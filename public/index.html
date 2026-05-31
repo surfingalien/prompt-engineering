@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PromptForge — AI Prompt Engineering Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #e05cad;
+    --accent3: #00d9b1;
+    --text: #e8e8f0;
+    --text-dim: #7a7a9a;
+    --text-muted: #4a4a6a;
+    --success: #00d9b1;
+    --warning: #f5a623;
+    --danger: #e05c5c;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --radius: 8px;
+    --glow: 0 0 30px rgba(124,106,247,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── Header ─────────────────────────────────────────── */
+  header {
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .logo span { color: var(--accent); }
+  .logo em { color: var(--accent2); font-style: normal; }
+
+  .header-nav {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .nav-btn {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  .nav-btn:hover { color: var(--text); background: var(--surface); border-color: var(--border); }
+  .nav-btn.active { color: var(--accent); background: rgba(124,106,247,0.1); border-color: rgba(124,106,247,0.3); }
+
+  /* ── Layout ─────────────────────────────────────────── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 340px;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 60px);
+  }
+
+  /* ── Left Sidebar ────────────────────────────────────── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-section {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-section h3 {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .search-box {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--text-muted); }
+
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+  }
+
+  .chip {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active { background: rgba(124,106,247,0.15); border-color: var(--accent); color: var(--accent); }
+
+  .prompt-list { padding: 0.5rem; }
+
+  .prompt-item {
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    margin-bottom: 0.2rem;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .prompt-item:hover { background: var(--surface2); border-color: var(--border); }
+  .prompt-item.selected { background: rgba(124,106,247,0.1); border-color: rgba(124,106,247,0.3); }
+
+  .prompt-item-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .prompt-item-meta {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .tag {
+    font-size: 0.62rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 100px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tag-role { background: rgba(124,106,247,0.15); color: var(--accent); }
+  .tag-technique { background: rgba(0,217,177,0.15); color: var(--accent3); }
+  .tag-system { background: rgba(224,92,173,0.15); color: var(--accent2); }
+  .tag-tool { background: rgba(245,166,35,0.15); color: var(--warning); }
+  .tag-code { background: rgba(100,180,255,0.15); color: #64b4ff; }
+
+  /* ── Main Editor ─────────────────────────────────────── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .editor-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .editor-title-input {
+    font-family: var(--sans);
+    font-size: 1rem;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    outline: none;
+    flex: 1;
+  }
+
+  .editor-title-input::placeholder { color: var(--text-muted); }
+
+  .editor-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+  .btn {
+    padding: 0.45rem 1rem;
+    border-radius: var(--radius);
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text-dim); }
+  .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:hover { background: #8f7dff; transform: translateY(-1px); box-shadow: var(--glow); }
+  .btn-success { background: transparent; border-color: var(--accent3); color: var(--accent3); }
+  .btn-success:hover { background: rgba(0,217,177,0.1); }
+  .btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+  .btn-danger:hover { background: rgba(224,92,92,0.1); }
+
+  .editor-tabs {
+    display: flex;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  .tab-btn {
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .editor-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .editor-body::-webkit-scrollbar { width: 4px; }
+  .editor-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* Textarea editor */
+  .prompt-textarea {
+    width: 100%;
+    min-height: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    padding: 1.25rem;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.2s;
+  }
+
+  .prompt-textarea:focus { border-color: var(--accent); }
+
+  /* Variables section */
+  .variables-panel {
+    margin-top: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .variables-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .var-list { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .var-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .var-input {
+    padding: 0.4rem 0.6rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    outline: none;
+  }
+
+  .var-input:focus { border-color: var(--accent3); }
+
+  .var-key { color: var(--accent3); }
+
+  /* Preview */
+  .preview-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    min-height: 200px;
+    position: relative;
+  }
+
+  .preview-box .var-highlight {
+    background: rgba(0,217,177,0.15);
+    color: var(--accent3);
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  /* Techniques view */
+  .techniques-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .technique-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .technique-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--glow);
+  }
+
+  .technique-card h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .technique-card p {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+  }
+
+  .technique-example {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent3);
+    background: var(--bg);
+    border-radius: 4px;
+    padding: 0.6rem 0.75rem;
+    border-left: 2px solid var(--accent3);
+  }
+
+  /* System prompts gallery */
+  .system-prompt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .system-prompt-card:hover { border-color: var(--accent2); }
+
+  .sp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .sp-name { font-weight: 700; font-size: 0.85rem; }
+  .sp-source {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(224,92,173,0.15);
+    color: var(--accent2);
+  }
+
+  .sp-preview {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  /* ── Right Panel ──────────────────────────────────────── */
+  .right-panel {
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .right-panel::-webkit-scrollbar { width: 4px; }
+  .right-panel::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .panel-section {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-section h3 {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  /* Optimizer */
+  .optimizer-modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .mode-btn {
+    padding: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .mode-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mode-btn.selected { background: rgba(124,106,247,0.15); border-color: var(--accent); color: var(--accent); }
+
+  /* Score bars */
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .score-label { font-size: 0.72rem; color: var(--text-dim); width: 90px; flex-shrink: 0; }
+
+  .score-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.5s ease;
+  }
+
+  .score-value { font-size: 0.72rem; font-weight: 700; font-family: var(--mono); width: 32px; text-align: right; }
+
+  /* Model selector */
+  .model-grid { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .model-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.6rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .model-card:hover { border-color: var(--accent); }
+  .model-card.active { border-color: var(--accent); background: rgba(124,106,247,0.08); }
+
+  .model-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .model-name { font-size: 0.78rem; font-weight: 600; flex: 1; }
+  .model-badge { font-size: 0.6rem; padding: 0.1rem 0.4rem; border-radius: 100px; font-weight: 700; }
+
+  /* History */
+  .history-item {
+    padding: 0.6rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.4rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .history-item:hover { border-color: var(--accent); }
+
+  .history-title { font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .history-time { font-size: 0.65rem; color: var(--text-muted); font-family: var(--mono); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: transform 0.3s ease;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--accent3); color: var(--accent3); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .empty-state-icon { font-size: 2.5rem; opacity: 0.5; }
+  .empty-state h4 { font-size: 0.9rem; color: var(--text-dim); }
+  .empty-state p { font-size: 0.78rem; max-width: 220px; line-height: 1.5; }
+
+  /* Optimize result */
+  .optimize-result {
+    background: var(--bg);
+    border: 1px solid var(--accent3);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .stat { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; }
+  .stat-label { color: var(--text-muted); }
+  .stat-value { font-family: var(--mono); font-weight: 700; color: var(--text-dim); }
+
+  /* Section hidden */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Scrollable prompt list area */
+  .prompt-list-container {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Highlight variables in preview */
+  .preview-var { color: var(--accent3); font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">⚡ Prompt<span>Forge</span><em>.ai</em></div>
+    <nav class="header-nav">
+      <button class="nav-btn active" onclick="setView('editor')" id="nav-editor">Editor</button>
+      <button class="nav-btn" onclick="setView('techniques')" id="nav-techniques">Techniques</button>
+      <button class="nav-btn" onclick="setView('system')" id="nav-system">System Prompts</button>
+      <button class="nav-btn" onclick="setView('library')" id="nav-library">Library</button>
+    </nav>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <span style="font-size:0.72rem;color:var(--text-muted);font-family:var(--mono)">surfingalien/prompt-engineering</span>
+    </div>
+  </header>
+
+  <!-- Main layout -->
+  <div class="layout" id="main-layout">
+
+    <!-- Left sidebar -->
+    <div class="sidebar" id="left-sidebar">
+      <div class="sidebar-section">
+        <h3>Search Prompts</h3>
+        <input class="search-box" type="text" id="search-input" placeholder="Search 500+ prompts..." oninput="filterPrompts(this.value)" />
+        <div class="filter-chips">
+          <button class="chip active" onclick="setFilter('all', this)">All</button>
+          <button class="chip" onclick="setFilter('role', this)">Role</button>
+          <button class="chip" onclick="setFilter('technique', this)">Technique</button>
+          <button class="chip" onclick="setFilter('system', this)">System</button>
+          <button class="chip" onclick="setFilter('code', this)">Code</button>
+          <button class="chip" onclick="setFilter('tool', this)">Tool</button>
+        </div>
+      </div>
+      <div class="prompt-list-container">
+        <div class="prompt-list" id="prompt-list"></div>
+      </div>
+    </div>
+
+    <!-- Center main -->
+    <div class="main" id="main-editor">
+
+      <!-- Editor header -->
+      <div class="editor-header">
+        <input class="editor-title-input" id="prompt-title" type="text" placeholder="Untitled Prompt" />
+        <div class="editor-actions">
+          <button class="btn btn-ghost" onclick="copyPrompt()">Copy</button>
+          <button class="btn btn-ghost" onclick="saveToHistory()">Save</button>
+          <button class="btn btn-primary" onclick="optimizePrompt()">✦ Optimize</button>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="stats-bar" id="stats-bar">
+        <div class="stat"><span class="stat-label">Chars</span><span class="stat-value" id="stat-chars">0</span></div>
+        <div class="stat"><span class="stat-label">Words</span><span class="stat-value" id="stat-words">0</span></div>
+        <div class="stat"><span class="stat-label">Tokens~</span><span class="stat-value" id="stat-tokens">0</span></div>
+        <div class="stat"><span class="stat-label">Variables</span><span class="stat-value" id="stat-vars">0</span></div>
+        <div class="stat"><span class="stat-label">Lines</span><span class="stat-value" id="stat-lines">0</span></div>
+      </div>
+
+      <!-- Editor tabs -->
+      <div class="editor-tabs">
+        <button class="tab-btn active" onclick="setTab('write')" id="tab-write">Write</button>
+        <button class="tab-btn" onclick="setTab('preview')" id="tab-preview">Preview</button>
+        <button class="tab-btn" onclick="setTab('variables')" id="tab-variables">Variables</button>
+        <button class="tab-btn" onclick="setTab('history')" id="tab-history">History</button>
+      </div>
+
+      <!-- Editor body -->
+      <div class="editor-body">
+        <!-- Write tab -->
+        <div class="tab-content active" id="content-write">
+          <textarea
+            class="prompt-textarea"
+            id="prompt-textarea"
+            placeholder="Write your prompt here...
+
+Use {{variable}} syntax for dynamic values.
+Example: You are a {{role}} expert in {{domain}}."
+            oninput="onPromptChange(this.value)"
+          ></textarea>
+        </div>
+
+        <!-- Preview tab -->
+        <div class="tab-content" id="content-preview">
+          <div class="preview-box" id="preview-output">Select a prompt or write one to preview it here.</div>
+        </div>
+
+        <!-- Variables tab -->
+        <div class="tab-content" id="content-variables">
+          <div class="variables-panel">
+            <div class="variables-header">
+              <span>Detected Variables</span>
+              <button class="btn btn-ghost" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="clearVars()">Clear All</button>
+            </div>
+            <div class="var-list" id="var-list">
+              <div class="empty-state" style="padding:1.5rem">
+                <div>No {{variables}} detected in your prompt.</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem">Use <code style="color:var(--accent3)">{{variable_name}}</code> syntax</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History tab -->
+        <div class="tab-content" id="content-history">
+          <div id="history-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="right-panel">
+
+      <!-- Optimizer -->
+      <div class="panel-section">
+        <h3>⚡ AI Optimizer</h3>
+        <div class="optimizer-modes" id="optimizer-modes">
+          <button class="mode-btn selected" onclick="setOptMode('clarity', this)" title="Improve clarity and specificity">Clarity</button>
+          <button class="mode-btn" onclick="setOptMode('cot', this)" title="Add Chain-of-Thought reasoning">Chain-of-Thought</button>
+          <button class="mode-btn" onclick="setOptMode('fewshot', this)" title="Structure for few-shot learning">Few-Shot</button>
+          <button class="mode-btn" onclick="setOptMode('system', this)" title="Convert to system prompt format">Sys Prompt</button>
+          <button class="mode-btn" onclick="setOptMode('concise', this)" title="Make shorter and punchier">Concise</button>
+          <button class="mode-btn" onclick="setOptMode('structured', this)" title="Add XML/JSON structure">Structured</button>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="runOptimizer()" id="opt-btn">
+          Run Optimizer
+        </button>
+        <div id="optimizer-result" style="display:none"></div>
+      </div>
+
+      <!-- Prompt Score -->
+      <div class="panel-section">
+        <h3>📊 Prompt Score</h3>
+        <div id="score-panel">
+          <div class="score-row">
+            <span class="score-label">Clarity</span>
+            <div class="score-bar"><div class="score-fill" id="score-clarity" style="width:0%;background:var(--accent)"></div></div>
+            <span class="score-value" id="sv-clarity" style="color:var(--accent)">-</span>
+          </div>
+          <div class="score-row">
+            <span class="score-label">Specificity</span>
+            <div class="score-bar"><div class="score-fill" id="score-specificity" style="width:0%;background:var(--accent2)"></div></div>
+            <span class="score-value" id="sv-specificity" style="color:var(--accent2)">-</span>
+          </div>
+          <div class="score-row">
+            <span class="score-label">Structure</span>
+            <div class="score-bar"><div class="score-fill" id="score-structure" style="width:0%;background:var(--accent3)"></div></div>
+            <span class="score-value" id="sv-structure" style="color:var(--accent3)">-</span>
+          </div>
+          <div class="score-row">
+            <span class="score-label">Context</span>
+            <div class="score-bar"><div class="score-fill" id="score-context" style="width:0%;background:var(--warning)"></div></div>
+            <span class="score-value" id="sv-context" style="color:var(--warning)">-</span>
+          </div>
+          <div class="score-row">
+            <span class="score-label">Constraints</span>
+            <div class="score-bar"><div class="score-fill" id="score-constraints" style="width:0%;background:#64b4ff"></div></div>
+            <span class="score-value" id="sv-constraints" style="color:#64b4ff">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Model Selector -->
+      <div class="panel-section">
+        <h3>🤖 Target Model</h3>
+        <div class="model-grid">
+          <div class="model-card active" onclick="selectModel(this, 'claude-opus-4-6')">
+            <div class="model-dot" style="background:#cc6fff"></div>
+            <span class="model-name">Claude Opus 4.6</span>
+            <span class="model-badge" style="background:rgba(204,111,255,0.15);color:#cc6fff">Frontier</span>
+          </div>
+          <div class="model-card" onclick="selectModel(this, 'claude-sonnet-4-6')">
+            <div class="model-dot" style="background:var(--accent)"></div>
+            <span class="model-name">Claude Sonnet 4.6</span>
+            <span class="model-badge" style="background:rgba(124,106,247,0.15);color:var(--accent)">Balanced</span>
+          </div>
+          <div class="model-card" onclick="selectModel(this, 'gpt-4o')">
+            <div class="model-dot" style="background:#10a37f"></div>
+            <span class="model-name">GPT-4o</span>
+            <span class="model-badge" style="background:rgba(16,163,127,0.15);color:#10a37f">OpenAI</span>
+          </div>
+          <div class="model-card" onclick="selectModel(this, 'gemini-2.5-pro')">
+            <div class="model-dot" style="background:#4285f4"></div>
+            <span class="model-name">Gemini 2.5 Pro</span>
+            <span class="model-badge" style="background:rgba(66,133,244,0.15);color:#4285f4">Google</span>
+          </div>
+          <div class="model-card" onclick="selectModel(this, 'grok-3')">
+            <div class="model-dot" style="background:#f5f5f5"></div>
+            <span class="model-name">Grok 3</span>
+            <span class="model-badge" style="background:rgba(245,245,245,0.1);color:#aaa">xAI</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Templates -->
+      <div class="panel-section">
+        <h3>⚡ Quick Insert</h3>
+        <div style="display:flex;flex-direction:column;gap:0.3rem">
+          <button class="btn btn-ghost" style="text-align:left;font-size:0.72rem" onclick="insertSnippet('cot')">+ Chain-of-Thought</button>
+          <button class="btn btn-ghost" style="text-align:left;font-size:0.72rem" onclick="insertSnippet('role')">+ Role Assignment</button>
+          <button class="btn btn-ghost" style="text-align:left;font-size:0.72rem" onclick="insertSnippet('xml')">+ XML Tags</button>
+          <button class="btn btn-ghost" style="text-align:left;font-size:0.72rem" onclick="insertSnippet('output')">+ Output Format</button>
+          <button class="btn btn-ghost" style="text-align:left;font-size:0.72rem" onclick="insertSnippet('constraints')">+ Constraints</button>
+          <button class="btn btn-ghost" style="text-align:left;font-size:0.72rem" onclick="insertSnippet('fewshot')">+ Few-Shot Examples</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Techniques view (hidden by default) -->
+<div id="view-techniques" style="display:none;flex:1;overflow-y:auto;padding:2rem">
+  <div style="max-width:1100px;margin:0 auto">
+    <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem">Prompting Techniques</h2>
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:2rem">From DAIR.AI Prompt Engineering Guide & research papers</p>
+    <div class="techniques-grid" id="techniques-grid"></div>
+  </div>
+</div>
+
+<!-- System Prompts view -->
+<div id="view-system" style="display:none;flex:1;overflow-y:auto;padding:2rem">
+  <div style="max-width:900px;margin:0 auto">
+    <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem">System Prompt Gallery</h2>
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:2rem">Leaked & published system prompts from CL4R1T4S, asgeirtj/system_prompts_leaks, and public sources</p>
+    <div id="system-prompts-list"></div>
+  </div>
+</div>
+
+<!-- Library view -->
+<div id="view-library" style="display:none;flex:1;overflow-y:auto;padding:2rem">
+  <div style="max-width:1100px;margin:0 auto">
+    <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem">Prompt Library</h2>
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:2rem">Curated from prompts.chat, DAIR.AI, and community contributions</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem" id="library-grid"></div>
+  </div>
+</div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────────────────
+const PROMPTS = [
+  { id:1, title:"Linux Terminal", category:"role", type:"role", prompt:"I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do not type commands unless I instruct you to do so. when i need to tell you something in english, i will do so by putting text inside curly brackets {like this}. my first command is pwd" },
+  { id:2, title:"Senior Developer", category:"code", type:"code", prompt:"You are a senior {{language}} developer with {{years}} years of experience. You write clean, maintainable, well-documented code following best practices. When reviewing code, you provide constructive feedback focusing on:\n- Performance\n- Security\n- Readability\n- Test coverage\n\nPlease review the following code:\n\n```{{language}}\n{{code}}\n```" },
+  { id:3, title:"Chain-of-Thought Reasoner", category:"technique", type:"technique", prompt:"Let's think through this step by step.\n\nProblem: {{problem}}\n\nReasoning:\n1. First, let me identify what we know...\n2. Next, let me consider the key relationships...\n3. Then, let me work through the logic...\n4. Finally, let me arrive at a conclusion...\n\nAnswer:" },
+  { id:4, title:"Product Manager", category:"role", type:"role", prompt:"You are an experienced product manager at a {{company_type}} company. Your job is to help the team make data-driven decisions about product features, prioritization, and user experience.\n\nWhen analyzing requests, always consider:\n- User needs and pain points\n- Business impact and ROI\n- Technical feasibility\n- Competitive landscape\n\nCurrent context: {{context}}" },
+  { id:5, title:"System Prompt Writer", category:"technique", type:"technique", prompt:"<system>\nYou are an expert AI system prompt engineer. Your role is to craft precise, effective system prompts that:\n1. Clearly define the AI's persona and constraints\n2. Set appropriate tone and communication style\n3. Specify output format requirements\n4. Include necessary safeguards\n</system>\n\nCreate a system prompt for: {{use_case}}" },
+  { id:6, title:"Code Reviewer", category:"code", type:"code", prompt:"Review the following {{language}} code and provide detailed feedback on:\n\n**Security vulnerabilities**: Check for SQL injection, XSS, CSRF, etc.\n**Performance issues**: Identify bottlenecks and inefficiencies\n**Code quality**: Assess readability, maintainability, DRY principles\n**Best practices**: Framework conventions, design patterns\n\nCode to review:\n```\n{{code}}\n```\n\nProvide your review in this format:\n- 🔴 Critical Issues:\n- 🟡 Improvements:\n- 🟢 Positives:" },
+  { id:7, title:"Few-Shot Classifier", category:"technique", type:"technique", prompt:"Classify the sentiment of the given text.\n\nExamples:\nText: \"I love this product! Amazing quality.\"\nSentiment: POSITIVE\n\nText: \"Terrible experience, would not recommend.\"\nSentiment: NEGATIVE\n\nText: \"It's okay, does what it says.\"\nSentiment: NEUTRAL\n\nNow classify:\nText: \"{{text}}\"\nSentiment:" },
+  { id:8, title:"Data Analyst", category:"role", type:"role", prompt:"You are a data analyst specializing in {{domain}}. Analyze the following data and provide:\n\n1. **Summary Statistics**: Key metrics and trends\n2. **Insights**: Non-obvious patterns and correlations\n3. **Anomalies**: Outliers or unexpected findings\n4. **Recommendations**: Data-driven action items\n5. **Visualization Suggestions**: Best charts for this data\n\nData:\n{{data}}" },
+  { id:9, title:"ReAct Agent", category:"technique", type:"technique", prompt:"You are an AI assistant using the ReAct (Reasoning + Acting) framework.\n\nFor each step, follow this format:\nThought: [Your reasoning about what to do]\nAction: [The action to take]\nObservation: [What you observe]\n... (repeat as needed)\nFinal Answer: [Your conclusion]\n\nQuestion: {{question}}\n\nBegin:" },
+  { id:10, title:"English Translator & Improver", category:"role", type:"role", prompt:"I want you to act as an English translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. My first sentence is: {{text}}" },
+  { id:11, title:"Startup Advisor", category:"role", type:"role", prompt:"You are an experienced startup advisor who has mentored 200+ companies through Y Combinator and top accelerators. Your advice is direct, practical, and data-driven.\n\nFor this {{company_stage}} startup in {{industry}}:\n- Current challenge: {{challenge}}\n- Resources available: {{resources}}\n\nProvide your honest assessment and top 3 actionable recommendations." },
+  { id:12, title:"Tree of Thoughts", category:"technique", type:"technique", prompt:"Use Tree of Thoughts reasoning to solve this problem. Explore multiple solution branches before converging.\n\nProblem: {{problem}}\n\nBranch A: [First approach]\n- Reasoning:\n- Pros:\n- Cons:\n\nBranch B: [Second approach]\n- Reasoning:\n- Pros:\n- Cons:\n\nBranch C: [Third approach]\n- Reasoning:\n- Pros:\n- Cons:\n\nBest Path: [Reasoning for chosen approach]\nSolution:" },
+  { id:13, title:"Security Researcher", category:"code", type:"code", prompt:"You are a senior security researcher conducting a {{assessment_type}} security assessment. Your goal is to identify vulnerabilities in {{target}} following responsible disclosure practices.\n\nScope: {{scope}}\nMethodology: {{methodology}}\n\nProvide a structured security report with:\n- Executive Summary\n- Technical Findings (CVSS scored)\n- Proof of Concept\n- Remediation Steps" },
+  { id:14, title:"Prompt Optimizer", category:"technique", type:"technique", prompt:"You are an expert prompt engineer. Optimize the following prompt for better performance with LLMs.\n\nOriginal prompt:\n{{original_prompt}}\n\nTarget model: {{model}}\nGoal: {{goal}}\n\nProvide:\n1. Analysis of issues with the original\n2. Optimized version\n3. Explanation of changes\n4. Expected improvement metrics" },
+  { id:15, title:"API Integration Expert", category:"tool", type:"tool", prompt:"You are an API integration specialist. Help me integrate the {{api_name}} API.\n\nTask: {{task}}\nProgramming language: {{language}}\nAuthentication type: {{auth_type}}\n\nProvide:\n- Working code example\n- Error handling\n- Rate limiting considerations\n- Best practices for {{api_name}}" },
+  { id:16, title:"Debater", category:"role", type:"role", prompt:"I want you to act as a debater. I will provide you with topics and your task is to research both sides, present valid arguments for each side, refute opposing points of view, and draw persuasive conclusions based on evidence.\n\nTopic: {{topic}}\nYour position: {{position}}\n\nStructure your argument with:\n1. Opening statement\n2. Main arguments (3)\n3. Rebuttals\n4. Closing statement" },
+  { id:17, title:"Zero-Shot Classifier", category:"technique", type:"technique", prompt:"Classify the following {{content_type}} into one of these categories: {{categories}}\n\nImportant rules:\n- Only output the category name, nothing else\n- If unsure, choose the closest match\n- Categories are mutually exclusive\n\n{{content_type}} to classify:\n{{content}}\n\nCategory:" },
+  { id:18, title:"Cursor System Prompt", category:"system", type:"system", prompt:"You are an AI coding assistant integrated into a code editor. You have access to the user's codebase and can read, write, and execute code.\n\nYour capabilities:\n- Read files and understand project structure\n- Write and edit code with precision\n- Execute terminal commands when needed\n- Search the web for documentation\n\nAlways:\n- Make minimal, targeted changes\n- Explain what you're doing and why\n- Ask for clarification when requirements are ambiguous\n- Follow the existing code style and conventions" },
+  { id:19, title:"Claude System Prompt (Public)", category:"system", type:"system", prompt:"The assistant is Claude, made by Anthropic. Claude is trained to be helpful, harmless, and honest.\n\nClaude can write and run code, analyze data, answer questions, and help with a wide variety of tasks. Claude should:\n- Be direct and confident in responses\n- Acknowledge uncertainty when unsure\n- Follow safety guidelines\n- Respect user autonomy\n- Provide balanced perspectives on controversial topics" },
+  { id:20, title:"MCP Tool Builder", category:"tool", type:"tool", prompt:"You are an expert MCP (Model Context Protocol) server developer. Build a production-ready MCP server for {{use_case}}.\n\nRequirements:\n- Language: {{language}} (Node.js/Python)\n- Tools to expose: {{tools}}\n- Authentication: {{auth}}\n\nProvide complete implementation including:\n1. Server setup\n2. Tool definitions with proper JSON schemas\n3. Error handling\n4. README with usage examples" },
+];
+
+const TECHNIQUES = [
+  { name: "Zero-Shot Prompting", difficulty: "Beginner", desc: "Ask the model to perform a task without any examples. Works well for simple, well-defined tasks.", example: "Classify this text as positive, negative, or neutral: 'The weather is great today.'" },
+  { name: "Few-Shot Prompting", difficulty: "Beginner", desc: "Provide a few examples to guide the model's responses. Dramatically improves accuracy on complex tasks.", example: "Translate English to French:\ncat → chat\ndog → chien\nbird → ?" },
+  { name: "Chain-of-Thought (CoT)", difficulty: "Intermediate", desc: "Ask the model to show its reasoning step by step. Dramatically improves performance on math, logic, and complex reasoning.", example: "Q: Roger has 5 tennis balls. He buys 2 more cans of 3. How many does he have? Let's think step by step." },
+  { name: "Self-Consistency", difficulty: "Intermediate", desc: "Generate multiple reasoning paths and select the most consistent answer. Improves reliability.", example: "Solve this problem 3 different ways, then identify the most consistent answer." },
+  { name: "Tree of Thoughts (ToT)", difficulty: "Advanced", desc: "Explore multiple reasoning branches simultaneously, allowing backtracking. Best for complex problem solving.", example: "Consider multiple approaches: Branch A..., Branch B..., Branch C... then evaluate and choose the best path." },
+  { name: "ReAct Framework", difficulty: "Advanced", desc: "Combines reasoning and acting — the model reasons, takes an action, observes the result, and continues.", example: "Thought: I need to find X\nAction: search(X)\nObservation: ...\nFinal Answer:" },
+  { name: "RAG Prompting", difficulty: "Advanced", desc: "Retrieval-Augmented Generation — ground the model's response in retrieved documents to reduce hallucination.", example: "Based on the following retrieved documents: [docs]\nAnswer this question: {question}" },
+  { name: "Directional Stimulus", difficulty: "Intermediate", desc: "Provide a hint or signal that guides the model toward the desired output type or style.", example: "Write a product description. Key focus: [durability, eco-friendly, premium]" },
+  { name: "Active Prompting", difficulty: "Advanced", desc: "Adaptively select the most informative examples for few-shot prompting based on uncertainty metrics.", example: "Select the most challenging examples from this dataset to improve model calibration." },
+  { name: "Automatic Prompt Engineer", difficulty: "Advanced", desc: "Use LLMs to automatically generate and score candidate prompts, then select the best performer.", example: "Generate 10 variations of this instruction and score them: 'Summarize the text'" },
+  { name: "Role Prompting", difficulty: "Beginner", desc: "Assign a specific persona or role to the model to improve domain-specific responses.", example: "You are a senior cybersecurity expert with 15 years of experience..." },
+  { name: "Structured Output", difficulty: "Beginner", desc: "Specify the exact output format (JSON, XML, markdown tables) for consistent, parseable responses.", example: "Return your response as JSON: {\"answer\": ..., \"confidence\": ..., \"sources\": [...]}" },
+];
+
+const SYSTEM_PROMPTS = [
+  { name: "Claude Opus 4.6", source: "CL4R1T4S / Anthropic", model: "Claude", text: "The assistant is Claude, created by Anthropic.\n\nClaude is currently operating in a web or mobile chat interface run by Anthropic, either in claude.ai or the Claude app.\n\nClaude has a genuine character that it maintains expressed across its interactions: an intellectual curiosity that delights in learning and discussing ideas across every domain; warmth and care for the humans it interacts with and beyond; a playful wit balanced with substance and depth...", tags: ["anthropic", "claude"] },
+  { name: "Cursor AI Editor", source: "CL4R1T4S / Cursor", model: "Custom", text: "You are an AI coding assistant integrated into the Cursor code editor. You have access to the entire codebase and can read, write, and execute code. Your goal is to help developers write better code faster.\n\nWhen making changes:\n- Be precise and minimal\n- Follow existing conventions\n- Explain your reasoning\n- Ask when requirements are unclear", tags: ["cursor", "coding"] },
+  { name: "Perplexity Search", source: "CL4R1T4S", model: "Custom", text: "You are Perplexity, a helpful search assistant trained to provide accurate, cited answers. You have real-time access to web search.\n\nFor every response:\n- Always cite your sources with [1], [2] notation\n- Prefer recent, authoritative sources\n- Acknowledge uncertainty\n- Be concise and direct", tags: ["search", "perplexity"] },
+  { name: "Lovable App Builder", source: "CL4R1T4S", model: "Custom", text: "You are an expert full-stack developer integrated into Lovable, an AI app builder. You help users build complete web applications using React, TypeScript, and Tailwind CSS.\n\nFor every feature request:\n1. Understand the user's intent\n2. Plan the implementation\n3. Write complete, working code\n4. Test edge cases\n5. Document your work", tags: ["lovable", "coding", "fullstack"] },
+  { name: "ChatGPT System (GPT-5.5)", source: "asgeirtj/system_prompts_leaks", model: "GPT", text: "You are ChatGPT, a large language model trained by OpenAI. You are helpful, harmless, and honest. You have knowledge up to your training cutoff. You can generate text, analyze code, create content, and assist with a wide variety of tasks. Always be respectful and follow OpenAI's usage policies.", tags: ["openai", "chatgpt"] },
+  { name: "Gemini Flash 3.5", source: "asgeirtj/system_prompts_leaks", model: "Gemini", text: "You are Gemini, a large language model made by Google. You are multimodal and can understand text, images, audio, and video. Your goal is to be helpful, accurate, and safe. You have access to Google Search for real-time information. Always cite sources when using search results.", tags: ["google", "gemini"] },
+  { name: "GitHub Copilot", source: "CL4R1T4S", model: "Custom", text: "You are GitHub Copilot, an AI programming assistant. When asked for your name, you must respond with 'GitHub Copilot'. Follow the user's requirements carefully and to the letter. Your expertise is strictly limited to software engineering topics.\n\nKeep your answers short and impersonal. Use Markdown formatting for code blocks.", tags: ["github", "coding"] },
+  { name: "Replit AI Agent", source: "CL4R1T4S", model: "Custom", text: "You are an AI agent on Replit. You help users build, debug, and deploy applications directly in the browser-based IDE.\n\nYou have access to:\n- The full project filesystem\n- A shell to run commands\n- Package manager (npm/pip)\n- Deployment tools\n\nAlways test your changes before reporting success.", tags: ["replit", "coding", "agent"] },
+];
+
+// ─── State ──────────────────────────────────────────────────────────
+let state = {
+  currentPrompt: '',
+  currentTitle: '',
+  selectedFilter: 'all',
+  searchQuery: '',
+  activeTab: 'write',
+  activeView: 'editor',
+  optMode: 'clarity',
+  selectedModel: 'claude-opus-4-6',
+  variables: {},
+  history: JSON.parse(localStorage.getItem('pf_history') || '[]'),
+  selectedPromptId: null,
+};
+
+// ─── Init ────────────────────────────────────────────────────────────
+function init() {
+  renderPromptList();
+  renderTechniques();
+  renderSystemPrompts();
+  renderLibrary();
+  renderHistory();
+}
+
+// ─── Prompt List ─────────────────────────────────────────────────────
+function renderPromptList() {
+  const list = document.getElementById('prompt-list');
+  const filtered = getFilteredPrompts();
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><h4>No prompts found</h4><p>Try a different search term or filter</p></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(p => `
+    <div class="prompt-item ${state.selectedPromptId === p.id ? 'selected' : ''}" onclick="selectPrompt(${p.id})">
+      <div class="prompt-item-title">${p.title}</div>
+      <div class="prompt-item-meta">
+        <span class="tag tag-${p.type}">${p.type}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getFilteredPrompts() {
+  return PROMPTS.filter(p => {
+    const matchFilter = state.selectedFilter === 'all' || p.category === state.selectedFilter;
+    const q = state.searchQuery.toLowerCase();
+    const matchSearch = !q || p.title.toLowerCase().includes(q) || p.prompt.toLowerCase().includes(q);
+    return matchFilter && matchSearch;
+  });
+}
+
+function filterPrompts(q) {
+  state.searchQuery = q;
+  renderPromptList();
+}
+
+function setFilter(f, el) {
+  state.selectedFilter = f;
+  document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderPromptList();
+}
+
+function selectPrompt(id) {
+  const p = PROMPTS.find(x => x.id === id);
+  if (!p) return;
+  state.selectedPromptId = id;
+  state.currentPrompt = p.prompt;
+  state.currentTitle = p.title;
+  document.getElementById('prompt-textarea').value = p.prompt;
+  document.getElementById('prompt-title').value = p.title;
+  onPromptChange(p.prompt);
+  renderPromptList();
+  setView('editor');
+}
+
+// ─── Editor ──────────────────────────────────────────────────────────
+function onPromptChange(val) {
+  state.currentPrompt = val;
+  updateStats(val);
+  detectVariables(val);
+  scorePrompt(val);
+  updatePreview();
+}
+
+function updateStats(val) {
+  const chars = val.length;
+  const words = val.trim() ? val.trim().split(/\s+/).length : 0;
+  const tokens = Math.round(chars / 4);
+  const vars = (val.match(/\{\{[^}]+\}\}/g) || []).length;
+  const lines = val.split('\n').length;
+  document.getElementById('stat-chars').textContent = chars;
+  document.getElementById('stat-words').textContent = words;
+  document.getElementById('stat-tokens').textContent = tokens;
+  document.getElementById('stat-vars').textContent = vars;
+  document.getElementById('stat-lines').textContent = lines;
+}
+
+function detectVariables(val) {
+  const matches = [...new Set((val.match(/\{\{([^}]+)\}\}/g) || []).map(m => m.slice(2,-2)))];
+  const panel = document.getElementById('var-list');
+
+  if (matches.length === 0) {
+    panel.innerHTML = `<div class="empty-state" style="padding:1.5rem"><div>No {{variables}} detected in your prompt.</div><div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.3rem">Use <code style="color:var(--accent3)">{{variable_name}}</code> syntax</div></div>`;
+    return;
+  }
+
+  // Keep existing values
+  panel.innerHTML = matches.map(v => `
+    <div class="var-row">
+      <span class="var-input var-key" style="background:transparent;border:none;padding:0.4rem 0.6rem;font-family:var(--mono);font-size:0.75rem">{{${v}}}</span>
+      <input class="var-input" type="text" placeholder="Enter value..." id="var-${v}" value="${state.variables[v] || ''}" oninput="setVar('${v}', this.value)" />
+      <button class="btn btn-ghost" style="padding:0.3rem 0.5rem;font-size:0.7rem" onclick="clearVar('${v}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function setVar(key, val) {
+  state.variables[key] = val;
+  updatePreview();
+}
+
+function clearVar(key) {
+  delete state.variables[key];
+  const input = document.getElementById(`var-${key}`);
+  if (input) input.value = '';
+  updatePreview();
+}
+
+function clearVars() {
+  state.variables = {};
+  detectVariables(state.currentPrompt);
+  updatePreview();
+}
+
+function updatePreview() {
+  let text = state.currentPrompt;
+  // Replace vars
+  Object.entries(state.variables).forEach(([k,v]) => {
+    if (v) text = text.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), `<span class="preview-var">${v}</span>`);
+  });
+  // Highlight remaining vars
+  text = text.replace(/\{\{([^}]+)\}\}/g, '<span style="color:var(--accent2);opacity:0.7">{{$1}}</span>');
+  // Escape for HTML but preserve our tags
+  const preview = document.getElementById('preview-output');
+  preview.innerHTML = text || '<span style="color:var(--text-muted)">Nothing to preview yet.</span>';
+}
+
+// ─── Score ───────────────────────────────────────────────────────────
+function scorePrompt(text) {
+  if (!text.trim()) {
+    ['clarity','specificity','structure','context','constraints'].forEach(k => {
+      document.getElementById(`score-${k}`).style.width = '0%';
+      document.getElementById(`sv-${k}`).textContent = '-';
+    });
+    return;
+  }
+
+  const len = text.length;
+  const words = text.trim().split(/\s+/).length;
+  const hasRole = /you are|act as|as an?|as a/i.test(text);
+  const hasStructure = /\n/.test(text) && (text.includes(':') || text.includes('-') || text.includes('1.'));
+  const hasExamples = /example|for instance|e\.g\.|such as/i.test(text);
+  const hasConstraints = /must|should|never|always|only|do not|don't/i.test(text);
+  const hasOutput = /output|format|return|respond|provide|list|json|xml/i.test(text);
+  const hasContext = len > 100 && words > 20;
+
+  const scores = {
+    clarity: Math.min(100, 20 + (words > 10 ? 30 : 0) + (words > 30 ? 20 : 0) + (hasRole ? 20 : 0) + (words < 200 ? 10 : 0)),
+    specificity: Math.min(100, 15 + (hasRole ? 25 : 0) + (hasExamples ? 25 : 0) + (hasOutput ? 20 : 0) + (len > 50 ? 15 : 0)),
+    structure: Math.min(100, 10 + (hasStructure ? 50 : 0) + (text.includes('\n\n') ? 20 : 0) + (text.includes('##') || text.includes('**') ? 20 : 0)),
+    context: Math.min(100, 10 + (hasContext ? 40 : 0) + (hasRole ? 25 : 0) + (hasExamples ? 25 : 0)),
+    constraints: Math.min(100, 5 + (hasConstraints ? 50 : 0) + (hasOutput ? 30 : 0) + (text.includes('only') ? 15 : 0)),
+  };
+
+  Object.entries(scores).forEach(([k,v]) => {
+    document.getElementById(`score-${k}`).style.width = `${v}%`;
+    document.getElementById(`sv-${k}`).textContent = v;
+  });
+}
+
+// ─── Optimize ────────────────────────────────────────────────────────
+async function optimizePrompt() {
+  if (!state.currentPrompt.trim()) { showToast('Write a prompt first', 'error'); return; }
+  runOptimizer();
+}
+
+async function runOptimizer() {
+  if (!state.currentPrompt.trim()) { showToast('Write a prompt first', 'error'); return; }
+
+  const btn = document.getElementById('opt-btn');
+  btn.innerHTML = '<span class="spinner"></span> Optimizing...';
+  btn.disabled = true;
+
+  const resultDiv = document.getElementById('optimizer-result');
+  resultDiv.style.display = 'none';
+
+  const modeInstructions = {
+    clarity: 'Rewrite this prompt to be clearer, more specific, and unambiguous. Fix vague language. Keep it concise.',
+    cot: 'Add Chain-of-Thought reasoning instructions to this prompt. Include "Let\'s think step by step" and structured reasoning steps.',
+    fewshot: 'Transform this prompt to use few-shot examples. Add 2-3 clear input/output examples before the actual request.',
+    system: 'Convert this into a professional system prompt format. Add role definition, capabilities, constraints, and output format.',
+    concise: 'Make this prompt shorter and more direct without losing essential information. Remove redundancy.',
+    structured: 'Add XML or structured tags to organize this prompt clearly: <task>, <context>, <constraints>, <output_format>.',
+  };
+
+  const systemPrompt = `You are an expert prompt engineer. Optimize the user's prompt according to the instruction. Return ONLY the optimized prompt, nothing else. No preamble, no explanation.`;
+  const userMsg = `Instruction: ${modeInstructions[state.optMode]}\n\nOriginal prompt:\n${state.currentPrompt}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    const data = await response.json();
+    const optimized = data.content?.[0]?.text || '';
+
+    if (optimized) {
+      resultDiv.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:0.5rem 0 0.3rem">
+          <span style="font-size:0.7rem;color:var(--accent3);font-weight:700;text-transform:uppercase;letter-spacing:0.05em">✦ Optimized (${state.optMode})</span>
+          <button class="btn btn-ghost" style="padding:0.2rem 0.5rem;font-size:0.7rem" onclick="applyOptimized()">Apply</button>
+        </div>
+        <div class="optimize-result" id="optimized-text">${optimized.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      `;
+      resultDiv.style.display = 'block';
+      window._optimizedText = optimized;
+      showToast('Prompt optimized!', 'success');
+    }
+  } catch (err) {
+    resultDiv.innerHTML = `<div style="color:var(--danger);font-size:0.75rem;margin-top:0.5rem;padding:0.5rem;background:var(--bg);border-radius:4px">API call failed. Check network.</div>`;
+    resultDiv.style.display = 'block';
+  }
+
+  btn.innerHTML = 'Run Optimizer';
+  btn.disabled = false;
+}
+
+function applyOptimized() {
+  if (window._optimizedText) {
+    document.getElementById('prompt-textarea').value = window._optimizedText;
+    onPromptChange(window._optimizedText);
+    showToast('Applied to editor!', 'success');
+  }
+}
+
+function setOptMode(mode, el) {
+  state.optMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ─── Snippets ─────────────────────────────────────────────────────────
+const SNIPPETS = {
+  cot: '\n\nLet\'s think through this step by step:\n1. First, I\'ll identify...\n2. Then, I\'ll consider...\n3. Finally, I\'ll conclude...',
+  role: 'You are an expert {{role}} with {{years}} years of experience in {{domain}}. ',
+  xml: '\n\n<context>\n{{context}}\n</context>\n\n<task>\n{{task}}\n</task>\n\n<constraints>\n{{constraints}}\n</constraints>',
+  output: '\n\nRespond in the following format:\n- **Summary**: One sentence overview\n- **Details**: Full explanation\n- **Recommendation**: Actionable next step',
+  constraints: '\n\nConstraints:\n- Only use information provided in the context\n- Keep response under {{max_words}} words\n- Use {{tone}} tone\n- Do not include {{excluded}}',
+  fewshot: '\n\nExamples:\nInput: {{example_input_1}}\nOutput: {{example_output_1}}\n\nInput: {{example_input_2}}\nOutput: {{example_output_2}}\n\nNow:\nInput: {{input}}\nOutput:',
+};
+
+function insertSnippet(key) {
+  const ta = document.getElementById('prompt-textarea');
+  const snippet = SNIPPETS[key];
+  const pos = ta.selectionStart;
+  const newText = ta.value.slice(0, pos) + snippet + ta.value.slice(pos);
+  ta.value = newText;
+  onPromptChange(newText);
+  ta.focus();
+  ta.setSelectionRange(pos + snippet.length, pos + snippet.length);
+  showToast('Snippet inserted!', 'success');
+}
+
+// ─── History ─────────────────────────────────────────────────────────
+function saveToHistory() {
+  if (!state.currentPrompt.trim()) { showToast('Nothing to save', 'error'); return; }
+  const item = {
+    id: Date.now(),
+    title: state.currentTitle || 'Untitled Prompt',
+    prompt: state.currentPrompt,
+    time: new Date().toLocaleString(),
+  };
+  state.history.unshift(item);
+  if (state.history.length > 50) state.history = state.history.slice(0, 50);
+  localStorage.setItem('pf_history', JSON.stringify(state.history));
+  renderHistory();
+  showToast('Saved to history!', 'success');
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (state.history.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h4>No history yet</h4><p>Save prompts to build your history</p></div>';
+    return;
+  }
+  list.innerHTML = state.history.map(item => `
+    <div class="history-item" onclick="loadHistory(${item.id})">
+      <div class="history-title">${item.title}</div>
+      <div class="history-time">${item.time}</div>
+    </div>
+  `).join('');
+}
+
+function loadHistory(id) {
+  const item = state.history.find(h => h.id === id);
+  if (!item) return;
+  document.getElementById('prompt-textarea').value = item.prompt;
+  document.getElementById('prompt-title').value = item.title;
+  onPromptChange(item.prompt);
+  setTab('write');
+  showToast('Loaded from history', 'success');
+}
+
+// ─── Copy ──────────────────────────────────────────────────────────────
+function copyPrompt() {
+  if (!state.currentPrompt.trim()) { showToast('Nothing to copy', 'error'); return; }
+  navigator.clipboard.writeText(state.currentPrompt)
+    .then(() => showToast('Copied to clipboard!', 'success'))
+    .catch(() => showToast('Copy failed', 'error'));
+}
+
+// ─── Views & Tabs ───────────────────────────────────────────────────────
+function setView(view) {
+  state.activeView = view;
+
+  // Show/hide main layout vs full-page views
+  const layout = document.getElementById('main-layout');
+  const views = ['techniques','system','library'];
+
+  views.forEach(v => {
+    document.getElementById(`view-${v}`).style.display = 'none';
+  });
+
+  if (view === 'editor') {
+    layout.style.display = 'grid';
+  } else {
+    layout.style.display = 'none';
+    document.getElementById(`view-${view}`).style.display = 'flex';
+    document.getElementById(`view-${view}`).style.flexDirection = 'column';
+  }
+
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`nav-${view}`)?.classList.add('active');
+}
+
+function setTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`content-${tab}`).classList.add('active');
+  if (tab === 'preview') updatePreview();
+}
+
+// ─── Model ──────────────────────────────────────────────────────────────
+function selectModel(el, model) {
+  state.selectedModel = model;
+  document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── Techniques ──────────────────────────────────────────────────────────
+function renderTechniques() {
+  const grid = document.getElementById('techniques-grid');
+  const colors = { Beginner: 'var(--accent3)', Intermediate: 'var(--accent)', Advanced: 'var(--accent2)' };
+  grid.innerHTML = TECHNIQUES.map(t => `
+    <div class="technique-card" onclick="loadTechnique('${t.name}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem">
+        <h4>${t.name}</h4>
+        <span class="tag" style="background:rgba(255,255,255,0.05);color:${colors[t.difficulty]}">${t.difficulty}</span>
+      </div>
+      <p>${t.desc}</p>
+      <div class="technique-example">${t.example}</div>
+    </div>
+  `).join('');
+}
+
+function loadTechnique(name) {
+  const t = TECHNIQUES.find(x => x.name === name);
+  if (!t) return;
+  document.getElementById('prompt-textarea').value = t.example;
+  document.getElementById('prompt-title').value = t.name;
+  onPromptChange(t.example);
+  setView('editor');
+  showToast(`Loaded: ${t.name}`, 'success');
+}
+
+// ─── System Prompts ──────────────────────────────────────────────────────
+function renderSystemPrompts() {
+  const list = document.getElementById('system-prompts-list');
+  list.innerHTML = SYSTEM_PROMPTS.map(p => `
+    <div class="system-prompt-card" onclick="loadSystemPrompt('${p.name}')">
+      <div class="sp-header">
+        <span class="sp-name">${p.name}</span>
+        <span class="sp-source">${p.source}</span>
+      </div>
+      <div style="display:flex;gap:0.3rem;margin-bottom:0.5rem">
+        ${p.tags.map(t => `<span class="tag" style="background:rgba(255,255,255,0.05);color:var(--text-muted)">${t}</span>`).join('')}
+      </div>
+      <div class="sp-preview">${p.text}</div>
+    </div>
+  `).join('');
+}
+
+function loadSystemPrompt(name) {
+  const p = SYSTEM_PROMPTS.find(x => x.name === name);
+  if (!p) return;
+  document.getElementById('prompt-textarea').value = p.text;
+  document.getElementById('prompt-title').value = p.name;
+  onPromptChange(p.text);
+  setView('editor');
+  showToast(`Loaded: ${p.name}`, 'success');
+}
+
+// ─── Library ──────────────────────────────────────────────────────────────
+function renderLibrary() {
+  const grid = document.getElementById('library-grid');
+  const colors = { role:'var(--accent)', technique:'var(--accent3)', system:'var(--accent2)', code:'#64b4ff', tool:'var(--warning)' };
+  grid.innerHTML = PROMPTS.map(p => `
+    <div class="system-prompt-card" onclick="selectPromptFromLibrary(${p.id})">
+      <div class="sp-header">
+        <span class="sp-name">${p.title}</span>
+        <span class="tag tag-${p.type}">${p.type}</span>
+      </div>
+      <div class="sp-preview">${p.prompt.slice(0, 120)}...</div>
+      <div style="margin-top:0.5rem;display:flex;justify-content:flex-end">
+        <span style="font-size:0.65rem;color:var(--text-muted);font-family:var(--mono)">${p.prompt.length} chars</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectPromptFromLibrary(id) {
+  selectPrompt(id);
+}
+
+// ─── Toast ──────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+  t.className = `toast show ${type}`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── Start ──────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

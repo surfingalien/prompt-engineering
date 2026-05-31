@@ -1,0 +1,21 @@
+{
+  "name": "prompt-engineering",
+  "version": "1.0.0",
+  "description": "PromptForge — AI Prompt Engineering Studio. Built from prompts.chat, dair-ai, CL4R1T4S, system_prompts_leaks, prompt-optimizer, and microsoft/generative-ai-for-beginners.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/surfingalien/prompt-engineering.git"
+  },
+  "keywords": ["prompt-engineering", "ai", "llm", "claude", "gpt", "prompts"],
+  "author": "surfingalien",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
