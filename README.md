@@ -20,6 +20,33 @@ docker compose up -d
 # Open Design  →  http://localhost:7456
 ```
 
+### Running from source (requires Node 24)
+
+Open Design strictly requires Node 24. Use nvm to install it:
+
+```bash
+# Install Node 24 via nvm
+source /opt/nvm/nvm.sh   # or: source ~/.nvm/nvm.sh
+nvm install 24
+nvm use 24
+
+# Install dependencies
+cd open-design
+corepack enable
+pnpm install
+
+# Start Open Design (dev mode)
+pnpm tools-dev run web
+# Web UI and daemon URLs printed to terminal
+```
+
+To also run PromptForge alongside it:
+```bash
+# In a second terminal (Node version doesn't matter for PromptForge)
+node server.js
+# → http://localhost:3000
+```
+
 ### Initialise the submodule (after cloning)
 
 ```bash
