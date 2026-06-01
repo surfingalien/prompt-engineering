@@ -29,6 +29,21 @@
   --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --display: 'Syne', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --radius: 10px;
+  /* ── Glassmorphism (from Leonxlnx/prompt-library) ── */
+  --surface-glass-opacity: 0.82;
+  --card-glass-opacity: 0.78;
+  --glass-blur-strength: 14px;
+  --background-image-strength: 0.24;
+  --glass-edge-opacity: 0.1;
+  --glass-highlight-opacity: 0.16;
+  --surface-top-glow-opacity: 0.08;
+  --workspace-bg-image: none;
+  --transition-glass: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-pill: 100px;
   --glow-accent: 0 0 40px rgba(108,92,231,0.2);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -370,6 +385,217 @@ header {
 .color-swatches { display:flex; gap:5px; flex-wrap:wrap; margin-top:0.5rem; }
 .swatch { width:28px; height:28px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:transform 0.1s; }
 .swatch:hover { transform:scale(1.15); }
+
+/* ── Variable Fill-In Dialog (from Leonxlnx/prompt-library) ── */
+.var-modal-overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  z-index:1000;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity 0.2s;
+}
+.var-modal-overlay.active { opacity:1; pointer-events:all; }
+
+.var-modal {
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  width:520px; max-width:calc(100vw - 2rem);
+  max-height:80vh;
+  display:flex; flex-direction:column;
+  box-shadow:0 32px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+  transform:translateY(12px) scale(0.98);
+  transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+  opacity:0;
+}
+.var-modal-overlay.active .var-modal { transform:translateY(0) scale(1); opacity:1; }
+
+.vm-header {
+  padding:1.1rem 1.25rem 0.85rem;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+}
+.vm-title { font-family:var(--display); font-weight:700; font-size:0.95rem; margin-bottom:0.2rem; }
+.vm-sub { font-size:0.72rem; color:var(--text-dim); }
+.vm-close {
+  width:28px; height:28px; border-radius:8px; border:1px solid var(--border);
+  background:transparent; color:var(--text-dim); cursor:pointer; display:flex;
+  align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s;
+}
+.vm-close:hover { background:rgba(224,92,92,0.15); border-color:var(--danger); color:var(--danger); }
+
+.vm-body { padding:1rem 1.25rem; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:0.75rem; }
+.vm-body::-webkit-scrollbar { width:3px; }
+.vm-body::-webkit-scrollbar-thumb { background:var(--border); }
+
+.vm-field { display:flex; flex-direction:column; gap:0.4rem; }
+.vm-label {
+  font-size:0.65rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.08em; color:var(--text-muted);
+  display:flex; align-items:center; gap:0.4rem;
+}
+.vm-label-key { color:var(--accent3); font-family:var(--mono); font-size:0.72rem; }
+.vm-input {
+  padding:0.55rem 0.75rem; background:var(--bg);
+  border:1px solid var(--border); border-radius:10px; color:var(--text);
+  font-family:var(--sans); font-size:0.82rem; outline:none; transition:border-color 0.15s;
+  width:100%;
+}
+.vm-input:focus { border-color:var(--accent3); box-shadow:0 0 0 3px rgba(0,206,201,0.12); }
+.vm-input::placeholder { color:var(--text-muted); }
+
+.vm-preview-label {
+  font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--text-muted); margin:0.5rem 0 0.35rem;
+}
+.vm-preview {
+  background:var(--bg); border:1px solid var(--border); border-radius:10px;
+  padding:0.75rem; font-family:var(--mono); font-size:0.75rem; line-height:1.65;
+  white-space:pre-wrap; color:var(--text); max-height:140px; overflow-y:auto;
+}
+.vm-preview::-webkit-scrollbar { width:3px; }
+.vm-preview::-webkit-scrollbar-thumb { background:var(--border); }
+
+.vm-footer {
+  padding:0.75rem 1.25rem 1rem;
+  border-top:1px solid var(--border);
+  display:flex; gap:0.6rem; justify-content:flex-end;
+  background:linear-gradient(180deg, transparent, rgba(0,0,0,0.1));
+  border-radius:0 0 20px 20px;
+}
+.vm-hint { font-size:0.65rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; flex:1; }
+.vm-kbd {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:20px; height:20px; padding:0 6px; border-radius:100px;
+  border:1px solid var(--border); background:var(--surface2);
+  font-size:0.6rem; font-weight:700; color:var(--text-dim); font-family:var(--mono);
+}
+
+/* ── Quick Capture Widget (from Leonxlnx/prompt-library quicksave) ── */
+.qc-trigger {
+  position:fixed; bottom:1.5rem; right:1.5rem; z-index:500;
+  width:46px; height:46px; border-radius:50%;
+  background:linear-gradient(135deg, var(--accent), #9c8cf8);
+  border:none; color:white; cursor:pointer;
+  box-shadow:0 8px 24px rgba(108,92,231,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  font-size:1.1rem;
+}
+.qc-trigger:hover { transform:scale(1.1) translateY(-2px); box-shadow:0 12px 32px rgba(108,92,231,0.55); }
+.qc-trigger:active { transform:scale(0.95); }
+
+.qc-panel {
+  position:fixed; bottom:4.5rem; right:1.5rem; z-index:499;
+  width:380px; max-width:calc(100vw - 3rem);
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  box-shadow:0 24px 56px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+  display:flex; flex-direction:column;
+  opacity:0; pointer-events:none;
+  transform:translateY(12px) scale(0.96);
+  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  overflow:hidden;
+}
+.qc-panel.active { opacity:1; pointer-events:all; transform:translateY(0) scale(1); }
+
+.qc-header {
+  padding:0.9rem 1rem 0.7rem;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(255,255,255,0.02);
+}
+.qc-brand { display:flex; align-items:center; gap:0.6rem; }
+.qc-icon { font-size:1rem; }
+.qc-title { font-family:var(--display); font-weight:700; font-size:0.82rem; }
+.qc-sub { font-size:0.65rem; color:var(--text-dim); margin-top:1px; }
+.qc-x {
+  width:26px; height:26px; border-radius:8px; border:1px solid var(--border);
+  background:transparent; color:var(--text-dim); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+}
+.qc-x:hover { background:rgba(224,92,92,0.15); border-color:var(--danger); color:var(--danger); }
+
+.qc-body { padding:0.8rem; display:flex; flex-direction:column; gap:0.6rem; }
+.qc-label { font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:0.3rem; display:block; }
+.qc-select, .qc-input, .qc-textarea {
+  width:100%; padding:0.45rem 0.65rem;
+  background:var(--bg); border:1px solid var(--border); border-radius:10px;
+  color:var(--text); font-family:var(--sans); font-size:0.78rem; outline:none;
+  transition:border-color 0.15s;
+}
+.qc-select:focus, .qc-input:focus, .qc-textarea:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-dim);
+}
+.qc-select { height:38px; cursor:pointer; }
+.qc-input { height:38px; }
+.qc-textarea { min-height:90px; resize:vertical; line-height:1.55; font-family:var(--mono); font-size:0.75rem; }
+.qc-select::placeholder, .qc-input::placeholder, .qc-textarea::placeholder { color:var(--text-muted); }
+
+.qc-footer {
+  padding:0.65rem 0.8rem 0.8rem;
+  border-top:1px solid var(--border);
+  display:flex; gap:0.5rem;
+  background:rgba(0,0,0,0.1);
+}
+.qc-btn {
+  flex:1; height:38px; border-radius:100px;
+  border:1px solid var(--border); font-family:var(--display);
+  font-size:0.75rem; font-weight:700; cursor:pointer; transition:all 0.15s;
+}
+.qc-btn-cancel { background:transparent; color:var(--text-dim); }
+.qc-btn-cancel:hover { background:var(--surface3); color:var(--text); }
+.qc-btn-save {
+  background:var(--accent); color:white; border-color:var(--accent);
+  box-shadow:0 6px 16px rgba(108,92,231,0.35);
+}
+.qc-btn-save:hover { background:#7c6cf0; transform:translateY(-1px); }
+
+.qc-hint { display:flex; justify-content:center; gap:1rem; padding:0.3rem 0.8rem 0.65rem; }
+.qc-hint-item { display:flex; align-items:center; gap:0.35rem; font-size:0.6rem; color:var(--text-muted); }
+.qc-hint kbd {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:20px; height:20px; padding:0 6px; border-radius:100px;
+  border:1px solid var(--border); background:var(--surface2);
+  font-size:0.58rem; font-weight:700; color:var(--text-dim); font-family:var(--mono);
+}
+
+/* ── Glass Settings Panel ── */
+.glass-panel {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:0.875rem;
+  margin-bottom:0.5rem;
+}
+.glass-row { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.55rem; }
+.glass-row:last-child { margin-bottom:0; }
+.glass-row-label { font-size:0.68rem; color:var(--text-dim); width:90px; flex-shrink:0; }
+.glass-slider {
+  flex:1; height:4px; accent-color:var(--accent);
+  cursor:pointer; outline:none; border-radius:100px;
+}
+.glass-row-val { font-size:0.65rem; font-family:var(--mono); font-weight:700; color:var(--text-dim); width:34px; text-align:right; }
+.accent-swatch { width:22px; height:22px; border-radius:6px; border:1px solid var(--border); cursor:pointer; flex-shrink:0; }
+
+/* Toast for QC save */
+.qc-toast {
+  position:fixed; left:50%; bottom:1.5rem; z-index:9999;
+  transform:translateX(-50%) translateY(60px);
+  display:flex; align-items:center; gap:0.5rem;
+  padding:0.5rem 1rem; border-radius:100px;
+  background:#38b875; color:white;
+  font-size:0.75rem; font-weight:700;
+  box-shadow:0 8px 24px rgba(56,184,117,0.35);
+  transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+  opacity:0;
+}
+.qc-toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
 </style>
 </head>
 <body>
@@ -527,6 +753,45 @@ header {
       <div class="model-card" onclick="selectModel(this,'grok-3')"><div class="model-dot" style="background:#aaa"></div><span class="model-name">Grok 3</span><span class="model-badge" style="background:rgba(170,170,170,0.1);color:#888">xAI</span></div>
     </div>
 
+    <!-- Glass & Appearance -->
+    <div class="rpanel-section" id="glass-rpanel-section">
+      <div class="rpanel-label" id="glass-rpanel-label" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="toggleGlassPanel()">
+        <span>🪟 Glass &amp; Appearance</span>
+        <span id="glass-panel-arrow" style="font-size:0.65rem;color:var(--text-muted)">▸</span>
+      </div>
+      <div id="glass-settings-panel" style="display:none;margin-top:0.5rem">
+        <div class="glass-row">
+          <span class="glass-row-label">Blur</span>
+          <input type="range" class="glass-slider" id="gs-blur" min="0" max="30" value="14" oninput="updateGlass()">
+          <span class="glass-row-val" id="gsv-blur">14px</span>
+        </div>
+        <div class="glass-row">
+          <span class="glass-row-label">Surface</span>
+          <input type="range" class="glass-slider" id="gs-surface" min="8" max="98" value="82" oninput="updateGlass()">
+          <span class="glass-row-val" id="gsv-surface">82%</span>
+        </div>
+        <div class="glass-row">
+          <span class="glass-row-label">Brightness</span>
+          <input type="range" class="glass-slider" id="gs-brightness" min="72" max="138" value="100" oninput="updateGlass()">
+          <span class="glass-row-val" id="gsv-brightness">100%</span>
+        </div>
+        <div class="glass-row">
+          <span class="glass-row-label">BG Reveal</span>
+          <input type="range" class="glass-slider" id="gs-bgvis" min="0" max="100" value="24" oninput="updateGlass()">
+          <span class="glass-row-val" id="gsv-bgvis">24%</span>
+        </div>
+        <div class="glass-row">
+          <span class="glass-row-label">Accent</span>
+          <input type="color" class="accent-swatch" id="gs-accent" value="#6c5ce7" oninput="updateGlass()">
+          <span class="glass-row-val" id="gsv-accent" style="font-size:0.6rem">#6C5CE7</span>
+        </div>
+        <div style="display:flex;gap:0.4rem;margin-top:0.6rem">
+          <button class="btn btn-ghost" style="flex:1;font-size:0.65rem;padding:0.3rem 0" onclick="resetGlass()">Reset</button>
+          <button class="btn btn-ghost" style="flex:1;font-size:0.65rem;padding:0.3rem 0" onclick="loadBgImage()">BG Image</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Insert -->
     <div class="rpanel-section">
       <div class="rpanel-label">⚡ Quick Insert</div>
@@ -611,6 +876,77 @@ header {
 </div>
 
 </div><!-- end flex wrapper -->
+
+<!-- ── Variable Fill-In Modal ── -->
+<div class="var-modal-overlay" id="var-modal-overlay">
+  <div class="var-modal">
+    <div class="vm-header">
+      <div>
+        <div class="vm-title">Fill in Variables</div>
+        <div class="vm-sub" id="vm-sub">Replace all {{variables}} then copy to clipboard</div>
+      </div>
+      <button class="vm-close" id="vm-close">✕</button>
+    </div>
+    <div class="vm-body" id="vm-body"></div>
+    <div style="padding:0 1.25rem 0.5rem">
+      <div class="vm-preview-label">Live Preview</div>
+      <div class="vm-preview" id="vm-preview-box"></div>
+    </div>
+    <div class="vm-footer">
+      <div class="vm-hint"><span class="vm-kbd">Ctrl+Enter</span> copy &amp; close</div>
+      <button class="btn btn-ghost" id="vm-cancel">Cancel</button>
+      <button class="btn btn-primary" id="vm-copy">Copy Filled Prompt</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Quick Capture Widget ── -->
+<button class="qc-trigger" id="qc-trigger" title="Quick Capture (Alt+Q)">⚡</button>
+<div class="qc-panel" id="qc-panel">
+  <div class="qc-header">
+    <div class="qc-brand">
+      <span class="qc-icon">⚡</span>
+      <div>
+        <div class="qc-title">Quick Capture</div>
+        <div class="qc-sub">Save a prompt without leaving your flow</div>
+      </div>
+    </div>
+    <button class="qc-x" id="qc-close">✕</button>
+  </div>
+  <div class="qc-body">
+    <div>
+      <label class="qc-label">Category</label>
+      <select class="qc-select" id="qc-category">
+        <option value="role">Role</option>
+        <option value="technique">Technique</option>
+        <option value="council">Council</option>
+        <option value="design">Design</option>
+        <option value="brain">Brain</option>
+        <option value="code">Code</option>
+        <option value="tool">Tool</option>
+        <option value="system">System</option>
+      </select>
+    </div>
+    <div>
+      <label class="qc-label">Title</label>
+      <input class="qc-input" type="text" id="qc-title" placeholder="Prompt title..." />
+    </div>
+    <div>
+      <label class="qc-label">Prompt Text</label>
+      <textarea class="qc-textarea" id="qc-text" placeholder="Paste or write your prompt here...&#10;Use {{variable}} for dynamic values."></textarea>
+    </div>
+  </div>
+  <div class="qc-footer">
+    <button class="qc-btn qc-btn-cancel" id="qc-cancel">Cancel</button>
+    <button class="qc-btn qc-btn-save" id="qc-save">✓ Save Prompt</button>
+  </div>
+  <div class="qc-hint">
+    <div class="qc-hint-item"><kbd>Esc</kbd> close</div>
+    <div class="qc-hint-item"><kbd>Ctrl+Enter</kbd> save</div>
+  </div>
+</div>
+<div class="qc-toast" id="qc-toast">✓ Prompt saved to library</div>
+
 </div><!-- app -->
 
 <div class="toast" id="toast"></div>
@@ -1177,6 +1513,315 @@ function showToast(msg,type='success') {
 }
 
 init();
+
+// ═══════════════════════════════════════════════════════════════
+// FEATURE 1: VARIABLE FILL-IN DIALOG
+// (from Leonxlnx/prompt-library — {{VARIABLE}} fill-in on copy)
+// ═══════════════════════════════════════════════════════════════
+
+function openVarModal(promptText) {
+  // Detect variables
+  const vars = [...new Set((promptText.match(/\{\{([^}]+)\}\}/g) || []).map(m => m.slice(2,-2)))];
+  const overlay = document.getElementById('var-modal-overlay');
+  const body = document.getElementById('vm-body');
+  const sub = document.getElementById('vm-sub');
+
+  // No vars? just copy directly
+  if (!vars.length) {
+    navigator.clipboard.writeText(promptText).then(() => showToast('Copied!', 'success'));
+    return;
+  }
+
+  sub.textContent = `Fill in ${vars.length} variable${vars.length>1?'s':''}, then copy`;
+
+  // Build inputs
+  body.innerHTML = vars.map(v => `
+    <div class="vm-field">
+      <label class="vm-label">
+        <span class="vm-label-key">{{${v}}}</span>
+      </label>
+      <input class="vm-input" type="text" id="vmf-${v.replace(/\W/g,'_')}"
+        placeholder="Enter value for {{${v}}}..."
+        oninput="updateVmPreview()" />
+    </div>
+  `).join('');
+
+  // Initial preview
+  updateVmPreview();
+  overlay.classList.add('active');
+
+  // Focus first input
+  setTimeout(() => {
+    const first = body.querySelector('.vm-input');
+    if (first) first.focus();
+  }, 120);
+}
+
+function getVmValues() {
+  const inputs = document.querySelectorAll('.vm-input');
+  const vals = {};
+  inputs.forEach(inp => {
+    // Recover var name from id: vmf-{sanitized}
+    // We store the original key as data attr
+    const raw = inp.placeholder.match(/\{\{(.+?)\}\}/);
+    if (raw) vals[raw[1]] = inp.value;
+  });
+  return vals;
+}
+
+function updateVmPreview() {
+  const prompt = state.prompt;
+  const vals = getVmValues();
+  let text = prompt;
+  Object.entries(vals).forEach(([k,v]) => {
+    if (v) text = text.replace(new RegExp(`\\{\\{${k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\}\\}`, 'g'), `<span style="color:var(--accent3);font-weight:bold">${v}</span>`);
+  });
+  text = text.replace(/\{\{([^}]+)\}\}/g, '<span style="color:var(--accent2);opacity:0.7">{{$1}}</span>');
+  document.getElementById('vm-preview-box').innerHTML = text.replace(/\n/g,'<br>');
+}
+
+function closeVarModal() {
+  document.getElementById('var-modal-overlay').classList.remove('active');
+}
+
+function copyFilledPrompt() {
+  const vals = getVmValues();
+  let text = state.prompt;
+  Object.entries(vals).forEach(([k,v]) => {
+    text = text.replace(new RegExp(`\\{\\{${k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\}\\}`, 'g'), v || `{{${k}}}`);
+  });
+  closeVarModal();
+  const fallback = () => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      showToast('Filled prompt copied!', 'success');
+    } catch(e) { showToast('Copied (check clipboard)', 'success'); }
+  };
+  if (navigator.clipboard) { navigator.clipboard.writeText(text).then(() => showToast('Filled prompt copied!','success')).catch(fallback); }
+  else { fallback(); }
+}
+
+// Wire modal events
+document.getElementById('vm-close').addEventListener('click', closeVarModal);
+document.getElementById('vm-cancel').addEventListener('click', closeVarModal);
+document.getElementById('vm-copy').addEventListener('click', copyFilledPrompt);
+document.getElementById('var-modal-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeVarModal();
+});
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('var-modal-overlay').classList.contains('active')) return;
+  if (e.key === 'Escape') closeVarModal();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyFilledPrompt(); }
+});
+
+// Override copy button to use fill-in dialog when vars exist
+function copyPrompt() {
+  if (!state.prompt.trim()) { showToast('Nothing to copy','error'); return; }
+  const hasVars = /\{\{[^}]+\}\}/.test(state.prompt);
+  if (hasVars) openVarModal(state.prompt);
+  else navigator.clipboard.writeText(state.prompt).then(() => showToast('Copied!','success')).catch(() => showToast('Copy failed','error'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FEATURE 2: QUICK CAPTURE WIDGET
+// (from Leonxlnx/prompt-library — always-accessible capture panel)
+// ═══════════════════════════════════════════════════════════════
+
+const qcPanel = document.getElementById('qc-panel');
+const qcTrigger = document.getElementById('qc-trigger');
+
+function toggleQC() {
+  qcPanel.classList.toggle('active');
+  if (qcPanel.classList.contains('active')) {
+    setTimeout(() => document.getElementById('qc-text').focus(), 100);
+  }
+}
+function closeQC() {
+  qcPanel.classList.remove('active');
+  document.getElementById('qc-title').value = '';
+  document.getElementById('qc-text').value = '';
+}
+function saveQC() {
+  const title = document.getElementById('qc-title').value.trim();
+  const text = document.getElementById('qc-text').value.trim();
+  const cat = document.getElementById('qc-category').value;
+  if (!text) { document.getElementById('qc-text').focus(); return; }
+  const autoTitle = title || text.substring(0, 40).replace(/\n/g,' ') + (text.length > 40 ? '…' : '');
+  const newPrompt = {
+    id: PROMPTS.length + Date.now(),
+    title: autoTitle,
+    category: cat,
+    type: cat,
+    prompt: text
+  };
+  PROMPTS.unshift(newPrompt);
+  renderPromptList();
+  renderLibrary();
+  // Show toast
+  const toast = document.getElementById('qc-toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+  closeQC();
+  // Also save to history
+  state.history.unshift({ id: Date.now(), title: autoTitle, prompt: text, time: new Date().toLocaleString() });
+  if (state.history.length > 50) state.history = state.history.slice(0, 50);
+  localStorage.setItem('pf2_history', JSON.stringify(state.history));
+}
+
+qcTrigger.addEventListener('click', toggleQC);
+document.getElementById('qc-close').addEventListener('click', closeQC);
+document.getElementById('qc-cancel').addEventListener('click', closeQC);
+document.getElementById('qc-save').addEventListener('click', saveQC);
+document.addEventListener('keydown', e => {
+  if (qcPanel.classList.contains('active')) {
+    if (e.key === 'Escape') closeQC();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); saveQC(); }
+  }
+  // Global shortcut Alt+Q
+  if (e.altKey && e.key === 'q') { e.preventDefault(); toggleQC(); }
+});
+// Auto-resize QC textarea
+document.getElementById('qc-text').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+});
+
+// ═══════════════════════════════════════════════════════════════
+// FEATURE 3: GLASSMORPHISM ENGINE
+// (from Leonxlnx/prompt-library — computed CSS var system)
+// ═══════════════════════════════════════════════════════════════
+
+let glassSettings = JSON.parse(localStorage.getItem('pf2_glass') || '{}');
+
+function clampNum(v, min, max, fb) {
+  const n = Number(v);
+  return !isFinite(n) ? fb : Math.min(max, Math.max(min, n));
+}
+function sanitizeHex(v, fb='#6c5ce7') {
+  const m = String(v||'').trim().match(/^#?([0-9a-fA-F]{6})$/);
+  return m ? `#${m[1].toUpperCase()}` : fb.toUpperCase();
+}
+function hexToRgbObj(hex) {
+  const n = sanitizeHex(hex).slice(1);
+  return { r:parseInt(n.slice(0,2),16), g:parseInt(n.slice(2,4),16), b:parseInt(n.slice(4,6),16) };
+}
+function mixRgb(a, b, w=0.5) {
+  const t = clampNum(w,0,1,0.5);
+  return { r:Math.round(a.r+(b.r-a.r)*t), g:Math.round(a.g+(b.g-a.g)*t), b:Math.round(a.b+(b.b-a.b)*t) };
+}
+function rgbStr(c) { return `rgb(${c.r},${c.g},${c.b})`; }
+function rgbaStr(c, a) { return `rgba(${c.r},${c.g},${c.b},${a})`; }
+
+function normalizeGlass(s) {
+  const surfaceOp = clampNum(s.surface_opacity ?? 0.82, 0.08, 0.98, 0.82);
+  const surfaceBr = clampNum(s.surface_brightness ?? 1, 0.72, 1.38, 1);
+  const bgVis = clampNum(s.background_visibility ?? 0.24, 0, 1, 0.24);
+  const brightnessRatio = clampNum((surfaceBr-0.72)/0.66, 0, 1, 0.42);
+  const glassBlur = Math.round(clampNum(9+(1-bgVis)*7+surfaceOp*5+(surfaceBr-1)*10, 6, 26, 14));
+  const cardOp = clampNum(surfaceOp+0.04-bgVis*0.07, 0.18, 0.96, 0.78);
+  const edgeOp = clampNum(0.08+brightnessRatio*0.08, 0.08, 0.18, 0.1);
+  const hlOp = clampNum(0.1+brightnessRatio*0.16, 0.1, 0.28, 0.16);
+  const topGlowOp = clampNum(0.04+brightnessRatio*0.15, 0.04, 0.2, 0.08);
+  return { surface_opacity:surfaceOp, surface_brightness:surfaceBr, background_visibility:bgVis,
+    glass_blur:glassBlur, card_opacity:cardOp, glass_edge_opacity:edgeOp,
+    glass_highlight_opacity:hlOp, surface_top_glow_opacity:topGlowOp,
+    accent_color: sanitizeHex(s.accent_color, '#6c5ce7') };
+}
+
+function applyAccentColor(hex) {
+  const base = hexToRgbObj(hex);
+  const white = {r:255,g:255,b:255};
+  const deep = {r:25,g:58,b:108};
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const accentText = isDark ? rgbStr(mixRgb(base,white,0.5)) : rgbStr(mixRgb(base,{r:23,g:50,b:78},0.58));
+  const hover = mixRgb(base,white,0.12);
+  const bStart = mixRgb(base,white,0.28), bMid = mixRgb(base,white,0.1), bEnd = mixRgb(base,deep,0.24);
+  const bStartH = mixRgb(bStart,white,0.12), bMidH = mixRgb(bMid,white,0.1), bEndH = mixRgb(bEnd,white,0.08);
+  const root = document.documentElement.style;
+  root.setProperty('--accent', hex);
+  root.setProperty('--accent-dim', rgbaStr(base,0.12));
+  root.setProperty('--accent2', rgbStr(mixRgb(base,{r:253,g:121,b:168},0.4)));
+  root.setProperty('--glow-accent', `0 0 40px ${rgbaStr(base,0.25)}`);
+  root.setProperty('--accent-text', accentText);
+  root.setProperty('--accent-hover', rgbStr(hover));
+}
+
+function applyGlass(settings) {
+  const n = normalizeGlass(settings);
+  const root = document.documentElement.style;
+  root.setProperty('--surface-glass-opacity', n.surface_opacity.toFixed(2));
+  root.setProperty('--card-glass-opacity', n.card_opacity.toFixed(2));
+  root.setProperty('--glass-blur-strength', `${n.glass_blur}px`);
+  root.setProperty('--background-image-strength', n.background_visibility.toFixed(2));
+  root.setProperty('--glass-edge-opacity', n.glass_edge_opacity.toFixed(2));
+  root.setProperty('--glass-highlight-opacity', n.glass_highlight_opacity.toFixed(2));
+  root.setProperty('--surface-top-glow-opacity', n.surface_top_glow_opacity.toFixed(2));
+  applyAccentColor(n.accent_color);
+  syncGlassControls(n);
+}
+
+function syncGlassControls(n) {
+  const blur = document.getElementById('gs-blur');
+  const surface = document.getElementById('gs-surface');
+  const brightness = document.getElementById('gs-brightness');
+  const bgvis = document.getElementById('gs-bgvis');
+  const accent = document.getElementById('gs-accent');
+  if (blur) { blur.value = n.glass_blur; document.getElementById('gsv-blur').textContent = `${n.glass_blur}px`; }
+  if (surface) { surface.value = Math.round(n.surface_opacity*100); document.getElementById('gsv-surface').textContent = `${Math.round(n.surface_opacity*100)}%`; }
+  if (brightness) { brightness.value = Math.round(n.surface_brightness*100); document.getElementById('gsv-brightness').textContent = `${Math.round(n.surface_brightness*100)}%`; }
+  if (bgvis) { bgvis.value = Math.round(n.background_visibility*100); document.getElementById('gsv-bgvis').textContent = `${Math.round(n.background_visibility*100)}%`; }
+  if (accent) { accent.value = n.accent_color.toLowerCase(); document.getElementById('gsv-accent').textContent = n.accent_color; }
+}
+
+function updateGlass() {
+  const s = {
+    glass_blur: Number(document.getElementById('gs-blur').value),
+    surface_opacity: Number(document.getElementById('gs-surface').value)/100,
+    surface_brightness: Number(document.getElementById('gs-brightness').value)/100,
+    background_visibility: Number(document.getElementById('gs-bgvis').value)/100,
+    accent_color: sanitizeHex(document.getElementById('gs-accent').value),
+  };
+  glassSettings = s;
+  localStorage.setItem('pf2_glass', JSON.stringify(s));
+  applyGlass(s);
+}
+
+function resetGlass() {
+  glassSettings = {};
+  localStorage.removeItem('pf2_glass');
+  applyGlass({});
+  showToast('Glass settings reset','success');
+}
+
+function toggleGlassPanel() {
+  const panel = document.getElementById('glass-settings-panel');
+  const arrow = document.getElementById('glass-panel-arrow');
+  const open = panel.style.display === 'none' || panel.style.display === '';
+  panel.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▾' : '▸';
+}
+
+function loadBgImage() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.documentElement.style.setProperty('--workspace-bg-image', `url("${ev.target.result}")`);
+      showToast('Background applied!','success');
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+// Boot glass on load
+applyGlass(glassSettings);
+
 </script>
 </body>
 </html>
