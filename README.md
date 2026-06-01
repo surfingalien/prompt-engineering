@@ -2,6 +2,30 @@
 
 A comprehensive prompt engineering tool synthesized from **9 community repositories**.
 
+## Open Design Integration
+
+[Open Design](https://github.com/nexu-io/open-design) is bundled as a git submodule — a local-first design agent tool that detects your installed coding agent CLI (Claude Code, Cursor, Gemini CLI, etc.) and generates design artifacts via 137 composable skills and 150 design systems.
+
+### Running the full stack with Docker
+
+```bash
+# 1. Copy and configure the env file
+cp .env.example .env
+# Edit .env and set OD_API_TOKEN (generate with: openssl rand -hex 32)
+
+# 2. Start both services
+docker compose up -d
+
+# PromptForge  →  http://localhost:3000
+# Open Design  →  http://localhost:7456
+```
+
+### Initialise the submodule (after cloning)
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Features
 
 ### 🆕 New in v2
