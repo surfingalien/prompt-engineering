@@ -617,6 +617,17 @@ header {
     <button class="nav-btn" onclick="setView('library')" id="nav-library">Library</button>
   </nav>
   <div class="header-right">
+    <div style="display:flex;align-items:center;gap:0.4rem">
+      <input id="api-key-input" type="password"
+        placeholder="sk-ant-… API key"
+        style="width:180px;padding:0.3rem 0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.7rem;outline:none;transition:border-color 0.15s"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+        oninput="saveApiKey(this.value)"
+        title="Paste your Anthropic API key — stored in localStorage, never sent anywhere except api.anthropic.com"
+      />
+      <span id="api-key-status" style="font-size:0.65rem;color:var(--text-muted)"></span>
+    </div>
     <span class="version-tag">surfingalien/prompt-engineering</span>
   </div>
 </header>
@@ -1113,6 +1124,21 @@ let state = {
   brainRole:'all',
 };
 
+// ─── API KEY ─────────────────────────────────────────────────────────────────
+function saveApiKey(val) {
+  if (val.trim()) {
+    localStorage.setItem('pf_api_key', val.trim());
+    document.getElementById('api-key-status').textContent = '✓';
+    document.getElementById('api-key-status').style.color = 'var(--success)';
+  } else {
+    localStorage.removeItem('pf_api_key');
+    document.getElementById('api-key-status').textContent = '';
+  }
+}
+function getApiKey() {
+  return localStorage.getItem('pf_api_key') || '';
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 function init() {
   renderPromptList();
@@ -1126,6 +1152,13 @@ function init() {
   renderHistory();
   renderColorSwatches();
   renderBrainRoleTabs();
+  // Restore saved API key
+  const savedKey = getApiKey();
+  if (savedKey) {
+    document.getElementById('api-key-input').value = savedKey;
+    document.getElementById('api-key-status').textContent = '✓';
+    document.getElementById('api-key-status').style.color = 'var(--success)';
+  }
 }
 
 // ─── COLOR SWATCHES ──────────────────────────────────────────────────────────
@@ -1186,13 +1219,21 @@ CHAIRMAN'S VERDICT:
 • Recommendation: ...
 • Monday morning action: ...`;
 
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    resultDiv.innerHTML='<div style="color:var(--accent4);font-size:0.72rem;margin-top:0.4rem;padding:0.5rem;background:var(--bg);border-radius:6px">Paste your Anthropic API key in the header input first.</div>';
+    resultDiv.style.display='block';
+    btn.innerHTML='Run Council (5 Advisors)'; btn.disabled=false;
+    return;
+  }
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:systemPrompt, messages:[{role:'user',content:state.prompt}] })
     });
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || res.statusText);
     const text = data.content?.[0]?.text || '';
     if (text) {
       resultDiv.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem"><span style="font-size:0.65rem;color:var(--accent4);font-weight:700;text-transform:uppercase">⚔ Council Verdict</span><button class="btn btn-ghost" style="padding:0.15rem 0.45rem;font-size:0.65rem" onclick="copyText('${text.replace(/'/g,"\\'")}')">Copy</button></div><div class="council-result">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
@@ -1200,7 +1241,7 @@ CHAIRMAN'S VERDICT:
       showToast('Council verdict ready!','success');
     }
   } catch(e) {
-    resultDiv.innerHTML='<div style="color:var(--danger);font-size:0.72rem;margin-top:0.4rem;padding:0.5rem;background:var(--bg);border-radius:6px">Council API call failed. Check connection.</div>';
+    resultDiv.innerHTML=`<div style="color:var(--danger);font-size:0.72rem;margin-top:0.4rem;padding:0.5rem;background:var(--bg);border-radius:6px">Council API call failed: ${e.message}</div>`;
     resultDiv.style.display='block';
   }
   btn.innerHTML='Run Council (5 Advisors)'; btn.disabled=false;
@@ -1328,9 +1369,17 @@ async function runOptimizer() {
     concise:'Make shorter and more direct without losing essential information.',
     structured:'Add XML/structured tags: <task>, <context>, <constraints>, <output_format>.',
   };
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    resultDiv.innerHTML='<div style="color:var(--accent4);font-size:0.72rem;margin-top:0.4rem">Paste your Anthropic API key in the header input first.</div>';
+    resultDiv.style.display='block';
+    btn.innerHTML='Run Optimizer'; btn.disabled=false;
+    return;
+  }
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:'You are an expert prompt engineer. Optimize the user\'s prompt. Return ONLY the optimized prompt, no preamble.',messages:[{role:'user',content:`Instruction: ${modes[state.optMode]}\n\nOriginal:\n${state.prompt}`}]})});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:'You are an expert prompt engineer. Optimize the user\'s prompt. Return ONLY the optimized prompt, no preamble.',messages:[{role:'user',content:`Instruction: ${modes[state.optMode]}\n\nOriginal:\n${state.prompt}`}]})});
     const data=await res.json();
+    if (!res.ok) throw new Error(data.error?.message || res.statusText);
     const text=data.content?.[0]?.text||'';
     if (text) {
       window._optimized=text;
@@ -1339,7 +1388,7 @@ async function runOptimizer() {
       showToast('Optimized!','success');
     }
   } catch(e) {
-    resultDiv.innerHTML='<div style="color:var(--danger);font-size:0.72rem;margin-top:0.4rem">API call failed.</div>';
+    resultDiv.innerHTML=`<div style="color:var(--danger);font-size:0.72rem;margin-top:0.4rem">API call failed: ${e.message}</div>`;
     resultDiv.style.display='block';
   }
   btn.innerHTML='Run Optimizer'; btn.disabled=false;
