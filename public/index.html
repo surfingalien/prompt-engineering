@@ -1583,7 +1583,7 @@ CHAIRMAN'S VERDICT:
     const res = await fetch('/api/chat', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:systemPrompt, messages:[{role:'user',content:state.prompt}] })
+      body:JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, system:systemPrompt, messages:[{role:'user',content:state.prompt}] })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || res.statusText);
@@ -1723,7 +1723,7 @@ async function runOptimizer() {
     structured:'Add XML/structured tags: <task>, <context>, <constraints>, <output_format>.',
   };
   try {
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:'You are an expert prompt engineer. Optimize the user\'s prompt. Return ONLY the optimized prompt, no preamble.',messages:[{role:'user',content:`Instruction: ${modes[state.optMode]}\n\nOriginal:\n${state.prompt}`}]})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'You are an expert prompt engineer. Optimize the user\'s prompt. Return ONLY the optimized prompt, no preamble.',messages:[{role:'user',content:`Instruction: ${modes[state.optMode]}\n\nOriginal:\n${state.prompt}`}]})});
     const data=await res.json();
     if (!res.ok) throw new Error(data.error?.message || res.statusText);
     const text=data.content?.[0]?.text||'';
