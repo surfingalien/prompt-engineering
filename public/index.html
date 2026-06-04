@@ -1309,18 +1309,6 @@ const SKILLKIT_SKILLS = [
    prompt:'Design a skill composition pipeline for:\n\n{{workflow}}\n\nComposition patterns:\n\n**Sequential** (output of A feeds B):\n```\nskill-A → skill-B → skill-C\n```\n\n**Parallel** (independent, then merge):\n```\n          → skill-B →\nskill-A →              → skill-D (aggregator)\n          → skill-C →\n```\n\n**Conditional** (branch on result):\n```\nskill-A → [condition] → skill-B (if true)\n                      → skill-C (if false)\n```\n\nImplementation:\n```yaml\n# skillkit.pipeline.yaml\nname: {{pipeline_name}}\nsteps:\n  - id: step1\n    skill: {{skill-name}}\n    input: "{{input}}"\n  - id: step2\n    skill: {{skill-name}}\n    input: "${{steps.step1.output}}"\n    depends_on: [step1]\n```\n\nError handling: mark each step as required or optional. Pipeline fails fast on required step errors.'},
 ];
 
-// Merge all new skill arrays into PROMPTS
-AI_ENG_SKILLS.forEach(s => {
-  PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
-});
-MEMORY_SKILLS.forEach(s => {
-  PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
-});
-SKILLKIT_SKILLS.forEach(s => {
-  PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
-});
-
-// ─── ECC SKILLS DATA ─────────────────────────────────────────────────────────
 const ECC_SKILLS = [
   // SECURITY
   {id:'ecc-s01',name:'Security Review',cat:'security',origin:'ECC',desc:'Comprehensive security checklist for auth, user input, secrets, APIs, and payment features.',
@@ -1416,9 +1404,9 @@ const ECC_SKILLS = [
 ];
 
 
-// Merge ECC skills into main PROMPTS list for sidebar search
+// Merge all skills into main PROMPTS list for sidebar search
 let _eccId = 10000;
-ECC_SKILLS.forEach(s => {
+[...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS].forEach(s => {
   PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
 });
 
