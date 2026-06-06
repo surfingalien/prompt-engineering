@@ -926,6 +926,7 @@ body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
     <button class="nav-btn" onclick="setView('library')" id="nav-library">Library</button>
     <button class="nav-btn" onclick="setView('ecc')" id="nav-ecc">⚡ Skills</button>
     <button class="nav-btn" onclick="setView('agents')" id="nav-agents">🤖 Agents</button>
+    <button class="nav-btn" onclick="setView('scout')" id="nav-scout" style="color:var(--accent)">📡 Scout</button>
   </nav>
   <div class="header-right">
     <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">
@@ -1280,6 +1281,103 @@ body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
       <button class="role-tab" onclick="setAgentCat('business-product',this)">Business</button>
     </div>
     <div class="techniques-grid" id="agents-grid"></div>
+  </div>
+</div>
+
+<!-- Scout View -->
+<div class="full-view" id="view-scout" style="flex:1">
+  <div style="max-width:1000px;margin:0 auto">
+    <div class="fv-header">
+      <div class="fv-title">📡 AI Intelligence Scout</div>
+      <div class="fv-sub">Autonomous discovery engine — generates new skills &amp; agents using Claude's knowledge of the AI ecosystem</div>
+    </div>
+
+    <!-- Scout Control Panel -->
+    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-md);padding:1.5rem;margin-bottom:1.5rem">
+      <div style="display:grid;grid-template-columns:1fr auto auto;gap:0.75rem;align-items:end;margin-bottom:1rem">
+        <div>
+          <div class="sidebar-label" style="margin-bottom:0.4rem">Discovery Topic</div>
+          <input id="scout-topic" type="text" class="search-box" style="width:100%;padding:0.55rem 0.75rem;font-size:0.82rem"
+            value="AI agents and prompt engineering" placeholder="e.g. multi-agent orchestration, RAG systems, browser automation..."/>
+        </div>
+        <div>
+          <div class="sidebar-label" style="margin-bottom:0.4rem">Type</div>
+          <select id="scout-type" style="padding:0.5rem 0.65rem;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--sans);font-size:0.78rem;outline:none;height:38px">
+            <option value="both">Skills + Agents</option>
+            <option value="skills">Skills only</option>
+            <option value="agents">Agents only</option>
+          </select>
+        </div>
+        <div>
+          <div class="sidebar-label" style="margin-bottom:0.4rem">Count</div>
+          <select id="scout-count" style="padding:0.5rem 0.65rem;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--sans);font-size:0.78rem;outline:none;height:38px">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick topic chips -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:1rem">
+        <span style="font-size:0.63rem;color:var(--text-muted);padding:0.2rem 0;align-self:center">Quick topics:</span>
+        <button class="chip" onclick="setScoutTopic('Multi-agent orchestration patterns')">Multi-agent</button>
+        <button class="chip" onclick="setScoutTopic('Browser automation and web agents')">Browser agents</button>
+        <button class="chip" onclick="setScoutTopic('RAG and retrieval systems')">RAG systems</button>
+        <button class="chip" onclick="setScoutTopic('LLM code generation and TDD')">Code gen</button>
+        <button class="chip" onclick="setScoutTopic('Memory architectures for AI agents')">Agent memory</button>
+        <button class="chip" onclick="setScoutTopic('Prompt compression and optimization')">Prompt optimize</button>
+        <button class="chip" onclick="setScoutTopic('MCP server implementations')">MCP servers</button>
+        <button class="chip" onclick="setScoutTopic('AI safety and alignment techniques')">AI safety</button>
+        <button class="chip" onclick="setScoutTopic('Vision and multimodal AI workflows')">Multimodal</button>
+        <button class="chip" onclick="setScoutTopic('Data analysis and AI pipelines')">Data + AI</button>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;align-items:center">
+        <button class="btn btn-council" onclick="runScout()" id="scout-run-btn" style="padding:0.55rem 1.5rem;font-size:0.82rem">
+          📡 Run Scout
+        </button>
+        <button class="btn btn-ghost" onclick="clearScoutDiscoveries()" style="font-size:0.75rem">Clear Discoveries</button>
+        <span id="scout-status" style="font-size:0.72rem;color:var(--text-muted);flex:1"></span>
+        <span id="scout-session-count" style="font-family:var(--mono);font-size:0.7rem;color:var(--accent)"></span>
+      </div>
+    </div>
+
+    <!-- Discoveries feed -->
+    <div id="scout-results-wrap" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.875rem">
+        <div style="font-family:var(--display);font-weight:700;font-size:1rem">Discovered This Session</div>
+        <button class="btn btn-primary" onclick="addAllDiscoveries()" id="scout-add-all-btn">+ Add All to Library</button>
+      </div>
+
+      <!-- Skills discovered -->
+      <div id="scout-skills-section" style="display:none;margin-bottom:1.5rem">
+        <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem">
+          <span style="width:3px;height:10px;background:var(--accent);border-radius:2px;display:inline-block"></span>
+          Skills
+        </div>
+        <div class="techniques-grid" id="scout-skills-grid"></div>
+      </div>
+
+      <!-- Agents discovered -->
+      <div id="scout-agents-section" style="display:none">
+        <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem">
+          <span style="width:3px;height:10px;background:var(--pink);border-radius:2px;display:inline-block"></span>
+          Agents
+        </div>
+        <div class="techniques-grid" id="scout-agents-grid"></div>
+      </div>
+    </div>
+
+    <!-- Saved discoveries (persisted) -->
+    <div id="scout-saved-wrap" style="margin-top:2rem">
+      <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem">
+        <span style="width:3px;height:10px;background:var(--green);border-radius:2px;display:inline-block"></span>
+        Saved to Library
+        <span id="scout-saved-count" style="font-family:var(--mono);font-size:0.68rem;color:var(--green)"></span>
+      </div>
+      <div class="techniques-grid" id="scout-saved-grid"></div>
+    </div>
   </div>
 </div>
 
@@ -4372,7 +4470,7 @@ function toggleTheme() {
 function setView(v) {
   state.view=v;
   document.getElementById('editor-layout').style.display=v==='editor'?'grid':'none';
-  ['council','techniques','design','brain','system','library','ecc','agents'].forEach(id=>{
+  ['council','techniques','design','brain','system','library','ecc','agents','scout'].forEach(id=>{
     const el=document.getElementById(`view-${id}`);
     if(el) el.classList.toggle('active',v===id);
   });
@@ -4715,6 +4813,267 @@ function loadBgImage() {
 
 // Boot glass on load
 applyGlass(glassSettings);
+
+// ─── AI INTELLIGENCE SCOUT ENGINE ────────────────────────────────────────────
+
+// In-memory store for this session's discoveries
+let scoutSessionSkills = [];
+let scoutSessionAgents = [];
+
+// Load persisted scout discoveries from localStorage and inject into live arrays
+function loadPersistedScoutDiscoveries() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('pf-scout-library') || '{"skills":[],"agents":[]}');
+    const savedSkills = saved.skills || [];
+    const savedAgents = saved.agents || [];
+
+    // Inject into live arrays so they show in Skills + Agents views
+    savedSkills.forEach(s => {
+      if (!SCOUT_SKILLS.find(e => e.id === s.id)) {
+        SCOUT_SKILLS.push(s);
+        PROMPTS.push({id: Date.now() + Math.random(), title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
+      }
+    });
+    savedAgents.forEach(a => {
+      if (!SYSTEM_PROMPTS_DATA.find(e => e.name === a.name && e.source === 'Scout')) {
+        SYSTEM_PROMPTS_DATA.push(a);
+      }
+    });
+
+    renderSavedScoutGrid(savedSkills, savedAgents);
+    updateScoutSavedCount(savedSkills.length + savedAgents.length);
+  } catch(e) {}
+}
+
+function setScoutTopic(topic) {
+  document.getElementById('scout-topic').value = topic;
+}
+
+async function runScout() {
+  const topic = document.getElementById('scout-topic').value.trim() || 'AI agents and prompt engineering';
+  const type = document.getElementById('scout-type').value;
+  const count = parseInt(document.getElementById('scout-count').value);
+  const btn = document.getElementById('scout-run-btn');
+  const status = document.getElementById('scout-status');
+
+  btn.innerHTML = '<span class="spinner"></span> Scouting...';
+  btn.disabled = true;
+  status.textContent = `Searching for ${topic}...`;
+  document.getElementById('scout-results-wrap').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/scout', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ topic, type, count })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Scout failed');
+
+    scoutSessionSkills = data.skills || [];
+    scoutSessionAgents = data.agents || [];
+
+    renderScoutResults(scoutSessionSkills, scoutSessionAgents, topic);
+    updateScoutSessionCount();
+    status.textContent = `Found ${scoutSessionSkills.length} skills + ${scoutSessionAgents.length} agents for "${topic}"`;
+    showToast(`Scout found ${scoutSessionSkills.length + scoutSessionAgents.length} discoveries!`, 'success');
+  } catch(e) {
+    status.textContent = `Scout error: ${e.message}`;
+    showToast('Scout failed — check API key', 'error');
+  }
+
+  btn.innerHTML = '📡 Run Scout';
+  btn.disabled = false;
+}
+
+function renderScoutResults(skills, agents, topic) {
+  const wrap = document.getElementById('scout-results-wrap');
+  const skillsSec = document.getElementById('scout-skills-section');
+  const agentsSec = document.getElementById('scout-agents-section');
+  const skillsGrid = document.getElementById('scout-skills-grid');
+  const agentsGrid = document.getElementById('scout-agents-grid');
+
+  const catColors = {security:'#f87171',testing:'#f87171',code:'var(--accent)',frontend:'var(--pink)',backend:'#b8aeff',agent:'var(--teal)',devops:'var(--amber)',ml:'var(--blue)',research:'var(--green)',product:'#c4b8ff',writing:'var(--amber)',design:'var(--pink)'};
+
+  if (skills.length) {
+    skillsSec.style.display = 'block';
+    skillsGrid.innerHTML = skills.map(s => {
+      const col = catColors[s.cat] || 'var(--accent)';
+      const isSaved = isScoutItemSaved('skill', s.id);
+      return `<div class="technique-card">
+        <div class="tc-header">
+          <div class="tc-name">${s.name}</div>
+          <span class="tc-level" style="background:rgba(124,108,240,0.12);color:${col}">${s.cat}</span>
+        </div>
+        <div class="tc-desc">${s.desc}</div>
+        <div style="display:flex;gap:0.4rem;margin-top:0.65rem">
+          <button class="btn btn-ghost btn-sm" onclick="loadScoutSkill('${s.id.replace(/'/g,"\\'")}')">Load to Editor</button>
+          <button class="btn ${isSaved?'btn-ghost':'btn-primary'} btn-sm" id="save-skill-${s.id.replace(/[^a-z0-9]/gi,'_')}" onclick="saveScoutSkill('${s.id.replace(/'/g,"\\'")}')">
+            ${isSaved ? '✓ Saved' : '+ Save'}
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    skillsSec.style.display = 'none';
+  }
+
+  if (agents.length) {
+    agentsSec.style.display = 'block';
+    agentsGrid.innerHTML = agents.map(a => {
+      const isSaved = isScoutItemSaved('agent', a.name);
+      return `<div class="technique-card">
+        <div class="tc-header">
+          <div class="tc-name">${a.name}</div>
+          <span class="tc-level" style="background:rgba(232,121,168,0.12);color:var(--pink)">${a.cat}</span>
+        </div>
+        <div class="tc-desc" style="font-size:0.73rem;color:var(--text-muted);line-height:1.5">${a.text.substring(0,160)}…</div>
+        <div style="display:flex;gap:0.4rem;margin-top:0.65rem">
+          <button class="btn btn-ghost btn-sm" onclick="loadScoutAgent('${a.name.replace(/'/g,"\\'")}')">Load to Editor</button>
+          <button class="btn ${isSaved?'btn-ghost':'btn-primary'} btn-sm" id="save-agent-${a.name.replace(/[^a-z0-9]/gi,'_')}" onclick="saveScoutAgent('${a.name.replace(/'/g,"\\'")}')">
+            ${isSaved ? '✓ Saved' : '+ Save'}
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    agentsSec.style.display = 'none';
+  }
+
+  wrap.style.display = skills.length || agents.length ? 'block' : 'none';
+}
+
+function loadScoutSkill(id) {
+  const s = scoutSessionSkills.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('prompt-textarea').value = s.prompt;
+  document.getElementById('prompt-title').value = s.name;
+  onPromptChange(s.prompt);
+  setView('editor');
+  showToast(`Loaded: ${s.name}`, 'success');
+}
+
+function loadScoutAgent(name) {
+  const a = scoutSessionAgents.find(x => x.name === name);
+  if (!a) return;
+  document.getElementById('prompt-textarea').value = a.text;
+  document.getElementById('prompt-title').value = a.name;
+  onPromptChange(a.text);
+  setView('editor');
+  showToast(`Loaded: ${a.name}`, 'success');
+}
+
+function isScoutItemSaved(type, key) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('pf-scout-library') || '{"skills":[],"agents":[]}');
+    if (type === 'skill') return (saved.skills || []).some(s => s.id === key);
+    return (saved.agents || []).some(a => a.name === key);
+  } catch(e) { return false; }
+}
+
+function saveScoutSkill(id) {
+  const s = scoutSessionSkills.find(x => x.id === id);
+  if (!s) return;
+  persistScoutItem('skill', s);
+  // Inject into live arrays immediately
+  if (!SCOUT_SKILLS.find(e => e.id === s.id)) {
+    SCOUT_SKILLS.push(s);
+    PROMPTS.push({id: Date.now(), title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
+    renderEccSkills();
+    renderPromptList();
+  }
+  const btnId = `save-skill-${id.replace(/[^a-z0-9]/gi,'_')}`;
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.textContent = '✓ Saved'; btn.className = 'btn btn-ghost btn-sm'; }
+  loadPersistedScoutDiscoveries();
+  showToast(`"${s.name}" added to library!`, 'success');
+}
+
+function saveScoutAgent(name) {
+  const a = scoutSessionAgents.find(x => x.name === name);
+  if (!a) return;
+  persistScoutItem('agent', a);
+  // Inject into live arrays immediately
+  if (!SYSTEM_PROMPTS_DATA.find(e => e.name === a.name && e.source === 'Scout')) {
+    SYSTEM_PROMPTS_DATA.push(a);
+    renderAgentsView();
+  }
+  const btnId = `save-agent-${name.replace(/[^a-z0-9]/gi,'_')}`;
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.textContent = '✓ Saved'; btn.className = 'btn btn-ghost btn-sm'; }
+  loadPersistedScoutDiscoveries();
+  showToast(`"${name}" added to agents library!`, 'success');
+}
+
+function addAllDiscoveries() {
+  scoutSessionSkills.forEach(s => { if (!isScoutItemSaved('skill', s.id)) saveScoutSkill(s.id); });
+  scoutSessionAgents.forEach(a => { if (!isScoutItemSaved('agent', a.name)) saveScoutAgent(a.name); });
+  showToast(`All discoveries added to library!`, 'success');
+}
+
+function persistScoutItem(type, item) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('pf-scout-library') || '{"skills":[],"agents":[]}');
+    if (type === 'skill') {
+      if (!saved.skills.find(s => s.id === item.id)) saved.skills.push(item);
+    } else {
+      if (!saved.agents.find(a => a.name === item.name)) saved.agents.push(item);
+    }
+    localStorage.setItem('pf-scout-library', JSON.stringify(saved));
+  } catch(e) {}
+}
+
+function clearScoutDiscoveries() {
+  if (!confirm('Clear all saved scout discoveries? This cannot be undone.')) return;
+  localStorage.removeItem('pf-scout-library');
+  scoutSessionSkills = [];
+  scoutSessionAgents = [];
+  document.getElementById('scout-results-wrap').style.display = 'none';
+  document.getElementById('scout-saved-grid').innerHTML = '';
+  updateScoutSavedCount(0);
+  updateScoutSessionCount();
+  showToast('Scout library cleared', 'success');
+}
+
+function renderSavedScoutGrid(skills, agents) {
+  const grid = document.getElementById('scout-saved-grid');
+  if (!skills.length && !agents.length) { grid.innerHTML = '<div class="empty"><p>No saved discoveries yet. Run the scout and save items.</p></div>'; return; }
+  const catColors = {security:'#f87171',testing:'#f87171',code:'var(--accent)',frontend:'var(--pink)',backend:'#b8aeff',agent:'var(--teal)',devops:'var(--amber)',ml:'var(--blue)',research:'var(--green)',product:'#c4b8ff',writing:'var(--amber)',design:'var(--pink)'};
+  const skillCards = skills.map(s => {
+    const col = catColors[s.cat] || 'var(--accent)';
+    return `<div class="technique-card" onclick="loadEccSkill('${s.id}')">
+      <div class="tc-header">
+        <div class="tc-name">${s.name}</div>
+        <span class="tc-level" style="background:rgba(52,211,153,0.1);color:var(--green)">skill</span>
+      </div>
+      <div class="tc-desc">${s.desc}</div>
+      <div class="tc-example" style="border-color:${col};color:${col};font-size:0.65rem">${s.cat} · click to load</div>
+    </div>`;
+  });
+  const agentCards = agents.map(a => `<div class="technique-card" onclick="loadAgentPrompt('${a.name.replace(/'/g,"\\'")}')">
+    <div class="tc-header">
+      <div class="tc-name">${a.name}</div>
+      <span class="tc-level" style="background:rgba(232,121,168,0.1);color:var(--pink)">agent</span>
+    </div>
+    <div class="tc-desc" style="font-size:0.73rem;color:var(--text-muted);line-height:1.5">${a.text.substring(0,140)}…</div>
+    <div class="tc-example" style="font-size:0.65rem">Scout · click to load</div>
+  </div>`);
+  grid.innerHTML = [...skillCards, ...agentCards].join('');
+}
+
+function updateScoutSavedCount(n) {
+  const el = document.getElementById('scout-saved-count');
+  if (el) el.textContent = n ? `(${n} saved)` : '';
+}
+
+function updateScoutSessionCount() {
+  const el = document.getElementById('scout-session-count');
+  const total = scoutSessionSkills.length + scoutSessionAgents.length;
+  if (el) el.textContent = total ? `${total} this session` : '';
+}
+
+// Load saved discoveries on boot
+loadPersistedScoutDiscoveries();
 
 </script>
 </body>
