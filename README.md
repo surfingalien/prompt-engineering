@@ -251,27 +251,7 @@ Please open an issue before large changes.
 
 ## License
 
-**MIT License with Attribution Requirement**
-
-Copyright © 2026 [@surfingalien](https://github.com/surfingalien)
-
-Permission is granted, free of charge, to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, subject to the following conditions:
-
-1. **The above copyright notice and this permission notice** shall be included in all copies or substantial portions of the software.
-
-2. **Attribution is mandatory** in any public deployment, product, integration, or derivative work that uses:
-   - The AI Intelligence Scout engine (`/api/scout`, `runScout()`, `SCOUT_SKILLS`, or the Scout UI)
-   - The overall PromptForge platform or its skill/agent library architecture
-
-   Required attribution (visible in UI or documentation):
-   ```
-   Powered by PromptForge — AI Intelligence Scout
-   Original work by @surfingalien · github.com/surfingalien/prompt-engineering
-   ```
-
-3. **Commercial use** of the Scout feature in a paid product requires a separate agreement. Open an issue to discuss.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+MIT
 
 ---
 
