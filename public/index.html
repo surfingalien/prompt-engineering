@@ -731,6 +731,180 @@ header::after{
   50%{box-shadow:0 0 0 6px rgba(124,108,240,0.12);}
 }
 
+/* ══════════════════════════════════════
+   TAN LIGHT THEME
+   body.theme-tan overrides all vars
+══════════════════════════════════════ */
+body.theme-tan {
+  --bg: #f5f0e8;
+  --surface: #ede8dc;
+  --surface2: #e5dfd1;
+  --surface3: #dcd5c4;
+  --surface4: #d2cab8;
+  --border: #d4ccb8;
+  --border2: #c5bcaa;
+  --border3: #b5ab98;
+  --accent: #6b5b9e;
+  --accent-hover: #7d6cb5;
+  --accent-dim: rgba(107,91,158,0.10);
+  --accent-dim2: rgba(107,91,158,0.16);
+  --pink: #c45c7e;
+  --teal: #2a8c85;
+  --amber: #b87c1a;
+  --blue: #2d6cbf;
+  --green: #2a8c5e;
+  --text: #2a2318;
+  --text-dim: #5c4f3a;
+  --text-muted: #8c7d65;
+  --text-faint: #c5b8a0;
+  --success: #2a8c5e;
+  --danger: #b83232;
+  --warning: #b87c1a;
+  --shadow-sm: 0 1px 3px rgba(60,40,10,0.12),0 1px 2px rgba(60,40,10,0.08);
+  --shadow: 0 4px 16px rgba(60,40,10,0.12),0 2px 4px rgba(60,40,10,0.08);
+  --shadow-lg: 0 16px 48px rgba(60,40,10,0.16),0 4px 16px rgba(60,40,10,0.1);
+  --glow-accent: 0 0 32px rgba(107,91,158,0.15),0 0 8px rgba(107,91,158,0.1);
+  --glow-sm: 0 0 16px rgba(107,91,158,0.1);
+  /* Legacy compat */
+  --accent2: var(--pink);
+  --accent3: var(--teal);
+  --accent4: var(--amber);
+}
+
+body.theme-tan::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 20% -5%, rgba(107,91,158,0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(196,92,126,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 5% 85%, rgba(42,140,133,0.04) 0%, transparent 50%);
+}
+
+/* Tan theme: header adjustments */
+body.theme-tan header {
+  background: rgba(245,240,232,0.94);
+  border-bottom-color: var(--border2);
+}
+body.theme-tan header::after {
+  background: linear-gradient(90deg, transparent, rgba(107,91,158,0.2), transparent);
+}
+body.theme-tan .header-nav {
+  background: var(--surface2);
+  border-color: var(--border2);
+}
+body.theme-tan .nav-btn.active {
+  background: var(--surface);
+  color: var(--text);
+}
+body.theme-tan .logo-icon {
+  box-shadow: 0 2px 8px rgba(107,91,158,0.25);
+}
+
+/* Tan theme: sidebar */
+body.theme-tan .sidebar,
+body.theme-tan .right-panel {
+  background: var(--surface);
+}
+body.theme-tan .search-box {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border2);
+}
+body.theme-tan .prompt-item:hover {
+  background: var(--surface2);
+}
+body.theme-tan .prompt-item.selected {
+  background: rgba(107,91,158,0.08);
+}
+
+/* Tan theme: editor */
+body.theme-tan .main { background: var(--bg); }
+body.theme-tan .editor-header,
+body.theme-tan .stats-bar,
+body.theme-tan .editor-tabs { background: var(--surface); }
+body.theme-tan .prompt-textarea {
+  background: #faf7f2;
+  border-color: var(--border2);
+  color: var(--text);
+}
+body.theme-tan .prompt-textarea:focus {
+  border-color: rgba(107,91,158,0.5);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* Tan theme: cards */
+body.theme-tan .technique-card,
+body.theme-tan .council-card,
+body.theme-tan .brain-card,
+body.theme-tan .lib-card,
+body.theme-tan .ds-card,
+body.theme-tan .sp-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+body.theme-tan .technique-card:hover,
+body.theme-tan .council-card:hover,
+body.theme-tan .brain-card:hover,
+body.theme-tan .lib-card:hover,
+body.theme-tan .ds-card:hover,
+body.theme-tan .sp-card:hover {
+  border-color: var(--border3);
+  background: #f0ebe0;
+}
+
+/* Tan theme: right panel */
+body.theme-tan .rpanel-section { border-bottom-color: var(--border); }
+body.theme-tan .advisor-chip,
+body.theme-tan .model-card,
+body.theme-tan .opt-mode-btn,
+body.theme-tan .design-btn,
+body.theme-tan .quick-insert-btn {
+  background: var(--bg);
+  border-color: var(--border2);
+  color: var(--text-dim);
+}
+body.theme-tan .score-bar { background: var(--border); }
+body.theme-tan .opt-result,
+body.theme-tan .council-result { background: #faf7f2; color: var(--text); }
+
+/* Tan theme: modals */
+body.theme-tan .var-modal,
+body.theme-tan .qc-panel {
+  background: var(--surface);
+  border-color: var(--border2);
+}
+body.theme-tan .vm-input,
+body.theme-tan .qc-select,
+body.theme-tan .qc-input,
+body.theme-tan .qc-textarea { background: #faf7f2; color: var(--text); }
+
+/* Tan theme: chips & tabs */
+body.theme-tan .chip { border-color: var(--border2); color: var(--text-muted); }
+body.theme-tan .chip.active { background: rgba(107,91,158,0.12); border-color: rgba(107,91,158,0.35); color: var(--accent); }
+body.theme-tan .role-tab { border-color: var(--border2); color: var(--text-muted); }
+body.theme-tan .role-tab.active { background: rgba(42,140,133,0.08); border-color: rgba(42,140,133,0.35); color: var(--teal); }
+
+/* Tan theme: toast */
+body.theme-tan .toast { background: var(--surface2); border-color: var(--border2); }
+body.theme-tan .qc-toast { color: #faf7f2; }
+
+/* ── Theme toggle button ── */
+.theme-toggle {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.28rem 0.7rem;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-pill);
+  background: var(--surface2);
+  cursor: pointer;
+  font-family: var(--display);
+  font-size: 0.68rem; font-weight: 700;
+  color: var(--text-muted);
+  transition: all var(--t-base);
+  white-space: nowrap;
+}
+.theme-toggle:hover { border-color: var(--border3); color: var(--text); }
+.theme-toggle-icon { font-size: 0.8rem; transition: transform 0.3s ease; }
+body.theme-tan .theme-toggle { background: var(--surface2); border-color: var(--border2); }
+body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
+
 </style>
 </head>
 <body>
@@ -754,6 +928,10 @@ header::after{
     <button class="nav-btn" onclick="setView('agents')" id="nav-agents">🤖 Agents</button>
   </nav>
   <div class="header-right">
+    <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">
+      <span class="theme-toggle-icon" id="theme-toggle-icon">☀</span>
+      <span id="theme-toggle-label">Tan</span>
+    </button>
     <span class="version-tag">v4.0 · AI Studio</span>
   </div>
 </header>
@@ -3742,6 +3920,24 @@ function renderLibrary() {
     </div>
   `).join('');
 }
+
+// ─── THEME TOGGLE ────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isTan = document.body.classList.toggle('theme-tan');
+  document.getElementById('theme-toggle-icon').textContent = isTan ? '🌙' : '☀';
+  document.getElementById('theme-toggle-label').textContent = isTan ? 'Dark' : 'Tan';
+  try { localStorage.setItem('pf-theme', isTan ? 'tan' : 'dark'); } catch(e){}
+}
+// Restore saved theme on load
+(function(){
+  try {
+    if (localStorage.getItem('pf-theme') === 'tan') {
+      document.body.classList.add('theme-tan');
+      document.getElementById('theme-toggle-icon').textContent = '🌙';
+      document.getElementById('theme-toggle-label').textContent = 'Dark';
+    }
+  } catch(e){}
+})();
 
 // ─── VIEW & TAB ──────────────────────────────────────────────────────────────
 function setView(v) {
