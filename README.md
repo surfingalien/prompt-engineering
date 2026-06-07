@@ -125,6 +125,7 @@ Results include **Copy** and **Apply to Editor** buttons.
 | [danielmiessler/PAI](https://github.com/danielmiessler/Personal_AI_Infrastructure) | 6 | 7-phase solver, ISA, red team, systems thinking, root cause, daily brief |
 | [obra/superpowers](https://github.com/obra/superpowers) | 5 | TDD, systematic debugging, code review, feature planning, spec refiner |
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | 4 | Research notebook, podcast script, multi-source synthesis, study guide |
+| [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 8 | Swarm coordination, SPARC coder, GOAP planner, TDD London, code review swarm, performance analyzer |
 | **📡 Scout (live-generated)** | ∞ | Any topic — generated on demand and saved to your library |
 
 ---
@@ -143,6 +144,7 @@ Results include **Copy** and **Apply to Editor** buttons.
 | [danielmiessler/PAI](https://github.com/danielmiessler/Personal_AI_Infrastructure) | 1 | Life OS Digital Assistant |
 | [obra/superpowers](https://github.com/obra/superpowers) | 1 | Superpowers Dev Agent |
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | 1 | Research Notebook Curator |
+| [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 5 | Swarm Orchestrator, SPARC Agent, Code Review Swarm, GOAP Planner, TDD London School |
 | **📡 Scout (surfingalien — original)** | ∞ | Any domain — generated and saved on demand |
 
 ---
@@ -233,6 +235,7 @@ Theme preference is saved to `localStorage` and restored on next visit.
 | [obra/superpowers](https://github.com/obra/superpowers) | — | Dev methodology skills |
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | — | Research notebook skills |
 | [nexu-io/open-design](https://github.com/nexu-io/open-design) | — | Design agent integration |
+| [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 58k★ | Swarm orchestration skills + agents (SPARC, GOAP, TDD, consensus) |
 
 ---
 
