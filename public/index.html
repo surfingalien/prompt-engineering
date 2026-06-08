@@ -156,6 +156,36 @@ header::after{
   background:var(--surface2);
 }
 
+/* Token Meter */
+.token-meter-btn {
+  display:flex;align-items:center;gap:0.4rem;
+  background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-pill);
+  padding:3px 10px 3px 8px;cursor:pointer;color:var(--text-muted);font-size:0.72rem;
+  transition:border-color 0.2s,color 0.2s;white-space:nowrap;
+}
+.token-meter-btn:hover { border-color:var(--border3);color:var(--text); }
+.token-meter-btn.warn { border-color:#f59e0b;color:#f59e0b; }
+.token-meter-btn.danger { border-color:#ef4444;color:#ef4444;animation:pulse-border 1.5s ease infinite; }
+@keyframes pulse-border { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.3)} 50%{box-shadow:0 0 0 3px rgba(239,68,68,0.15)} }
+.token-meter-bar-wrap {
+  width:52px;height:4px;background:var(--border2);border-radius:2px;overflow:hidden;
+}
+.token-meter-bar {
+  height:100%;width:0%;border-radius:2px;
+  background:var(--accent);transition:width 0.4s ease,background 0.4s ease;
+}
+.token-meter-bar.warn { background:#f59e0b; }
+.token-meter-bar.danger { background:#ef4444; }
+/* token modal */
+.token-preset-btn {
+  padding:0.3rem 0.7rem;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--radius-pill);color:var(--text-muted);font-size:0.72rem;cursor:pointer;
+  transition:border-color 0.15s,color 0.15s;
+}
+.token-preset-btn:hover,.token-preset-btn.active { border-color:var(--accent);color:var(--accent); }
+body.theme-tan .token-meter-btn { background:var(--surface2);border-color:var(--border2); }
+body.theme-tan .token-preset-btn { background:var(--surface2); }
+
 /* ══════════════════════════════════════
    LAYOUT
 ══════════════════════════════════════ */
@@ -931,6 +961,13 @@ body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
     <button class="nav-btn" onclick="setView('scout')" id="nav-scout" style="color:var(--accent)">📡 Scout</button>
   </nav>
   <div class="header-right">
+    <button class="token-meter-btn" onclick="openTokenSettings()" id="token-meter-btn" title="Token usage — click to configure alert">
+      <span id="token-meter-icon">⚡</span>
+      <div class="token-meter-bar-wrap">
+        <div class="token-meter-bar" id="token-meter-bar"></div>
+      </div>
+      <span id="token-meter-label">0</span>
+    </button>
     <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">
       <span class="theme-toggle-icon" id="theme-toggle-icon">☀</span>
       <span id="theme-toggle-label">Tan</span>
@@ -938,6 +975,78 @@ body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
     <span class="version-tag">v4.0 · AI Studio</span>
   </div>
 </header>
+
+<!-- Token Alert Settings Modal -->
+<div id="token-modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeTokenSettings()" style="display:none">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
+      <h3 style="margin:0;font-size:1rem;font-weight:600">⚡ Token Usage &amp; Alerts</h3>
+      <button onclick="closeTokenSettings()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1">✕</button>
+    </div>
+    <div id="token-modal-body">
+      <div style="background:var(--surface2);border-radius:8px;padding:1rem;margin-bottom:1.2rem">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem">
+          <span style="font-size:0.78rem;color:var(--text-muted)">TODAY'S USAGE</span>
+          <span style="font-size:0.72rem;color:var(--text-muted)" id="token-reset-label"></span>
+        </div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--accent);margin-bottom:0.4rem" id="token-modal-count">0</div>
+        <div class="token-meter-bar-wrap" style="height:8px;margin-bottom:0.6rem">
+          <div class="token-meter-bar" id="token-modal-bar"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted)">
+          <span>0</span>
+          <span id="token-modal-limit-label">limit</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1rem">
+        <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:0.4rem">DAILY TOKEN LIMIT</label>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem">
+          <button class="token-preset-btn" onclick="setTokenPreset(50000)">50K</button>
+          <button class="token-preset-btn" onclick="setTokenPreset(100000)">100K</button>
+          <button class="token-preset-btn" onclick="setTokenPreset(250000)">250K</button>
+          <button class="token-preset-btn" onclick="setTokenPreset(500000)">500K</button>
+          <button class="token-preset-btn" onclick="setTokenPreset(1000000)">1M</button>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <input id="token-limit-input" type="number" min="1000" step="1000" style="flex:1;padding:0.45rem 0.6rem;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:0.82rem" placeholder="Custom limit">
+          <span style="font-size:0.78rem;color:var(--text-muted)">tokens / day</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.2rem">
+        <label style="font-size:0.78rem;color:var(--text-muted);display:block;margin-bottom:0.4rem">ALERT THRESHOLD</label>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button class="token-preset-btn" onclick="setAlertPreset(70)">70%</button>
+          <button class="token-preset-btn" onclick="setAlertPreset(80)">80%</button>
+          <button class="token-preset-btn" onclick="setAlertPreset(90)">90%</button>
+          <button class="token-preset-btn" onclick="setAlertPreset(95)">95%</button>
+        </div>
+        <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center">
+          <input id="token-alert-input" type="number" min="1" max="100" style="width:80px;padding:0.45rem 0.6rem;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:0.82rem">
+          <span style="font-size:0.78rem;color:var(--text-muted)">% — alert when usage reaches this</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.2rem">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem">
+          <input type="checkbox" id="token-alert-enabled" style="accent-color:var(--accent)">
+          Enable alerts (toast + header warning)
+        </label>
+      </div>
+
+      <div style="display:flex;gap:0.6rem">
+        <button onclick="saveTokenSettings()" class="btn btn-primary" style="flex:1;padding:0.55rem">Save Settings</button>
+        <button onclick="resetTokenUsage()" class="btn" style="padding:0.55rem 1rem;background:var(--surface2);border:1px solid var(--border3);color:var(--text-muted);font-size:0.8rem">Reset Usage</button>
+      </div>
+
+      <div id="token-history-wrap" style="margin-top:1.2rem;border-top:1px solid var(--border2);padding-top:1rem">
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.6rem">SESSION BREAKDOWN</div>
+        <div id="token-history-list" style="font-size:0.78rem;color:var(--text-muted);max-height:140px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div style="display:flex;flex:1;min-height:0;overflow:hidden">
 
@@ -4911,6 +5020,7 @@ function init() {
   renderBrainRoleTabs();
   renderEccSkills();
   renderAgentsView();
+  updateTokenMeter();
 }
 
 // ─── COLOR SWATCHES ──────────────────────────────────────────────────────────
@@ -4980,6 +5090,7 @@ CHAIRMAN'S VERDICT:
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || res.statusText);
+    trackTokenUsage(data.usage?.input_tokens, data.usage?.output_tokens, 'Council');
     const text = data.content?.[0]?.text || '';
     if (text) {
       resultDiv.textContent = text;
@@ -5120,6 +5231,7 @@ async function runOptimizer() {
     const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'You are an expert prompt engineer. Optimize the user\'s prompt. Return ONLY the optimized prompt, no preamble.',messages:[{role:'user',content:`Instruction: ${modes[state.optMode]}\n\nOriginal:\n${state.prompt}`}]})});
     const data=await res.json();
     if (!res.ok) throw new Error(data.error?.message || res.statusText);
+    trackTokenUsage(data.usage?.input_tokens, data.usage?.output_tokens, 'Optimizer');
     const text=data.content?.[0]?.text||'';
     if (text) {
       window._optimized=text;
@@ -5380,6 +5492,189 @@ function selectModel(el,m) {
 
 // ─── TOAST ───────────────────────────────────────────────────────────────────
 let _tt=null;
+// ─── TOKEN USAGE TRACKER & ALERT SYSTEM ──────────────────────────────────────
+const TOKEN_STORE_KEY = 'pf-token-usage';
+const TOKEN_SETTINGS_KEY = 'pf-token-settings';
+
+function getTokenSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(TOKEN_SETTINGS_KEY) || '{}');
+    return {
+      limit: s.limit || 100000,
+      alertPct: s.alertPct || 80,
+      enabled: s.enabled !== false,
+    };
+  } catch { return { limit: 100000, alertPct: 80, enabled: true }; }
+}
+
+function getTokenStore() {
+  try {
+    const s = JSON.parse(localStorage.getItem(TOKEN_STORE_KEY) || '{}');
+    const today = new Date().toISOString().slice(0, 10);
+    if (s.date !== today) return { date: today, total: 0, sessions: [] };
+    return s;
+  } catch { return { date: new Date().toISOString().slice(0,10), total: 0, sessions: [] }; }
+}
+
+function saveTokenStore(store) {
+  try { localStorage.setItem(TOKEN_STORE_KEY, JSON.stringify(store)); } catch {}
+}
+
+function trackTokenUsage(inputTokens, outputTokens, label) {
+  const store = getTokenStore();
+  const used = (inputTokens || 0) + (outputTokens || 0);
+  if (!used) return;
+  store.total += used;
+  store.sessions.unshift({
+    ts: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),
+    label: label || 'API call',
+    input: inputTokens || 0,
+    output: outputTokens || 0,
+    total: used,
+  });
+  if (store.sessions.length > 50) store.sessions = store.sessions.slice(0, 50);
+  saveTokenStore(store);
+  updateTokenMeter();
+  checkTokenAlert(store.total);
+}
+
+function updateTokenMeter() {
+  const store = getTokenStore();
+  const settings = getTokenSettings();
+  const pct = Math.min((store.total / settings.limit) * 100, 100);
+  const fmtNum = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? Math.round(n/1000)+'K' : n;
+
+  const bar = document.getElementById('token-meter-bar');
+  const label = document.getElementById('token-meter-label');
+  const btn = document.getElementById('token-meter-btn');
+  const icon = document.getElementById('token-meter-icon');
+  if (!bar) return;
+
+  bar.style.width = pct + '%';
+
+  const isDanger = pct >= 100;
+  const isWarn = pct >= settings.alertPct && pct < 100;
+
+  bar.className = 'token-meter-bar' + (isDanger ? ' danger' : isWarn ? ' warn' : '');
+  btn.className = 'token-meter-btn' + (isDanger ? ' danger' : isWarn ? ' warn' : '');
+  icon.textContent = isDanger ? '🔴' : isWarn ? '⚠️' : '⚡';
+  label.textContent = fmtNum(store.total);
+
+  // Also update modal if open
+  const modalBar = document.getElementById('token-modal-bar');
+  const modalCount = document.getElementById('token-modal-count');
+  if (modalBar) {
+    modalBar.style.width = pct + '%';
+    modalBar.className = 'token-meter-bar' + (isDanger ? ' danger' : isWarn ? ' warn' : '');
+  }
+  if (modalCount) modalCount.textContent = store.total.toLocaleString() + ' tokens';
+}
+
+let _tokenAlertFired80 = false;
+let _tokenAlertFired100 = false;
+
+function checkTokenAlert(total) {
+  const settings = getTokenSettings();
+  if (!settings.enabled) return;
+  const pct = (total / settings.limit) * 100;
+  const fmtNum = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? Math.round(n/1000)+'K' : n;
+
+  if (pct >= 100 && !_tokenAlertFired100) {
+    _tokenAlertFired100 = true;
+    showTokenAlert(`Token limit reached! ${fmtNum(total)} / ${fmtNum(settings.limit)} used today.`, 'danger');
+  } else if (pct >= settings.alertPct && !_tokenAlertFired80) {
+    _tokenAlertFired80 = true;
+    showTokenAlert(`${Math.round(pct)}% of daily tokens used (${fmtNum(total)} / ${fmtNum(settings.limit)})`, 'warn');
+  }
+}
+
+function showTokenAlert(msg, level) {
+  const el = document.getElementById('token-alert-banner');
+  if (el) el.remove();
+  const banner = document.createElement('div');
+  banner.id = 'token-alert-banner';
+  banner.style.cssText = `position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:9999;
+    padding:0.55rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:500;
+    display:flex;align-items:center;gap:0.7rem;box-shadow:0 4px 20px rgba(0,0,0,0.3);
+    background:${level==='danger'?'#7f1d1d':'#78350f'};color:#fff;border:1px solid ${level==='danger'?'#ef4444':'#f59e0b'};`;
+  banner.innerHTML = `<span>${level==='danger'?'🔴':'⚠️'} ${msg}</span>
+    <button onclick="document.getElementById('token-alert-banner').remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:1rem;padding:0;line-height:1;opacity:0.7">✕</button>`;
+  document.body.appendChild(banner);
+  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 8000);
+}
+
+function openTokenSettings() {
+  const settings = getTokenSettings();
+  const store = getTokenStore();
+  const fmtNum = n => n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? Math.round(n/1000)+'K' : n;
+
+  document.getElementById('token-limit-input').value = settings.limit;
+  document.getElementById('token-alert-input').value = settings.alertPct;
+  document.getElementById('token-alert-enabled').checked = settings.enabled;
+  document.getElementById('token-modal-count').textContent = store.total.toLocaleString() + ' tokens';
+  document.getElementById('token-modal-limit-label').textContent = fmtNum(settings.limit);
+  document.getElementById('token-reset-label').textContent = 'Resets at midnight · Today: ' + (store.date || '—');
+
+  const pct = Math.min((store.total / settings.limit) * 100, 100);
+  const bar = document.getElementById('token-modal-bar');
+  bar.style.width = pct + '%';
+  bar.className = 'token-meter-bar' + (pct >= 100 ? ' danger' : pct >= settings.alertPct ? ' warn' : '');
+
+  // Mark active presets
+  document.querySelectorAll('.token-preset-btn').forEach(b => b.classList.remove('active'));
+
+  // Session history
+  const histEl = document.getElementById('token-history-list');
+  if (!store.sessions.length) {
+    histEl.innerHTML = '<span style="color:var(--text-muted);font-style:italic">No API calls today yet.</span>';
+  } else {
+    histEl.innerHTML = store.sessions.slice(0, 15).map(s =>
+      `<div style="display:flex;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid var(--border2)">
+        <span style="color:var(--text-muted)">${s.ts} · ${s.label}</span>
+        <span style="color:var(--text);font-family:var(--mono)">${s.total.toLocaleString()}</span>
+      </div>`
+    ).join('');
+  }
+
+  document.getElementById('token-modal-overlay').style.display = 'flex';
+}
+
+function closeTokenSettings() {
+  document.getElementById('token-modal-overlay').style.display = 'none';
+}
+
+function setTokenPreset(val) {
+  document.getElementById('token-limit-input').value = val;
+  document.querySelectorAll('.token-preset-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.getAttribute('onclick').match(/\d+/)?.[0]) === val));
+}
+
+function setAlertPreset(val) {
+  document.getElementById('token-alert-input').value = val;
+}
+
+function saveTokenSettings() {
+  const limit = parseInt(document.getElementById('token-limit-input').value) || 100000;
+  const alertPct = parseInt(document.getElementById('token-alert-input').value) || 80;
+  const enabled = document.getElementById('token-alert-enabled').checked;
+  try { localStorage.setItem(TOKEN_SETTINGS_KEY, JSON.stringify({ limit, alertPct, enabled })); } catch {}
+  _tokenAlertFired80 = false;
+  _tokenAlertFired100 = false;
+  updateTokenMeter();
+  closeTokenSettings();
+  showToast('Token alert settings saved!', 'success');
+}
+
+function resetTokenUsage() {
+  const today = new Date().toISOString().slice(0, 10);
+  saveTokenStore({ date: today, total: 0, sessions: [] });
+  _tokenAlertFired80 = false;
+  _tokenAlertFired100 = false;
+  updateTokenMeter();
+  closeTokenSettings();
+  showToast('Token usage reset.', 'success');
+}
+
 function showToast(msg,type='success') {
   const t=document.getElementById('toast');
   t.textContent=(type==='success'?'✓ ':'✗ ')+msg;
@@ -5753,6 +6048,7 @@ async function runScout() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Scout failed');
+    if (data.meta?.tokens_used) trackTokenUsage(data.meta.tokens_used.input, data.meta.tokens_used.output, 'Scout');
 
     scoutSessionSkills = data.skills || [];
     scoutSessionAgents = data.agents || [];

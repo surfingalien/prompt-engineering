@@ -131,6 +131,10 @@ Topic focus: ${topic}`;
         generated_at: new Date().toISOString(),
         skills_count: skills.length,
         agents_count: agents.length,
+        tokens_used: {
+          input: data.usage?.input_tokens || 0,
+          output: data.usage?.output_tokens || 0,
+        },
       }
     });
   } catch (err) {
