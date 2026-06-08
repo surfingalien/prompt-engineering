@@ -3523,7 +3523,7 @@ Prefer skills with:
 - Clear SKILL.md with well-defined trigger conditions
 
 **Secondary — GitHub search**
-Search: `topic:agent-skill` or `filename:SKILL.md` + domain keywords
+Search: \`topic:agent-skill\` or \`filename:SKILL.md\` + domain keywords
 Look for repos following the SKILL.md frontmatter spec:
 \`\`\`yaml
 ---
@@ -3533,10 +3533,10 @@ description: One-line description of what this skill does
 \`\`\`
 
 **Tertiary — Known quality collections**
-- `vercel-labs/agent-skills` — official Vercel collection
-- `ruvnet/ruflo` — swarm orchestration skills
-- `affaan-m/ECC` — engineering code skills
-- `rohitg00/awesome-claude-code-toolkit` — Claude Code specialist agents
+- \`vercel-labs/agent-skills\` — official Vercel collection
+- \`ruvnet/ruflo\` — swarm orchestration skills
+- \`affaan-m/ECC\` — engineering code skills
+- \`rohitg00/awesome-claude-code-toolkit\` — Claude Code specialist agents
 
 ### Step 3 — Evaluate Quality
 For each candidate skill, score on:
@@ -3679,9 +3679,6 @@ description: {{one-line-description}}
 - Prefer fewer, higher-quality recommendations over exhaustive lists
 - A good custom skill recommendation is more valuable than no recommendation`},
 ];
-[...VERCEL_SKILLS_SKILLS].forEach(s => {
-  PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
-});
 
 // ─── RUFLO / CLAUDE-FLOW SKILLS ──────────────────────────────────────────────
 const RUFLO_SKILLS = [
