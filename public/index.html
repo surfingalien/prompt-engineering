@@ -1021,12 +1021,117 @@ body.theme-tan .qc-toast { color: #faf7f2; }
 body.theme-tan .theme-toggle { background: var(--surface2); border-color: var(--border2); }
 body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
 
+/* ══════════════════════════════════════
+   MOBILE / RESPONSIVE
+══════════════════════════════════════ */
+
+/* Hamburger button in header */
+.sidebar-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-xs);
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--t-base), border-color var(--t-base);
+}
+.sidebar-toggle-btn:hover { background: var(--surface3); border-color: var(--border3); color: var(--text); }
+
+/* Desktop sidebar collapse */
+body.sidebar-hidden .layout { grid-template-columns: 0 1fr 300px !important; }
+body.sidebar-hidden .sidebar { width: 0; min-width: 0; padding: 0; border: none; overflow: hidden; }
+
+.sidebar-reopen-btn {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 200;
+  width: 22px;
+  height: 48px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-left: none;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background var(--t-base);
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-reopen-btn:hover { background: var(--surface4); color: var(--text); }
+body.sidebar-hidden .sidebar-reopen-btn { display: flex; }
+
+/* Mobile backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 299;
+  background: rgba(0,0,0,0.6);
+}
+body.sidebar-open .sidebar-backdrop { display: block; }
+
+/* Tablet — hide both sidebars by default */
+@media (max-width: 900px) {
+  .sidebar-toggle-btn { display: flex; }
+  .layout { grid-template-columns: 1fr !important; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 280px;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 280ms cubic-bezier(0.4,0,0.2,1);
+    border-right: 1px solid var(--border2);
+  }
+  body.sidebar-open .sidebar { transform: translateX(0); }
+
+  .layout > *:nth-child(3) { display: none; }
+
+  .header-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .header-nav::-webkit-scrollbar { display: none; }
+  .version-tag { display: none; }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  header { height: 48px; padding: 0 0.75rem; gap: 0.5rem; }
+  .logo-sub { display: none; }
+  .version-tag { display: none; }
+  #model-selector { display: none; }
+  .token-meter-bar-wrap { display: none; }
+  #token-meter-label { display: none; }
+  .nav-btn { font-size: 0.68rem; padding: 4px 8px; }
+  .full-view { padding: 1rem; }
+  .editor-body { padding: 0.75rem !important; }
+  .prompt-textarea { min-height: 200px; }
+  .stats-bar { gap: 0.3rem; padding: 0.35rem 0.75rem; }
+  .stat { padding: 2px 7px; font-size: 0.62rem; }
+}
+
 </style>
 </head>
 <body>
 <div class="app">
 
 <header>
+  <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
   <div class="logo">
     <div class="logo-icon">⚡</div>
     <span class="logo-text">Prompt<span class="logo-accent">Forge</span></span>
@@ -1064,6 +1169,12 @@ body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
     <span class="version-tag">v4.0 · AI Studio</span>
   </div>
 </header>
+
+<!-- Sidebar backdrop (mobile) -->
+<div class="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+<!-- Sidebar reopen button (desktop, shown when sidebar-hidden) -->
+<button class="sidebar-reopen-btn" onclick="toggleSidebarDesktop()" title="Show sidebar">▶</button>
 
 <!-- Token Alert Settings Modal -->
 <div id="token-modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeTokenSettings()" style="display:none">
@@ -7594,6 +7705,17 @@ function updateScoutSessionCount() {
 
 // Load saved discoveries on boot
 loadPersistedScoutDiscoveries();
+
+// ── Mobile/Responsive sidebar functions ──
+function toggleSidebar() {
+  document.body.classList.toggle('sidebar-open');
+}
+function closeSidebar() {
+  document.body.classList.remove('sidebar-open');
+}
+function toggleSidebarDesktop() {
+  document.body.classList.toggle('sidebar-hidden');
+}
 
 </script>
 
