@@ -127,6 +127,9 @@ Results include **Copy** and **Apply to Editor** buttons.
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | 4 | Research notebook, podcast script, multi-source synthesis, study guide |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | 2 | Agent skill discovery, AI skill recommendation engine |
 | [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 8 | Swarm coordination, SPARC coder, GOAP planner, TDD London, code review swarm, performance analyzer |
+| [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | 6 | Prompt engineering expert, deep research pro, 3-pass code review, OWASP security audit, memory manager, parallel agent dispatcher |
+| [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | 2 | ReAct deep research agent, structured report generator |
+| [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 4 | Deep research coordinator, structured report builder, slide deck creator, sub-agent driven development |
 | **📡 Scout (live-generated)** | ∞ | Any topic — generated on demand and saved to your library |
 
 ---
@@ -146,6 +149,9 @@ Results include **Copy** and **Apply to Editor** buttons.
 | [obra/superpowers](https://github.com/obra/superpowers) | 1 | Superpowers Dev Agent |
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | 1 | Research Notebook Curator |
 | [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 5 | Swarm Orchestrator, SPARC Agent, Code Review Swarm, GOAP Planner, TDD London School |
+| [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | 2 | Prompt Engineering Expert, OpenClaw Security Auditor |
+| [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | 1 | Local Deep Research Agent |
+| [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 2 | DeerFlow Research Orchestrator, Sub-Agent Development Controller |
 | **📡 Scout (surfingalien — original)** | ∞ | Any domain — generated and saved on demand |
 
 ---
@@ -238,6 +244,9 @@ Theme preference is saved to `localStorage` and restored on next visit.
 | [nexu-io/open-design](https://github.com/nexu-io/open-design) | — | Design agent integration |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | — | Agent skill discovery + recommendation engine skills |
 | [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 58k★ | Swarm orchestration skills + agents (SPARC, GOAP, TDD, consensus) |
+| [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | — | Prompt engineering, deep research, code review, OWASP security, memory, parallel agents |
+| [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | — | ReAct research agent, structured report generator |
+| [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 70k★ | Research orchestration, report builder, slide creator, sub-agent development |
 
 ---
 
