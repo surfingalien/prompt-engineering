@@ -109,10 +109,11 @@ Results include **Copy** and **Apply to Editor** buttons.
 
 ---
 
-## Skills Library (350+)
+## Skills Library (420+)
 
 | Source | Skills | Categories |
 |--------|--------|-----------|
+| [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | 68 | Discovery, Strategy, Execution, Market Research, Data Analytics, GTM, Marketing, AI Shipping |
 | [affaan-m/ECC](https://github.com/affaan-m/ECC) | 36 | Security, Testing, Code, Frontend, Backend, Agent, DevOps, ML, Research, Product, Writing |
 | [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) | 14 | RAG, Chain-of-Thought, LangGraph, Multi-Agent, LLM Infra, Safety |
 | [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) | 8 | Agent memory workflows |
@@ -229,6 +230,7 @@ Theme preference is saved to `localStorage` and restored on next visit.
 | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | — | Design system generator |
 | [huytieu/COG-second-brain](https://github.com/huytieu/COG-second-brain) | — | COG Brain skills |
 | [Leonxlnx/prompt-library](https://github.com/Leonxlnx/prompt-library) | — | UI patterns |
+| [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | — | 68 PM skills across discovery, strategy, execution, GTM, analytics, AI shipping |
 | [affaan-m/ECC](https://github.com/affaan-m/ECC) | — | 251 production skills + 7 agents |
 | [rohitg00/awesome-claude-code-toolkit](https://github.com/rohitg00/awesome-claude-code-toolkit) | — | 136 specialist agents |
 | [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) | — | AI engineering curriculum |
