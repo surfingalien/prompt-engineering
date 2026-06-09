@@ -1027,7 +1027,7 @@ body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
 
 /* Hamburger button in header */
 .sidebar-toggle-btn {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
@@ -7708,7 +7708,11 @@ loadPersistedScoutDiscoveries();
 
 // ── Mobile/Responsive sidebar functions ──
 function toggleSidebar() {
-  document.body.classList.toggle('sidebar-open');
+  if (window.innerWidth <= 900) {
+    document.body.classList.toggle('sidebar-open');
+  } else {
+    document.body.classList.toggle('sidebar-hidden');
+  }
 }
 function closeSidebar() {
   document.body.classList.remove('sidebar-open');
