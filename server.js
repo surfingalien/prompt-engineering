@@ -34,7 +34,9 @@ app.post('/api/scout', async (req, res) => {
   if (!apiKey) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
   }
-  const { topic = 'AI agents and prompt engineering', count = 3, type = 'both' } = req.body;
+  const { topic = 'AI agents and prompt engineering', count = 3, type = 'both', model = 'claude-sonnet-4-6' } = req.body;
+  const ALLOWED_MODELS = ['claude-sonnet-4-6','claude-opus-4-8','claude-haiku-4-5-20251001'];
+  const scoutModel = ALLOWED_MODELS.includes(model) ? model : 'claude-sonnet-4-6';
 
   const systemPrompt = `You are an AI Intelligence Scout — an expert in AI skills, agents, prompts, and frameworks. Your job is to generate NEW, high-quality skill and agent definitions based on the latest developments in the AI ecosystem.
 
@@ -86,7 +88,7 @@ Topic focus: ${topic}`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: scoutModel,
         max_tokens: 8000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMsg }],

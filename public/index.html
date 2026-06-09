@@ -185,6 +185,10 @@ header::after{
 .token-preset-btn:hover,.token-preset-btn.active { border-color:var(--accent);color:var(--accent); }
 body.theme-tan .token-meter-btn { background:var(--surface2);border-color:var(--border2); }
 body.theme-tan .token-preset-btn { background:var(--surface2); }
+#model-selector { transition:border-color 0.2s,color 0.2s; }
+#model-selector:hover { border-color:var(--border3);color:var(--text); }
+#model-selector option { background:var(--surface);color:var(--text); }
+body.theme-tan #model-selector { background:var(--surface2);border-color:var(--border2); }
 
 /* ══════════════════════════════════════
    LAYOUT
@@ -968,6 +972,11 @@ body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
       </div>
       <span id="token-meter-label">0</span>
     </button>
+    <select id="model-selector" onchange="setModel(this.value)" title="AI model for Council, Optimizer, and Scout" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-pill);color:var(--text-muted);font-size:0.72rem;padding:3px 10px;cursor:pointer;outline:none;font-family:var(--mono)">
+      <option value="claude-sonnet-4-6">Sonnet 4.6</option>
+      <option value="claude-opus-4-8">Opus 4.8</option>
+      <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
+    </select>
     <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">
       <span class="theme-toggle-icon" id="theme-toggle-icon">☀</span>
       <span id="theme-toggle-label">Tan</span>
@@ -4632,6 +4641,204 @@ const OPENCLAW_AGENTS = [
 ];
 [...OPENCLAW_AGENTS].forEach(a => SYSTEM_PROMPTS_DATA.push(a));
 
+// ─── OMNIROUTE SKILLS ────────────────────────────────────────────────────────
+const OMNIROUTE_SKILLS = [
+  {id:'omr-01', name:'AI Provider Router Design', cat:'agent', origin:'diegosouzapw/OmniRoute', desc:'Architect multi-provider LLM routing with fallback tiers, circuit breakers, cost optimization, and zero-downtime failover.',
+   prompt:`You are an AI provider routing architect. Design resilient, cost-efficient routing strategies for LLM applications that handle provider failures gracefully and minimize cost without sacrificing quality.
+
+## Application to Route
+{{application_description}}
+
+## Requirements
+- **Primary goal**: {{primary_goal}} (cost / latency / quality / reliability)
+- **Monthly budget**: {{monthly_budget}}
+- **Acceptable latency**: {{max_latency_ms}}ms p95
+- **Required models**: {{required_models}}
+
+## Routing Architecture
+
+### 4-Tier Fallback Hierarchy
+Design your tiers based on cost and reliability:
+
+| Tier | Type | Use When | Example Providers |
+|------|------|----------|-------------------|
+| T1 — Subscription | Highest quality, fixed cost | Primary, all requests | Anthropic Pro, OpenAI Plus |
+| T2 — API (pay-per-token) | On-demand, variable cost | T1 down or over budget | Anthropic API, OpenAI API |
+| T3 — Cheap/Budget | Low cost, good enough | T2 over budget | Together AI, Groq, Fireworks |
+| T4 — Free | Zero cost, variable quality | Fallback, non-critical | Pollinations, Kiro, Qoder |
+
+### Routing Strategies
+
+**Priority Routing** (reliability-first)
+- Always try T1 first → fall to T2 on failure → T3 on T2 failure
+- Use for: user-facing production traffic
+
+**Cost-Optimized Routing**
+- Route based on token cost per request type
+- Short prompts (<500 tokens) → cheap/fast models
+- Long context (>8k tokens) → models with large context windows
+- Complex reasoning → premium models only
+
+**Weighted Routing**
+- Distribute across providers by weight: T1=60%, T2=30%, T3=10%
+- Useful for A/B testing model quality
+- Gradually shift weights as confidence grows
+
+**Context-Relay Routing**
+- Maintain conversation context across provider switches
+- Serialize conversation history in standard format
+- Re-hydrate on new provider seamlessly
+
+### Circuit Breaker Configuration
+For each provider, define:
+\`\`\`
+provider: {{provider_name}}
+circuit_breaker:
+  failure_threshold: 3        # trips after N consecutive failures
+  recovery_timeout: 30s       # wait before retry
+  half_open_requests: 1       # test requests before fully reopening
+  error_types: [timeout, 5xx, rate_limit]
+\`\`\`
+
+### Cost Controls
+- **Token budget per request**: set max_tokens appropriate to task
+- **Daily spend cap**: hard limit with graceful degradation to free tier
+- **Token compression**: apply prompt compression for repetitive/large context (15-95% savings)
+- **Caching**: cache identical prompts for N minutes to avoid duplicate API calls
+
+### Health Monitoring
+Track per provider:
+- Success rate (target: >99%)
+- P50/P95/P99 latency
+- Cost per 1K tokens
+- Rate limit headroom
+- Daily token usage vs quota
+
+## Output
+
+**ROUTING PLAN**:
+\`\`\`yaml
+routing:
+  strategy: {{chosen_strategy}}
+  tiers:
+    - tier: 1
+      providers: [...]
+      condition: "always try first"
+    - tier: 2
+      providers: [...]
+      condition: "T1 failure or rate limit"
+  circuit_breakers:
+    {{provider}}: {threshold: N, recovery: Xs}
+  cost_controls:
+    daily_budget: ${{amount}}
+    fallback_on_budget_exceeded: tier_4
+\`\`\`
+
+**ESTIMATED MONTHLY COST**: ${{estimate}} at {{volume}} requests/day
+**RELIABILITY ESTIMATE**: {{uptime}}% given provider SLAs
+**RECOMMENDED MONITORING**: [key metrics and alert thresholds]`},
+
+  {id:'omr-02', name:'Token Compression Strategist', cat:'ml', origin:'diegosouzapw/OmniRoute', desc:'Reduce prompt token usage 15-95% using RTK filtering, Caveman compression, and context-aware strategies — without losing meaning.',
+   prompt:`You are a token compression specialist. Analyze prompts and apply compression strategies to reduce token usage while preserving all information needed for quality responses.
+
+## Prompt to Compress
+\`\`\`
+{{prompt_or_context}}
+\`\`\`
+
+## Compression Target
+- **Goal**: {{compression_goal}} (cost reduction / latency / context window fit)
+- **Quality constraint**: {{quality_constraint}} (lossless / lossy-acceptable / aggressive)
+- **Protected content**: {{protected_content}} (code blocks / URLs / JSON / all of the above)
+
+## Compression Strategies
+
+### Strategy 1 — RTK (Redundancy & Token Killing)
+Remove output that doesn't inform the model:
+- Command echo: "Please write a..." → strip if obvious from context
+- Affirmations: "Of course!", "Certainly!", "Sure!" → remove entirely
+- Preamble padding: "As an AI language model..." → always remove
+- Redundant context: information already in system prompt → strip from user turn
+
+**Savings: 10-30% on typical prompts**
+
+### Strategy 2 — Caveman Compression
+Rewrite verbose natural language into dense shorthand:
+\`\`\`
+BEFORE: "Please analyze the following code and identify any potential security vulnerabilities,
+         performance issues, or bugs that could cause problems in production"
+AFTER:  "audit code: security vulns + perf issues + bugs → production impact"
+\`\`\`
+
+Rules:
+- Remove articles (a, an, the) where meaning is clear
+- Replace verbose phrases with terse equivalents
+- Use → for "results in", "produces", "causes"
+- Use + for "and", & for conjunction in lists
+- Use abbreviations for repeated domain terms (establish once, use throughout)
+
+**Savings: 20-50% on instruction-heavy prompts**
+
+### Strategy 3 — Context Deduplication
+Identify and remove repeated information:
+- Shared context in system prompt → remove from every user message
+- Repeated examples → keep 1, reference pattern
+- Boilerplate instructions → move to system prompt once
+
+**Savings: 30-70% on multi-turn conversations**
+
+### Strategy 4 — Structural Compression
+Replace verbose structure with dense formats:
+\`\`\`
+BEFORE:
+"First, you should consider X. Then, you need to look at Y.
+ After that, make sure to check Z."
+
+AFTER:
+"Steps: 1) X 2) Y 3) Z"
+\`\`\`
+
+**Savings: 15-40% on procedural prompts**
+
+### Strategy 5 — Selective Truncation (lossy)
+For long context where recent information matters most:
+- Keep first N% (task definition) + last M% (recent context)
+- Summarize middle section: "[Summary: X prior exchanges covering Y and Z]"
+- Preserve all code blocks and structured data verbatim
+
+**Savings: 40-80% on long conversation histories**
+
+## Protected Content Rules
+Never compress:
+- Code blocks (preserve exactly — compression corrupts syntax)
+- URLs (preserve exactly)
+- JSON/YAML/XML structures (preserve exactly)
+- Quoted strings that will be compared or matched
+- Numbers, dates, identifiers
+
+## Compression Report
+
+**ORIGINAL**: {{original_token_count}} tokens (estimated)
+
+**COMPRESSED PROMPT**:
+\`\`\`
+{{compressed_version}}
+\`\`\`
+
+**COMPRESSED**: {{compressed_token_count}} tokens (estimated)
+**SAVINGS**: {{pct}}% — {{tokens_saved}} tokens saved
+
+**STRATEGIES APPLIED**:
+- [Strategy name]: saved ~N tokens
+- ...
+
+**QUALITY IMPACT**: NONE / MINIMAL / MODERATE — [explanation of any meaning loss]
+
+**PROTECTED CONTENT**: [List of blocks preserved verbatim]
+
+**RECOMMENDATION**: [If lossy compression was needed, flag it explicitly]`},
+];
+
 // ─── VERCEL LABS / SKILLS ECOSYSTEM ──────────────────────────────────────────
 const VERCEL_SKILLS_SKILLS = [
   {id:'vsk-01', name:'Agent Skill Discovery', cat:'agent', origin:'vercel-labs/skills', desc:'Find, evaluate, and recommend skills from the open agent ecosystem (skills.sh, GitHub) to extend any AI agent\'s capabilities.',
@@ -5930,7 +6137,7 @@ discovery:
 ];
 [...SCOUT_AGENTS].forEach(a => SYSTEM_PROMPTS_DATA.push(a));
 let _eccId = 10000;
-[...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...VERCEL_SKILLS_SKILLS, ...RUFLO_SKILLS, ...SCOUT_SKILLS].forEach(s => {
+[...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...RUFLO_SKILLS, ...SCOUT_SKILLS].forEach(s => {
   PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
 });
 
@@ -5939,7 +6146,8 @@ let state = {
   prompt:'', title:'',
   filter:'all', search:'',
   tab:'write', view:'editor',
-  optMode:'clarity', selectedModel:'claude-opus-4-6',
+  optMode:'clarity',
+  selectedModel: localStorage.getItem('pf-model') || 'claude-sonnet-4-6',
   variables:{},
   history: JSON.parse(localStorage.getItem('pf2_history')||'[]'),
   selectedId:null,
@@ -5956,7 +6164,7 @@ function setEccCat(cat, el) {
   renderEccSkills();
 }
 function renderEccSkills() {
-  const ALL_SKILLS = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...VERCEL_SKILLS_SKILLS, ...RUFLO_SKILLS, ...SCOUT_SKILLS];
+  const ALL_SKILLS = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...RUFLO_SKILLS, ...SCOUT_SKILLS];
   const filtered = eccCatFilter === 'all' ? ALL_SKILLS : ALL_SKILLS.filter(s => s.cat === eccCatFilter);
   const catColors = {security:'#ff7070',testing:'#ff6464',code:'var(--accent)',frontend:'var(--accent2)',backend:'#a89cff',agent:'var(--accent3)',devops:'var(--accent4)',ml:'#4285f4',research:'#00c864',product:'#c8b8ff',writing:'#ffb400',marketing:'#ff64c8',design:'var(--accent2)'};
   document.getElementById('ecc-grid').innerHTML = filtered.map(s => {
@@ -5972,7 +6180,7 @@ function renderEccSkills() {
   }).join('');
 }
 function loadEccSkill(id) {
-  const skill = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...VERCEL_SKILLS_SKILLS, ...RUFLO_SKILLS, ...SCOUT_SKILLS].find(s => s.id === id);
+  const skill = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...RUFLO_SKILLS, ...SCOUT_SKILLS].find(s => s.id === id);
   if (!skill) return;
   document.getElementById('prompt-textarea').value = skill.prompt;
   document.getElementById('prompt-title').value = skill.name;
@@ -6055,6 +6263,7 @@ function init() {
   renderEccSkills();
   renderAgentsView();
   updateTokenMeter();
+  initModelSelector();
 }
 
 // ─── COLOR SWATCHES ──────────────────────────────────────────────────────────
@@ -6120,7 +6329,7 @@ CHAIRMAN'S VERDICT:
     const res = await fetch('/api/chat', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, system:systemPrompt, messages:[{role:'user',content:state.prompt}] })
+      body:JSON.stringify({ model:state.selectedModel, max_tokens:1000, system:systemPrompt, messages:[{role:'user',content:state.prompt}] })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || res.statusText);
@@ -6262,7 +6471,7 @@ async function runOptimizer() {
     structured:'Add XML/structured tags: <task>, <context>, <constraints>, <output_format>.',
   };
   try {
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'You are an expert prompt engineer. Optimize the user\'s prompt. Return ONLY the optimized prompt, no preamble.',messages:[{role:'user',content:`Instruction: ${modes[state.optMode]}\n\nOriginal:\n${state.prompt}`}]})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:state.selectedModel,max_tokens:1000,system:'You are an expert prompt engineer. Optimize the user\'s prompt. Return ONLY the optimized prompt, no preamble.',messages:[{role:'user',content:`Instruction: ${modes[state.optMode]}\n\nOriginal:\n${state.prompt}`}]})});
     const data=await res.json();
     if (!res.ok) throw new Error(data.error?.message || res.statusText);
     trackTokenUsage(data.usage?.input_tokens, data.usage?.output_tokens, 'Optimizer');
@@ -6709,6 +6918,23 @@ function resetTokenUsage() {
   showToast('Token usage reset.', 'success');
 }
 
+// ─── MODEL SELECTOR ───────────────────────────────────────────────────────────
+function setModel(model) {
+  state.selectedModel = model;
+  try { localStorage.setItem('pf-model', model); } catch {}
+  const labels = {
+    'claude-sonnet-4-6': 'Sonnet 4.6',
+    'claude-opus-4-8': 'Opus 4.8',
+    'claude-haiku-4-5-20251001': 'Haiku 4.5',
+  };
+  showToast(`Model: ${labels[model] || model}`, 'success');
+}
+
+function initModelSelector() {
+  const sel = document.getElementById('model-selector');
+  if (sel && state.selectedModel) sel.value = state.selectedModel;
+}
+
 function showToast(msg,type='success') {
   const t=document.getElementById('toast');
   t.textContent=(type==='success'?'✓ ':'✗ ')+msg;
@@ -7078,7 +7304,7 @@ async function runScout() {
     const res = await fetch('/api/scout', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ topic, type, count })
+      body: JSON.stringify({ topic, type, count, model: state.selectedModel })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Scout failed');

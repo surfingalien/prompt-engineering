@@ -130,6 +130,7 @@ Results include **Copy** and **Apply to Editor** buttons.
 | [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | 6 | Prompt engineering expert, deep research pro, 3-pass code review, OWASP security audit, memory manager, parallel agent dispatcher |
 | [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | 2 | ReAct deep research agent, structured report generator |
 | [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 4 | Deep research coordinator, structured report builder, slide deck creator, sub-agent driven development |
+| [diegosouzapw/OmniRoute](https://github.com/diegosouzapw/OmniRoute) | 2 | AI provider router design, token compression strategist |
 | **📡 Scout (live-generated)** | ∞ | Any topic — generated on demand and saved to your library |
 
 ---
