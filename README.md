@@ -109,10 +109,11 @@ Results include **Copy** and **Apply to Editor** buttons.
 
 ---
 
-## Skills Library (420+)
+## Skills Library (480+)
 
 | Source | Skills | Categories |
 |--------|--------|-----------|
+| [f/prompts.chat](https://github.com/f/prompts.chat) | 70 | Role personas, interview prep, domain experts, creative writing |
 | [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | 68 | Discovery, Strategy, Execution, Market Research, Data Analytics, GTM, Marketing, AI Shipping |
 | [affaan-m/ECC](https://github.com/affaan-m/ECC) | 36 | Security, Testing, Code, Frontend, Backend, Agent, DevOps, ML, Research, Product, Writing |
 | [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) | 14 | RAG, Chain-of-Thought, LangGraph, Multi-Agent, LLM Infra, Safety |
