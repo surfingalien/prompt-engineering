@@ -1413,8 +1413,8 @@ body.sidebar-open .sidebar-backdrop { display: block; }
     <!-- Model -->
     <div class="rpanel-section">
       <div class="rpanel-label">🤖 Target Model</div>
-      <div class="model-card active" onclick="selectModel(this,'claude-opus-4-6')"><div class="model-dot" style="background:#cc6fff"></div><span class="model-name">Claude Opus 4.6</span><span class="model-badge" style="background:rgba(204,111,255,0.15);color:#cc6fff">Frontier</span></div>
-      <div class="model-card" onclick="selectModel(this,'claude-sonnet-4-6')"><div class="model-dot" style="background:var(--accent)"></div><span class="model-name">Claude Sonnet 4.6</span><span class="model-badge" style="background:var(--accent-dim);color:var(--accent)">Balanced</span></div>
+      <div class="model-card" onclick="selectModel(this,'claude-opus-4-8')"><div class="model-dot" style="background:#cc6fff"></div><span class="model-name">Claude Opus 4.8</span><span class="model-badge" style="background:rgba(204,111,255,0.15);color:#cc6fff">Frontier</span></div>
+      <div class="model-card active" onclick="selectModel(this,'claude-sonnet-4-6')"><div class="model-dot" style="background:var(--accent)"></div><span class="model-name">Claude Sonnet 4.6</span><span class="model-badge" style="background:var(--accent-dim);color:var(--accent)">Balanced</span></div>
       <div class="model-card" onclick="selectModel(this,'gpt-4o')"><div class="model-dot" style="background:#10a37f"></div><span class="model-name">GPT-4o</span><span class="model-badge" style="background:rgba(16,163,127,0.15);color:#10a37f">OpenAI</span></div>
       <div class="model-card" onclick="selectModel(this,'gemini-2-5')"><div class="model-dot" style="background:#4285f4"></div><span class="model-name">Gemini 2.5 Pro</span><span class="model-badge" style="background:rgba(66,133,244,0.15);color:#4285f4">Google</span></div>
       <div class="model-card" onclick="selectModel(this,'grok-3')"><div class="model-dot" style="background:#aaa"></div><span class="model-name">Grok 3</span><span class="model-badge" style="background:rgba(170,170,170,0.1);color:#888">xAI</span></div>
@@ -9027,7 +9027,10 @@ async function runScout() {
       body: JSON.stringify({ topic, type, count, model: state.selectedModel })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Scout failed');
+    if (!res.ok) {
+      const msg = data.error || data.detail || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
     if (data.meta?.tokens_used) trackTokenUsage(data.meta.tokens_used.input, data.meta.tokens_used.output, 'Scout');
 
     scoutSessionSkills = data.skills || [];
@@ -9038,8 +9041,9 @@ async function runScout() {
     status.textContent = `Found ${scoutSessionSkills.length} skills + ${scoutSessionAgents.length} agents for "${topic}"`;
     showToast(`Scout found ${scoutSessionSkills.length + scoutSessionAgents.length} discoveries!`, 'success');
   } catch(e) {
-    status.textContent = `Scout error: ${e.message}`;
-    showToast('Scout failed — check API key', 'error');
+    const msg = e.message || 'Unknown error';
+    status.textContent = `Scout error: ${msg}`;
+    showToast(`Scout failed: ${msg.slice(0,60)}`, 'error');
   }
 
   btn.innerHTML = '📡 Run Scout';

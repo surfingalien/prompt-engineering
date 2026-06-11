@@ -95,7 +95,7 @@ Topic focus: ${topic}`;
       }),
     });
     const data = await upstream.json();
-    if (!upstream.ok) return res.status(upstream.status).json({ error: data.error?.message || 'API error' });
+    if (!upstream.ok) return res.status(upstream.status).json({ error: data.error?.message || JSON.stringify(data.error) || 'API error', detail: JSON.stringify(data).slice(0, 300) });
 
     const rawText = data.content?.[0]?.text || '';
 
