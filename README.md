@@ -1,6 +1,6 @@
 # ⚡ PromptForge v4 — AI Prompt Engineering Studio
 
-> **The most complete open-source AI prompt engineering platform.** Write, optimize, score, and deploy prompts — powered by 350+ skills, 200+ specialist agents, and a live AI Intelligence Scout that discovers new skills and agents autonomously.
+> **The most complete open-source AI prompt engineering platform.** Write, optimize, score, and deploy prompts — powered by 350+ skills, 220+ specialist agents, and a live AI Intelligence Scout that discovers new skills and agents autonomously.
 
 **Live at:** [prompt-engineering-production-67f2.up.railway.app](https://prompt-engineering-production-67f2.up.railway.app)
 
@@ -30,7 +30,7 @@ PromptForge is a single-page AI studio that turns anyone into a skilled prompt e
 
 - A live **prompt editor** with real-time scoring, variable fill-in, and AI optimization
 - A **350+ skill library** covering every major AI engineering domain
-- A **200+ agent library** of production-grade system prompts
+- A **220+ agent library** of production-grade system prompts
 - A **5-advisor Council** for AI-assisted decision making
 - A live **AI Intelligence Scout** that autonomously discovers and adds new skills and agents from the internet
 
@@ -89,7 +89,7 @@ Agent memory · Prompt compression · MCP servers · AI safety · Multimodal wor
 | **Sys Prompts** | 30+ real system prompts from Claude, ChatGPT, Cursor, Copilot, Lovable |
 | **Library** | 600+ full prompts across all categories |
 | **⚡ Skills** | 350+ production workflow skills across 13 categories |
-| **🤖 Agents** | 200+ specialist agent system prompts across 12 source collections |
+| **🤖 Agents** | 220+ specialist agent system prompts across 13 source collections |
 | **📡 Scout** | **Live AI discovery engine** — generates and injects new skills + agents autonomously |
 
 ---
@@ -138,7 +138,7 @@ Results include **Copy** and **Apply to Editor** buttons.
 
 ---
 
-## Agent Library (200+)
+## Agent Library (220+)
 
 | Source | Agents | Domains |
 |--------|--------|---------|
@@ -156,6 +156,7 @@ Results include **Copy** and **Apply to Editor** buttons.
 | [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | 2 | Prompt Engineering Expert, OpenClaw Security Auditor |
 | [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | 1 | Local Deep Research Agent |
 | [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 2 | DeerFlow Research Orchestrator, Sub-Agent Development Controller |
+| [x1xhlol/system-prompts-and-models-of-ai-tools](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools) | 23 | Cursor, Windsurf, Devin, v0, Claude Code, VSCode Copilot, Lovable, Replit, Perplexity, Kiro, Same.dev, Junie, Augment, Traycer, Cluely, Emergent + more |
 | **📡 Scout (surfingalien — original)** | ∞ | Any domain — generated and saved on demand |
 
 ---
@@ -165,7 +166,7 @@ Results include **Copy** and **Apply to Editor** buttons.
 ```
 prompt-engineering/
 ├── public/
-│   └── index.html        # Full SPA — 10 views, 350+ skills, 200+ agents, Scout engine
+│   └── index.html        # Full SPA — 10 views, 350+ skills, 220+ agents, Scout engine
 ├── server.js             # Express — /api/chat proxy + /api/scout discovery endpoint
 ├── Dockerfile            # Node 22 Alpine — Railway-ready
 ├── docker-compose.yml    # PromptForge (3000) + Open Design (7456)
