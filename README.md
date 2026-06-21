@@ -129,6 +129,7 @@ Results include **Copy** and **Apply to Editor** buttons.
 | [obra/superpowers](https://github.com/obra/superpowers) | 5 | TDD, systematic debugging, code review, feature planning, spec refiner |
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | 4 | Research notebook, podcast script, multi-source synthesis, study guide |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | 2 | Agent skill discovery, AI skill recommendation engine |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | 10 | TDD vertical slices, six-phase bug diagnosis, PRD synthesis, vertical-slice issues, architecture review, deep module design, domain modeling, session handoff, multi-session teaching, design interview with ADRs |
 | [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 8 | Swarm coordination, SPARC coder, GOAP planner, TDD London, code review swarm, performance analyzer |
 | [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | 6 | Prompt engineering expert, deep research pro, 3-pass code review, OWASP security audit, memory manager, parallel agent dispatcher |
 | [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | 2 | ReAct deep research agent, structured report generator |
@@ -249,6 +250,7 @@ Theme preference is saved to `localStorage` and restored on next visit.
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | — | Research notebook skills |
 | [nexu-io/open-design](https://github.com/nexu-io/open-design) | — | Design agent integration |
 | [vercel-labs/skills](https://github.com/vercel-labs/skills) | — | Agent skill discovery + recommendation engine skills |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | 138k★ | TDD, bug diagnosis, PRD synthesis, vertical-slice issues, architecture review, deep module design, domain modeling, handoff, teaching, design grilling |
 | [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 58k★ | Swarm orchestration skills + agents (SPARC, GOAP, TDD, consensus) |
 | [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | — | Prompt engineering, deep research, code review, OWASP security, memory, parallel agents |
 | [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | — | ReAct research agent, structured report generator |
