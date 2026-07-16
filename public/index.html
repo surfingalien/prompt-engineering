@@ -8745,7 +8745,7 @@ Connects to external tools through Model Context Protocol. Searches registry bef
 CLARIT4S_PROMPTS.forEach(a => SYSTEM_PROMPTS_DATA.push(a));
 
 let _eccId = 10000;
-[...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...SCOUT_SKILLS].forEach(s => {
+[...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...SCOUT_SKILLS].forEach(s => {
   PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
 });
 
@@ -8788,7 +8788,7 @@ function renderEccSkills() {
   }).join('');
 }
 function loadEccSkill(id) {
-  const skill = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...SCOUT_SKILLS].find(s => s.id === id);
+  const skill = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...SCOUT_SKILLS].find(s => s.id === id);
   if (!skill) return;
   document.getElementById('prompt-textarea').value = skill.prompt;
   document.getElementById('prompt-title').value = skill.name;
@@ -9939,6 +9939,28 @@ async function runScout() {
   btn.disabled = false;
 }
 
+// Trust tier chip for governed Scout items (server attaches trust + governance)
+function scoutTrustBadge(item) {
+  if (!item.trust) return '';
+  const tierColors = {gold:'#f4c430', silver:'#b8c2cc', bronze:'#cd7f32', quarantined:'#f87171'};
+  const col = tierColors[item.trust.tier] || 'var(--text-muted)';
+  const review = item.governance && item.governance.decision === 'review';
+  const vr = item.verification && item.verification.verdict;
+  return `<div style="display:flex;gap:0.35rem;align-items:center;margin:0.3rem 0 0.1rem">
+    <span style="font-size:0.62rem;font-weight:700;color:${col};border:1px solid ${col};border-radius:9px;padding:0.05rem 0.45rem;text-transform:uppercase;letter-spacing:0.04em">${item.trust.tier} ${item.trust.score}</span>
+    ${vr === 'pass' ? '<span style="font-size:0.62rem;color:var(--green)">✓ cross-model verified</span>' : ''}
+    ${review ? `<span style="font-size:0.62rem;color:#f4a340" title="${(item.governance.reasons||[]).join('; ').replace(/"/g,'&quot;')}">⚠ review: ${(item.governance.reasons||[])[0]||''}</span>` : ''}
+  </div>`;
+}
+
+// Review-flagged items need an explicit OK before entering the library
+function confirmScoutSave(item) {
+  if (item.governance && item.governance.decision === 'review') {
+    return confirm(`"${item.name}" was flagged by the governance policy:\n\n- ${(item.governance.reasons||[]).join('\n- ')}\n\nSave it to your library anyway?`);
+  }
+  return true;
+}
+
 function renderScoutResults(skills, agents, topic) {
   const wrap = document.getElementById('scout-results-wrap');
   const skillsSec = document.getElementById('scout-skills-section');
@@ -9958,6 +9980,7 @@ function renderScoutResults(skills, agents, topic) {
           <div class="tc-name">${s.name}</div>
           <span class="tc-level" style="background:rgba(124,108,240,0.12);color:${col}">${s.cat}</span>
         </div>
+        ${scoutTrustBadge(s)}
         <div class="tc-desc">${s.desc}</div>
         <div style="display:flex;gap:0.4rem;margin-top:0.65rem">
           <button class="btn btn-ghost btn-sm" onclick="loadScoutSkill('${s.id.replace(/'/g,"\\'")}')">Load to Editor</button>
@@ -9980,6 +10003,7 @@ function renderScoutResults(skills, agents, topic) {
           <div class="tc-name">${a.name}</div>
           <span class="tc-level" style="background:rgba(232,121,168,0.12);color:var(--pink)">${a.cat}</span>
         </div>
+        ${scoutTrustBadge(a)}
         <div class="tc-desc" style="font-size:0.73rem;color:var(--text-muted);line-height:1.5">${a.text.substring(0,160)}…</div>
         <div style="display:flex;gap:0.4rem;margin-top:0.65rem">
           <button class="btn btn-ghost btn-sm" onclick="loadScoutAgent('${a.name.replace(/'/g,"\\'")}')">Load to Editor</button>
@@ -10027,6 +10051,7 @@ function isScoutItemSaved(type, key) {
 function saveScoutSkill(id) {
   const s = scoutSessionSkills.find(x => x.id === id);
   if (!s) return;
+  if (!confirmScoutSave(s)) return;
   persistScoutItem('skill', s);
   // Inject into live arrays immediately
   if (!SCOUT_SKILLS.find(e => e.id === s.id)) {
@@ -10045,6 +10070,7 @@ function saveScoutSkill(id) {
 function saveScoutAgent(name) {
   const a = scoutSessionAgents.find(x => x.name === name);
   if (!a) return;
+  if (!confirmScoutSave(a)) return;
   persistScoutItem('agent', a);
   // Inject into live arrays immediately
   if (!SYSTEM_PROMPTS_DATA.find(e => e.name === a.name && e.source === 'Scout')) {
