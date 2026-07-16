@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const governance = require('./governance');
 const app = express();
 
 app.use(express.json());
@@ -115,8 +116,8 @@ Topic focus: ${topic}`;
     }
 
     // Validate and sanitize
-    const skills = (parsed.skills || []).filter(s => s.id && s.name && s.prompt && s.cat);
-    const agents = (parsed.agents || []).filter(a => a.name && a.text && a.source);
+    let skills = (parsed.skills || []).filter(s => s.id && s.name && s.prompt && s.cat);
+    let agents = (parsed.agents || []).filter(a => a.name && a.text && a.source);
 
     // Ensure all scout skill IDs are prefixed with scout-
     skills.forEach(s => {
@@ -124,6 +125,83 @@ Topic focus: ${topic}`;
       s.origin = s.origin || 'Scout Discovery';
     });
     agents.forEach(a => { a.source = 'Scout'; });
+
+    // ── Governance gate: policy rules run before anything reaches the client.
+    // Denied items are dropped (and reported in meta.rejected); review items
+    // are returned flagged so the UI warns before a library save.
+    const rejected = [];
+    const gate = (kind, items) => items.filter(item => {
+      const policy = governance.evaluateItem(kind, item);
+      if (policy.decision === 'deny') {
+        rejected.push({ kind, key: kind === 'skill' ? item.id : item.name, stage: 'policy', reasons: policy.reasons });
+        return false;
+      }
+      item.governance = policy;
+      return true;
+    });
+    skills = gate('skill', skills);
+    agents = gate('agent', agents);
+
+    // ── Cross-model verification: a DIFFERENT Claude model judges each item
+    // (pass/fail only — no rewriting), so the generator never grades its own
+    // work. Fail-open: if the verifier call breaks, items proceed unverified
+    // and score accordingly. Disable with SCOUT_VERIFY=0.
+    let verifyTokens = { input: 0, output: 0 };
+    const verdicts = new Map();
+    const verifyEnabled = process.env.SCOUT_VERIFY !== '0' && (skills.length || agents.length);
+    if (verifyEnabled) {
+      try {
+        const vres = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({
+            model: governance.verifierModel(scoutModel),
+            max_tokens: 120 * (skills.length + agents.length) + 100,
+            messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
+          }),
+        });
+        const vdata = await vres.json();
+        if (vres.ok) {
+          verifyTokens = { input: vdata.usage?.input_tokens || 0, output: vdata.usage?.output_tokens || 0 };
+          const vtext = vdata.content?.[0]?.text || '';
+          const vmatch = vtext.match(/\[[\s\S]*\]/);
+          for (const v of JSON.parse(vmatch ? vmatch[0] : vtext)) {
+            if (v && v.key && (v.verdict === 'pass' || v.verdict === 'fail')) {
+              verdicts.set(`${v.kind}:${v.key}`, { verdict: v.verdict, reason: v.reason || '' });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Scout verifier pass failed (continuing unverified):', err.message);
+      }
+    }
+
+    // ── Trust scoring + audit. Verified failures are dropped like policy
+    // denials — a second model judged them broken or unsafe.
+    const finalize = (kind, items) => items.filter(item => {
+      const key = kind === 'skill' ? item.id : item.name;
+      const verification = verdicts.get(`${kind}:${key}`) || null;
+      if (verification && verification.verdict === 'fail') {
+        rejected.push({ kind, key, stage: 'verification', reasons: [verification.reason] });
+        return false;
+      }
+      item.verification = verification || { verdict: 'unverified', reason: verifyEnabled ? 'verifier gave no verdict' : 'verification disabled' };
+      item.trust = governance.trustScore(kind, item, { policy: item.governance, verification });
+      return true;
+    });
+    skills = finalize('skill', skills);
+    agents = finalize('agent', agents);
+
+    const auditEntry = governance.appendAudit({
+      topic,
+      scout_model: scoutModel,
+      verifier_model: verifyEnabled ? governance.verifierModel(scoutModel) : null,
+      accepted: [
+        ...skills.map(s => ({ kind: 'skill', key: s.id, digest: governance.itemDigest('skill', s), tier: s.trust.tier, score: s.trust.score })),
+        ...agents.map(a => ({ kind: 'agent', key: a.name, digest: governance.itemDigest('agent', a), tier: a.trust.tier, score: a.trust.score })),
+      ],
+      rejected,
+    });
 
     res.json({
       skills,
@@ -133,15 +211,29 @@ Topic focus: ${topic}`;
         generated_at: new Date().toISOString(),
         skills_count: skills.length,
         agents_count: agents.length,
+        rejected,
+        audit_seq: auditEntry.seq,
+        audit_hash: auditEntry.hash,
         tokens_used: {
-          input: data.usage?.input_tokens || 0,
-          output: data.usage?.output_tokens || 0,
+          input: (data.usage?.input_tokens || 0) + verifyTokens.input,
+          output: (data.usage?.output_tokens || 0) + verifyTokens.output,
         },
       }
     });
   } catch (err) {
     res.status(502).json({ error: 'Scout request failed.', detail: err.message });
   }
+});
+
+// Scout audit chain — every run's accepted/rejected items with hash linkage
+app.get('/api/scout/audit', (req, res) => {
+  const limit = Math.max(1, Math.min(200, parseInt(req.query.limit) || 50));
+  res.json(governance.readAuditLog().slice(-limit).reverse());
+});
+
+// Recompute the whole chain; pinpoints the first tampered entry if any
+app.get('/api/scout/audit/verify', (req, res) => {
+  res.json(governance.verifyAuditChain());
 });
 
 app.get('/', (req, res) => {

@@ -75,6 +75,23 @@ Agent memory · Prompt compression · MCP servers · AI safety · Multimodal wor
 - **Security**: API key stays server-side; Scout results are AI-generated, not scraped
 - **Frontend**: Results injected into `SCOUT_SKILLS` and `SYSTEM_PROMPTS_DATA` live arrays; `loadPersistedScoutDiscoveries()` runs on boot
 
+### Governance, Trust & Audit (`governance.js`)
+
+Every Scout discovery now passes three gates before it can enter your library:
+
+| Gate | What it does |
+|------|-------------|
+| **Policy engine** | Deterministic allow / review / deny rules: prompt-injection markers, secret-exfiltration instructions, and user-deception patterns are **denied** and never reach the browser; destructive-command content, unknown categories, and size violations are flagged **review** and require an explicit confirm before saving |
+| **Cross-model verification** | A *different* Claude model (never the generator grading itself) judges each item pass/fail for coherence and safety; failures are dropped. Disable with `SCOUT_VERIFY=0` |
+| **Trust scoring** | Each surviving item gets a 0–100 score and a **gold / silver / bronze / quarantined** tier from structure quality, policy outcome, and verification verdict — shown as a chip on every result card |
+
+Every run is appended to a SHA-256 **hash-chained audit log** (`scout-audit.jsonl`): each entry's hash covers its content plus the previous entry's hash, so any tampering with history is detectable.
+
+- `GET /api/scout/audit` — recent runs with accepted/rejected items and hash linkage
+- `GET /api/scout/audit/verify` — recomputes the whole chain, pinpoints the first broken link
+
+Run the governance test suite with `npm test` (zero extra dependencies — Node's built-in test runner).
+
 ---
 
 ## Features at a Glance
