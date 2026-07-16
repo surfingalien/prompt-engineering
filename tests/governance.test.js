@@ -112,6 +112,55 @@ test('verification failure drags score down', () => {
   assert.ok(failed.score < passed.score - 40);
 });
 
+// ── Skill maintainer ──────────────────────────────────────────────────────────
+
+test('maintainer prunes items the policy now denies', () => {
+  const v = governance.classifyMaintenance({
+    policy: { decision: 'deny', reasons: ['prompt-injection: instruction override'] },
+    verification: { verdict: 'pass' },
+    trust: { score: 0, tier: 'denied' },
+  });
+  assert.equal(v.action, 'prune');
+  assert.ok(v.reasons.some(r => r.includes('policy now denies')));
+});
+
+test('maintainer prunes items a second model now fails', () => {
+  const v = governance.classifyMaintenance({
+    policy: { decision: 'allow', reasons: [] },
+    verification: { verdict: 'fail', reason: 'placeholder junk' },
+    trust: { score: 30, tier: 'quarantined' },
+  });
+  assert.equal(v.action, 'prune');
+  assert.ok(v.reasons.some(r => r.includes('verification failed')));
+});
+
+test('maintainer flags review-policy or quarantined-trust items', () => {
+  const review = governance.classifyMaintenance({
+    policy: { decision: 'review', reasons: ['destructive commands'] },
+    verification: { verdict: 'pass' },
+    trust: { score: 55, tier: 'bronze' },
+  });
+  assert.equal(review.action, 'flag');
+
+  const quarantined = governance.classifyMaintenance({
+    policy: { decision: 'allow', reasons: [] },
+    verification: null,
+    trust: { score: 35, tier: 'quarantined' },
+  });
+  assert.equal(quarantined.action, 'flag');
+  assert.ok(quarantined.reasons.some(r => r.includes('quarantined')));
+});
+
+test('maintainer keeps clean, verified, well-scored items', () => {
+  const v = governance.classifyMaintenance({
+    policy: { decision: 'allow', reasons: [] },
+    verification: { verdict: 'pass' },
+    trust: { score: 85, tier: 'gold' },
+  });
+  assert.equal(v.action, 'keep');
+  assert.deepEqual(v.reasons, []);
+});
+
 // ── Audit chain ──────────────────────────────────────────────────────────────
 
 test('intact chain verifies; entries link', () => {
