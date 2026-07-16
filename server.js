@@ -236,6 +236,86 @@ app.get('/api/scout/audit/verify', (req, res) => {
   res.json(governance.verifyAuditChain());
 });
 
+// Scout skill maintainer — re-validate a saved library and decide what to prune.
+// Scout only ever added; nothing revisited stale/now-failing items. The client
+// sends its persisted library ({skills, agents}); each item is re-scored against
+// today's policy + a fresh cross-model verification, and gets a keep/flag/prune
+// verdict. The client applies pruning to its own localStorage. Read-only on the
+// server except for an audit-log entry.
+app.post('/api/scout/maintain', async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
+
+  const skills = Array.isArray(req.body?.skills) ? req.body.skills.filter(s => s && s.id && s.prompt) : [];
+  const agents = Array.isArray(req.body?.agents) ? req.body.agents.filter(a => a && a.name && a.text) : [];
+  if (!skills.length && !agents.length) {
+    return res.json({ skills: [], agents: [], summary: { keep: 0, flag: 0, prune: 0 }, note: 'Library is empty — nothing to maintain.' });
+  }
+
+  const model = req.body?.model || 'claude-sonnet-4-6';
+  const scoutModel = ['claude-sonnet-4-6', 'claude-opus-4-8', 'claude-haiku-4-5-20251001'].includes(model) ? model : 'claude-sonnet-4-6';
+
+  // One cross-model verification pass over the whole library (assess-only,
+  // fail-open). Disable with SCOUT_VERIFY=0, same knob as generation.
+  const verdicts = new Map();
+  let verifyTokens = { input: 0, output: 0 };
+  if (process.env.SCOUT_VERIFY !== '0') {
+    try {
+      const vres = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: governance.verifierModel(scoutModel),
+          max_tokens: 120 * (skills.length + agents.length) + 100,
+          messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
+        }),
+      });
+      const vdata = await vres.json();
+      if (vres.ok) {
+        verifyTokens = { input: vdata.usage?.input_tokens || 0, output: vdata.usage?.output_tokens || 0 };
+        const vtext = vdata.content?.[0]?.text || '';
+        const vmatch = vtext.match(/\[[\s\S]*\]/);
+        for (const v of JSON.parse(vmatch ? vmatch[0] : vtext)) {
+          if (v && v.key && (v.verdict === 'pass' || v.verdict === 'fail')) {
+            verdicts.set(`${v.kind}:${v.key}`, { verdict: v.verdict, reason: v.reason || '' });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Maintainer verifier pass failed (continuing unverified):', err.message);
+    }
+  }
+
+  const summary = { keep: 0, flag: 0, prune: 0 };
+  const review = (kind, items) => items.map(item => {
+    const key = kind === 'skill' ? item.id : item.name;
+    const policy = governance.evaluateItem(kind, item);
+    const verification = verdicts.get(`${kind}:${key}`) || null;
+    const trust = governance.trustScore(kind, item, { policy, verification });
+    const verdict = governance.classifyMaintenance({ policy, verification, trust });
+    summary[verdict.action] += 1;
+    return { key, name: item.name, action: verdict.action, reasons: verdict.reasons, trust: verdict.trust, verification };
+  });
+
+  const skillResults = review('skill', skills);
+  const agentResults = review('agent', agents);
+
+  governance.appendAudit({
+    event: 'maintenance',
+    scout_model: scoutModel,
+    reviewed: skills.length + agents.length,
+    summary,
+    pruned: [...skillResults, ...agentResults].filter(r => r.action === 'prune').map(r => `${r.name || r.key}`),
+  });
+
+  res.json({
+    skills: skillResults,
+    agents: agentResults,
+    summary,
+    tokens_used: verifyTokens,
+  });
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

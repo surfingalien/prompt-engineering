@@ -90,6 +90,28 @@ Every run is appended to a SHA-256 **hash-chained audit log** (`scout-audit.json
 - `GET /api/scout/audit` — recent runs with accepted/rejected items and hash linkage
 - `GET /api/scout/audit/verify` — recomputes the whole chain, pinpoints the first broken link
 
+### Skill maintainer — keep the library fresh
+
+Scout only ever *added* to your library; it never revisited what was already
+there. **🩺 Maintain library** (in the Scout tab) re-scores every saved item
+against today's policy plus a fresh cross-model verification and returns a
+verdict per item:
+
+- **prune** — the policy now denies it, or a second model judges it broken/unsafe
+- **flag** — the policy flags it for review, or its trust fell to *quarantined*
+- **keep** — still clean and useful
+
+`POST /api/scout/maintain` does the re-validation (read-only except for an audit
+entry); the client applies pruning to its own library.
+
+### White-box, editable library memory
+
+The saved Scout library is PromptForge's persistent, self-accumulated memory —
+and it's now **curatable**, not append-only. Every saved card has **Note** and
+**✕** controls: annotate an item or delete it outright, so you shape the memory
+rather than just piling onto it. Combined with the maintainer, the library stays
+a trusted set instead of an ever-growing pile of stale AI output.
+
 Run the governance test suite with `npm test` (zero extra dependencies — Node's built-in test runner).
 
 ---

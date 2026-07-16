@@ -1711,7 +1711,10 @@ body.sidebar-open .sidebar-backdrop { display: block; }
         <span style="width:3px;height:10px;background:var(--green);border-radius:2px;display:inline-block"></span>
         Saved to Library
         <span id="scout-saved-count" style="font-family:var(--mono);font-size:0.68rem;color:var(--green)"></span>
+        <button class="btn btn-ghost" onclick="runScoutMaintenance()" id="scout-maintain-btn" style="margin-left:auto;font-size:0.72rem" title="Re-validate every saved item against today's policy + a fresh cross-model check, and flag or prune stale/now-failing ones">🩺 Maintain library</button>
       </div>
+      <div id="scout-maintain-status" style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.6rem"></div>
+      <div id="scout-maintain-results" style="display:none;margin-bottom:1rem"></div>
       <div class="techniques-grid" id="scout-saved-grid"></div>
     </div>
   </div>
@@ -10102,6 +10105,116 @@ function persistScoutItem(type, item) {
   } catch(e) {}
 }
 
+// ── White-box editable library memory ────────────────────────────────────────
+// The saved Scout library IS PromptForge's persistent, self-accumulated memory.
+// It used to be append-only + opaque; these let a user curate it directly —
+// delete an item or annotate it with a note — not just pile more on.
+
+function removeSavedScoutItem(kind, key, ev) {
+  if (ev) ev.stopPropagation();
+  try {
+    const saved = JSON.parse(localStorage.getItem('pf-scout-library') || '{"skills":[],"agents":[]}');
+    if (kind === 'skill') {
+      saved.skills = (saved.skills || []).filter(s => s.id !== key);
+      // Drop from the live in-memory array so it disappears from the library now.
+      const i = SCOUT_SKILLS.findIndex(s => s.id === key);
+      if (i >= 0) SCOUT_SKILLS.splice(i, 1);
+    } else {
+      saved.agents = (saved.agents || []).filter(a => a.name !== key);
+      const i = SYSTEM_PROMPTS_DATA.findIndex(a => a.name === key && a.source === 'Scout');
+      if (i >= 0) SYSTEM_PROMPTS_DATA.splice(i, 1);
+    }
+    localStorage.setItem('pf-scout-library', JSON.stringify(saved));
+    renderSavedScoutGrid(saved.skills || [], saved.agents || []);
+    updateScoutSavedCount((saved.skills || []).length + (saved.agents || []).length);
+    if (typeof renderEccSkills === 'function') renderEccSkills();
+    showToast('Removed from library', 'success');
+  } catch (e) {}
+}
+
+function setSavedScoutNote(kind, key, ev) {
+  if (ev) ev.stopPropagation();
+  try {
+    const saved = JSON.parse(localStorage.getItem('pf-scout-library') || '{"skills":[],"agents":[]}');
+    const list = kind === 'skill' ? (saved.skills || []) : (saved.agents || []);
+    const item = kind === 'skill' ? list.find(s => s.id === key) : list.find(a => a.name === key);
+    if (!item) return;
+    const note = prompt('Note for this item (blank to clear):', item.note || '');
+    if (note === null) return;
+    item.note = note.trim();
+    localStorage.setItem('pf-scout-library', JSON.stringify(saved));
+    renderSavedScoutGrid(saved.skills || [], saved.agents || []);
+    showToast(item.note ? 'Note saved' : 'Note cleared', 'success');
+  } catch (e) {}
+}
+
+// ── Skill maintainer ──────────────────────────────────────────────────────────
+async function runScoutMaintenance() {
+  const btn = document.getElementById('scout-maintain-btn');
+  const status = document.getElementById('scout-maintain-status');
+  const resultsWrap = document.getElementById('scout-maintain-results');
+  const saved = JSON.parse(localStorage.getItem('pf-scout-library') || '{"skills":[],"agents":[]}');
+  const skills = saved.skills || [], agents = saved.agents || [];
+  if (!skills.length && !agents.length) { showToast('Library is empty — nothing to maintain', 'error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Checking…';
+  status.textContent = `Re-validating ${skills.length + agents.length} saved item(s)…`;
+  try {
+    const res = await fetch('/api/scout/maintain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skills, agents, model: state.selectedModel }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    if (data.meta?.tokens_used || data.tokens_used) {
+      const t = data.tokens_used || {}; trackTokenUsage(t.input || 0, t.output || 0, 'Maintainer');
+    }
+    renderMaintenanceResults(data);
+    const s = data.summary || { keep: 0, flag: 0, prune: 0 };
+    status.textContent = `Keep ${s.keep} · Flag ${s.flag} · Prune ${s.prune}`;
+    resultsWrap.style.display = 'block';
+  } catch (e) {
+    status.textContent = `Maintenance failed: ${e.message}`;
+    showToast(`Maintenance failed: ${String(e.message).slice(0, 60)}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🩺 Maintain library';
+  }
+}
+
+function renderMaintenanceResults(data) {
+  const wrap = document.getElementById('scout-maintain-results');
+  const rows = [
+    ...(data.skills || []).map(r => ({ ...r, kind: 'skill' })),
+    ...(data.agents || []).map(r => ({ ...r, kind: 'agent' })),
+  ].filter(r => r.action !== 'keep'); // only surface items needing attention
+  if (!rows.length) {
+    wrap.innerHTML = `<div style="padding:0.75rem 1rem;border:1px solid var(--green);border-radius:10px;color:var(--green);font-size:0.78rem">✓ Whole library still passes — nothing to flag or prune.</div>`;
+    return;
+  }
+  const actionColor = { prune: '#f87171', flag: '#f4a340' };
+  wrap.innerHTML = rows.map(r => {
+    const col = actionColor[r.action] || 'var(--text-muted)';
+    const tier = r.trust ? `${r.trust.tier} ${r.trust.score}` : '';
+    const key = (r.key || r.name || '').replace(/'/g, "\\'");
+    return `<div style="border:1px solid ${col}33;border-left:3px solid ${col};border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.5rem">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:${col}">${r.action}</span>
+        <span style="font-weight:600;font-size:0.82rem">${(r.name || r.key || '').replace(/</g,'&lt;')}</span>
+        <span style="font-size:0.62rem;color:var(--text-muted)">${r.kind} · ${tier}</span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:0.66rem;color:${col}" onclick="removeSavedScoutItem('${r.kind}','${key}')">Remove</button>
+      </div>
+      ${(r.reasons || []).length ? `<div style="font-size:0.68rem;color:var(--text-muted);margin-top:0.3rem">${r.reasons.map(x => escapeHtmlLite(x)).join(' · ')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function escapeHtmlLite(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function clearScoutDiscoveries() {
   if (!confirm('Clear all saved scout discoveries? This cannot be undone.')) return;
   localStorage.removeItem('pf-scout-library');
@@ -10120,23 +10233,37 @@ function renderSavedScoutGrid(skills, agents) {
   const catColors = {security:'#f87171',testing:'#f87171',code:'var(--accent)',frontend:'var(--pink)',backend:'#b8aeff',agent:'var(--teal)',devops:'var(--amber)',ml:'var(--blue)',research:'var(--green)',product:'#c4b8ff',writing:'var(--amber)',design:'var(--pink)'};
   const skillCards = skills.map(s => {
     const col = catColors[s.cat] || 'var(--accent)';
+    const sid = String(s.id).replace(/'/g, "\\'");
     return `<div class="technique-card" onclick="loadEccSkill('${s.id}')">
       <div class="tc-header">
         <div class="tc-name">${s.name}</div>
         <span class="tc-level" style="background:rgba(52,211,153,0.1);color:var(--green)">skill</span>
       </div>
       <div class="tc-desc">${s.desc}</div>
-      <div class="tc-example" style="border-color:${col};color:${col};font-size:0.65rem">${s.cat} · click to load</div>
+      ${s.note ? `<div style="font-size:0.66rem;color:var(--amber);margin-top:0.35rem">📝 ${escapeHtmlLite(s.note)}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem">
+        <div class="tc-example" style="border-color:${col};color:${col};font-size:0.65rem;margin:0">${s.cat} · click to load</div>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:0.62rem" onclick="setSavedScoutNote('skill','${sid}',event)">Note</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:0.62rem;color:#f87171" onclick="removeSavedScoutItem('skill','${sid}',event)">✕</button>
+      </div>
     </div>`;
   });
-  const agentCards = agents.map(a => `<div class="technique-card" onclick="loadAgentPrompt('${a.name.replace(/'/g,"\\'")}')">
+  const agentCards = agents.map(a => {
+    const an = String(a.name).replace(/'/g, "\\'");
+    return `<div class="technique-card" onclick="loadAgentPrompt('${an}')">
     <div class="tc-header">
       <div class="tc-name">${a.name}</div>
       <span class="tc-level" style="background:rgba(232,121,168,0.1);color:var(--pink)">agent</span>
     </div>
     <div class="tc-desc" style="font-size:0.73rem;color:var(--text-muted);line-height:1.5">${a.text.substring(0,140)}…</div>
-    <div class="tc-example" style="font-size:0.65rem">Scout · click to load</div>
-  </div>`);
+    ${a.note ? `<div style="font-size:0.66rem;color:var(--amber);margin-top:0.35rem">📝 ${escapeHtmlLite(a.note)}</div>` : ''}
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem">
+      <div class="tc-example" style="font-size:0.65rem;margin:0">Scout · click to load</div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:0.62rem" onclick="setSavedScoutNote('agent','${an}',event)">Note</button>
+      <button class="btn btn-ghost btn-sm" style="font-size:0.62rem;color:#f87171" onclick="removeSavedScoutItem('agent','${an}',event)">✕</button>
+    </div>
+  </div>`;
+  });
   grid.innerHTML = [...skillCards, ...agentCards].join('');
 }
 
