@@ -9514,6 +9514,11 @@ function setView(v) {
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const navEl=document.getElementById(`nav-${v}`);
   if(navEl) navEl.classList.add('active');
+  // The hamburger only opens the Editor's prompt-list sidebar — it doesn't
+  // exist on other views, so hide it there and clear any stale open state.
+  const toggleBtn=document.querySelector('.sidebar-toggle-btn');
+  if(toggleBtn) toggleBtn.style.display=v==='editor'?'':'none';
+  if(v!=='editor') closeSidebar();
 }
 
 function setTab(t) {
