@@ -1,0 +1,4 @@
+[
+  { "role": "system", "content": "{{system_prompt}}" },
+  { "role": "user", "content": "Discover and generate {{count}} new {{type_instruction}} focused on: \"{{topic}}\"\n\nRequirements:\n- Skills must be practical, production-grade prompt templates\n- Agents must have strong identity, clear capabilities, concrete operating procedures\n- Content must be genuinely useful for AI practitioners\n- Avoid duplicating common patterns already well-covered (basic CoT, simple role prompts)\n- Focus on: advanced orchestration, specialized domains, emerging techniques, real workflows\n- Each skill prompt should include: context, instructions, output format, at least one templated placeholder variable\n- Each agent text should include: identity statement, core capabilities list, operating procedures, output standards\n\nTopic focus: {{topic}}" }
+]

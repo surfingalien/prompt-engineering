@@ -1,27 +1,51 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+const { rateLimit } = require('express-rate-limit');
 const governance = require('./governance');
 const app = express();
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Anthropic call helper ─────────────────────────────────────────────────
+// Centralizes the upstream request so caching, Helicone routing, and headers
+// stay consistent across /api/chat, /api/scout, and the Scout verifier pass.
+// Set HELICONE_API_KEY to route calls through Helicone for per-request cost,
+// latency, and prompt-version observability — no code changes needed beyond
+// the env var. Unset, this talks to the Anthropic API directly.
+function anthropicRequest(apiKey, body) {
+  const heliconeKey = process.env.HELICONE_API_KEY;
+  const url = heliconeKey ? 'https://anthropic.helicone.ai/v1/messages' : 'https://api.anthropic.com/v1/messages';
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey,
+    'anthropic-version': '2023-06-01',
+  };
+  if (heliconeKey) headers['Helicone-Auth'] = `Bearer ${heliconeKey}`;
+  return fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+}
+
+// ── Rate limiting ──────────────────────────────────────────────────────────
+// ANTHROPIC_API_KEY lives server-side, so these routes are the only thing
+// standing between a public deployment and an open-ended API bill.
+const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again in a few minutes.' },
+});
+const scoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false,
+  message: { error: 'Too many Scout requests. Please try again in a few minutes.' },
+});
+
 // Proxy endpoint — keeps ANTHROPIC_API_KEY server-side only
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
   }
   try {
-    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(req.body),
-    });
+    const upstream = await anthropicRequest(apiKey, req.body);
     const data = await upstream.json();
     res.status(upstream.status).json(data);
   } catch (err) {
@@ -30,7 +54,7 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Scout endpoint — generates new skills & agents using Claude's knowledge
-app.post('/api/scout', async (req, res) => {
+app.post('/api/scout', scoutLimiter, async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
@@ -39,32 +63,9 @@ app.post('/api/scout', async (req, res) => {
   const ALLOWED_MODELS = ['claude-sonnet-4-6','claude-opus-4-8','claude-haiku-4-5-20251001'];
   const scoutModel = ALLOWED_MODELS.includes(model) ? model : 'claude-sonnet-4-6';
 
-  const systemPrompt = `You are an AI Intelligence Scout — an expert in AI skills, agents, prompts, and frameworks. Your job is to generate NEW, high-quality skill and agent definitions based on the latest developments in the AI ecosystem.
-
-Output ONLY valid JSON. No markdown, no explanation, no preamble. Just the JSON object.
-
-Generate skills and agents in this exact format:
-{
-  "skills": [
-    {
-      "id": "scout-[unique-4-char-alphanumeric]",
-      "name": "Skill Name",
-      "cat": "one of: research|code|agent|ml|writing|devops|security|testing|frontend|backend|product|design",
-      "origin": "Scout Discovery",
-      "desc": "One sentence description under 120 chars",
-      "prompt": "Full detailed prompt text with {{variable}} placeholders where appropriate. At least 300 words. Include clear sections, instructions, and output format."
-    }
-  ],
-  "agents": [
-    {
-      "name": "Agent Name",
-      "source": "Scout",
-      "cat": "one of: research|core-development|data-ai|infrastructure|specialized-domains|orchestration|quality-assurance",
-      "tags": ["tag1", "tag2", "tag3"],
-      "text": "Full system prompt defining the agent's identity, capabilities, approach, and constraints. At least 200 words. Make it production-quality."
-    }
-  ]
-}`;
+  // Single-sourced from prompts/scout-system.txt so the promptfoo eval suite
+  // (promptfooconfig.yaml) tests the exact prompt this endpoint runs.
+  const systemPrompt = fs.readFileSync(path.join(__dirname, 'prompts', 'scout-system.txt'), 'utf8');
 
   const userMsg = `Discover and generate ${count} new ${type === 'skills' ? 'skills only (agents array empty)' : type === 'agents' ? 'agents only (skills array empty)' : 'skills AND agents'} focused on: "${topic}"
 
@@ -81,19 +82,13 @@ Today's date: ${new Date().toISOString().split('T')[0]}
 Topic focus: ${topic}`;
 
   try {
-    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: scoutModel,
-        max_tokens: 8000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }],
-      }),
+    // The system prompt is identical on every call — cache it so repeated
+    // Scout runs only pay full price for the first request in the window.
+    const upstream = await anthropicRequest(apiKey, {
+      model: scoutModel,
+      max_tokens: 8000,
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+      messages: [{ role: 'user', content: userMsg }],
     });
     const data = await upstream.json();
     if (!upstream.ok) return res.status(upstream.status).json({ error: data.error?.message || JSON.stringify(data.error) || 'API error', detail: JSON.stringify(data).slice(0, 300) });
@@ -151,14 +146,10 @@ Topic focus: ${topic}`;
     const verifyEnabled = process.env.SCOUT_VERIFY !== '0' && (skills.length || agents.length);
     if (verifyEnabled) {
       try {
-        const vres = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-          body: JSON.stringify({
-            model: governance.verifierModel(scoutModel),
-            max_tokens: 120 * (skills.length + agents.length) + 100,
-            messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
-          }),
+        const vres = await anthropicRequest(apiKey, {
+          model: governance.verifierModel(scoutModel),
+          max_tokens: 120 * (skills.length + agents.length) + 100,
+          messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
         });
         const vdata = await vres.json();
         if (vres.ok) {
