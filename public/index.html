@@ -238,6 +238,49 @@ body.theme-tan .token-preset-btn { background:var(--surface2); }
 body.theme-tan #model-selector { background:var(--surface2);border-color:var(--border2); }
 
 /* ══════════════════════════════════════
+   PREMIUM HERO BANNER
+══════════════════════════════════════ */
+.pf-hero{
+  position:relative;flex-shrink:0;overflow:hidden;
+  padding:1.1rem 1.75rem;
+  background:
+    radial-gradient(ellipse 60% 140% at 0% 50%, rgba(123,94,167,0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 140% at 100% 50%, rgba(244,114,182,0.10) 0%, transparent 70%),
+    var(--surface);
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;
+}
+.pf-hero::after{
+  content:'';position:absolute;inset:0 0 auto 0;height:1px;
+  background:linear-gradient(90deg, transparent, rgba(167,139,250,0.5) 30%, rgba(244,114,182,0.4) 70%, transparent);
+}
+.pf-hero-badge{
+  display:inline-flex;align-items:center;gap:0.35rem;
+  padding:0.2rem 0.65rem;border-radius:var(--radius-pill);
+  background:var(--accent-dim);border:1px solid var(--border3);
+  font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--accent2);
+  letter-spacing:0.02em;flex-shrink:0;white-space:nowrap;
+}
+.pf-hero-copy{flex:1;min-width:280px;}
+.pf-hero-title{
+  font-family:var(--display);font-weight:800;font-size:1.15rem;letter-spacing:-0.01em;
+  margin-bottom:0.2rem;
+  background:var(--grad-primary);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.pf-hero-sub{font-size:0.78rem;color:var(--text-dim);line-height:1.5;max-width:640px;}
+.pf-hero-actions{display:flex;align-items:center;gap:0.5rem;flex-shrink:0;}
+.pf-hero-close{
+  background:none;border:none;color:var(--text-muted);cursor:pointer;
+  font-size:1rem;line-height:1;padding:0.3rem;border-radius:var(--radius-sm);
+  transition:color var(--t-base),background var(--t-base);flex-shrink:0;align-self:flex-start;
+}
+.pf-hero-close:hover{color:var(--text);background:rgba(255,255,255,0.06);}
+@media (max-width:860px){
+  .pf-hero{padding:0.9rem 1rem;}
+  .pf-hero-sub{display:none;}
+}
+
+/* ══════════════════════════════════════
    LAYOUT
 ══════════════════════════════════════ */
 .layout{display:grid;grid-template-columns:256px 1fr 300px;flex:1;overflow:hidden;min-height:0;}
@@ -855,44 +898,45 @@ body.theme-tan #model-selector { background:var(--surface2);border-color:var(--b
 }
 
 /* ══════════════════════════════════════
-   TAN LIGHT THEME
+   PREMIUM THEME (sole theme — dark mode retired)
    body.theme-tan overrides all vars
 ══════════════════════════════════════ */
 body.theme-tan {
-  --bg: #f7f4ee;
-  --surface: #faf8f3;
-  --surface2: #f0ece3;
-  --surface3: #e8e3d8;
-  --surface4: #ddd8cc;
-  --surface5: #d2cab8;
-  --border: #e0dbd0;
-  --border2: #d4cfc4;
-  --border3: #c4bfb4;
-  --border4: #b5ab98;
-  --accent: #6d4fa0;
-  --accent2: #8b6fc7;
-  --accent-hover: #7d5fb0;
-  --accent-dim: rgba(109,79,160,0.1);
-  --accent-dim2: rgba(109,79,160,0.18);
-  --accent-glow: rgba(109,79,160,0.3);
-  --grad-primary: linear-gradient(135deg, #6d4fa0 0%, #c45c7e 100%);
-  --pink: #c45c7e;
-  --teal: #2a8c85;
-  --amber: #b87c1a;
-  --blue: #2d6cbf;
-  --green: #2a8c5e;
-  --text: #1a1814;
-  --text-dim: #4a4640;
-  --text-muted: #8a8680;
-  --text-faint: #d0c8b8;
-  --success: #2a8c5e;
-  --danger: #b83232;
-  --warning: #b87c1a;
-  --shadow-sm: 0 1px 3px rgba(60,40,10,0.12),0 1px 2px rgba(60,40,10,0.08);
-  --shadow: 0 4px 16px rgba(60,40,10,0.12),0 2px 4px rgba(60,40,10,0.08);
-  --shadow-lg: 0 16px 48px rgba(60,40,10,0.16),0 4px 16px rgba(60,40,10,0.1);
-  --glow-accent: 0 0 32px rgba(107,91,158,0.15),0 0 8px rgba(107,91,158,0.1);
-  --glow-sm: 0 0 16px rgba(107,91,158,0.1);
+  --bg: #faf9f5;
+  --surface: #ffffff;
+  --surface2: #f4f1ea;
+  --surface3: #eae5da;
+  --surface4: #ddd5c4;
+  --surface5: #cfc4ac;
+  --border: #e9e4d9;
+  --border2: #ddd5c6;
+  --border3: #c8beac;
+  --border4: #ab9c81;
+  --accent: #5b3e8f;
+  --accent2: #8362c4;
+  --accent-hover: #6c4ba3;
+  --accent-dim: rgba(91,62,143,0.09);
+  --accent-dim2: rgba(91,62,143,0.16);
+  --accent-glow: rgba(91,62,143,0.28);
+  --grad-primary: linear-gradient(135deg, #5b3e8f 0%, #c2577a 100%);
+  --pink: #c2577a;
+  --teal: #1f7a72;
+  --gold: #a8791a;
+  --amber: #a8791a;
+  --blue: #2f5fa8;
+  --green: #257a52;
+  --text: #18140f;
+  --text-dim: #47413a;
+  --text-muted: #857c6d;
+  --text-faint: #ddd4c0;
+  --success: #257a52;
+  --danger: #b03232;
+  --warning: #a8791a;
+  --shadow-sm: 0 1px 3px rgba(35,25,10,0.08),0 1px 2px rgba(35,25,10,0.05);
+  --shadow: 0 6px 20px rgba(35,25,10,0.09),0 2px 6px rgba(35,25,10,0.05);
+  --shadow-lg: 0 22px 60px rgba(35,25,10,0.13),0 6px 20px rgba(35,25,10,0.07);
+  --glow-accent: 0 0 32px rgba(91,62,143,0.14),0 0 10px rgba(91,62,143,0.09);
+  --glow-sm: 0 0 16px rgba(91,62,143,0.09);
   /* Legacy compat */
   --accent3: var(--teal);
   --accent4: var(--amber);
@@ -900,18 +944,19 @@ body.theme-tan {
 
 body.theme-tan::before {
   background:
-    radial-gradient(ellipse 70% 50% at 20% -5%, rgba(107,91,158,0.07) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(196,92,126,0.05) 0%, transparent 55%),
-    radial-gradient(ellipse 40% 35% at 5% 85%, rgba(42,140,133,0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 50% at 20% -5%, rgba(91,62,143,0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(194,87,122,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 5% 85%, rgba(31,122,114,0.04) 0%, transparent 50%);
 }
 
-/* Tan theme: header adjustments */
+/* Premium theme: header adjustments */
 body.theme-tan header {
-  background: rgba(247,244,238,0.95);
+  background: rgba(250,249,245,0.92);
+  backdrop-filter: blur(14px);-webkit-backdrop-filter: blur(14px);
   border-bottom-color: var(--border2);
 }
 body.theme-tan header::after {
-  background: linear-gradient(90deg, transparent, rgba(107,91,158,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(168,121,26,0.35) 30%, rgba(91,62,143,0.3) 70%, transparent);
 }
 body.theme-tan .header-nav {
   background: var(--surface2);
@@ -920,12 +965,13 @@ body.theme-tan .header-nav {
 body.theme-tan .nav-btn.active {
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--shadow-sm);
 }
 body.theme-tan .logo-icon {
-  box-shadow: 0 2px 8px rgba(107,91,158,0.25);
+  box-shadow: 0 2px 10px rgba(91,62,143,0.3);
 }
 
-/* Tan theme: sidebar */
+/* Premium theme: sidebar */
 body.theme-tan .sidebar,
 body.theme-tan .right-panel {
   background: var(--surface);
@@ -939,25 +985,25 @@ body.theme-tan .prompt-item:hover {
   background: var(--surface2);
 }
 body.theme-tan .prompt-item.selected {
-  background: rgba(107,91,158,0.08);
+  background: rgba(91,62,143,0.07);
 }
 
-/* Tan theme: editor */
+/* Premium theme: editor */
 body.theme-tan .main { background: var(--bg); }
 body.theme-tan .editor-header,
 body.theme-tan .stats-bar,
 body.theme-tan .editor-tabs { background: var(--surface); }
 body.theme-tan .prompt-textarea {
-  background: #faf7f2;
+  background: #fffefb;
   border-color: var(--border2);
   color: var(--text);
 }
 body.theme-tan .prompt-textarea:focus {
-  border-color: rgba(107,91,158,0.5);
+  border-color: rgba(91,62,143,0.45);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
-/* Tan theme: cards */
+/* Premium theme: cards */
 body.theme-tan .technique-card,
 body.theme-tan .council-card,
 body.theme-tan .brain-card,
@@ -966,6 +1012,7 @@ body.theme-tan .ds-card,
 body.theme-tan .sp-card {
   background: var(--surface);
   border-color: var(--border);
+  box-shadow: var(--shadow-sm);
 }
 body.theme-tan .technique-card:hover,
 body.theme-tan .council-card:hover,
@@ -974,10 +1021,11 @@ body.theme-tan .lib-card:hover,
 body.theme-tan .ds-card:hover,
 body.theme-tan .sp-card:hover {
   border-color: var(--border3);
-  background: #f0ebe0;
+  background: #fdfbf6;
+  box-shadow: var(--shadow);
 }
 
-/* Tan theme: right panel */
+/* Premium theme: right panel */
 body.theme-tan .rpanel-section { border-bottom-color: var(--border); }
 body.theme-tan .advisor-chip,
 body.theme-tan .model-card,
@@ -990,47 +1038,32 @@ body.theme-tan .quick-insert-btn {
 }
 body.theme-tan .score-bar { background: var(--border); }
 body.theme-tan .opt-result,
-body.theme-tan .council-result { background: #faf7f2; color: var(--text); }
+body.theme-tan .council-result { background: #fffefb; color: var(--text); }
 
-/* Tan theme: modals */
+/* Premium theme: modals */
 body.theme-tan .var-modal,
 body.theme-tan .qc-panel {
   background: var(--surface);
   border-color: var(--border2);
+  box-shadow: var(--shadow-lg);
 }
 body.theme-tan .vm-input,
 body.theme-tan .qc-select,
 body.theme-tan .qc-input,
-body.theme-tan .qc-textarea { background: #faf7f2; color: var(--text); }
+body.theme-tan .qc-textarea { background: #fffefb; color: var(--text); }
 
-/* Tan theme: chips & tabs */
+/* Premium theme: chips & tabs */
 body.theme-tan .chip { border-color: var(--border2); color: var(--text-muted); }
-body.theme-tan .chip.active { background: rgba(107,91,158,0.12); border-color: rgba(107,91,158,0.35); color: var(--accent); }
+body.theme-tan .chip.active { background: rgba(91,62,143,0.1); border-color: rgba(91,62,143,0.32); color: var(--accent); }
 body.theme-tan .role-tab { border-color: var(--border2); color: var(--text-muted); }
-body.theme-tan .role-tab.active { background: rgba(42,140,133,0.08); border-color: rgba(42,140,133,0.35); color: var(--teal); }
+body.theme-tan .role-tab.active { background: rgba(31,122,114,0.08); border-color: rgba(31,122,114,0.32); color: var(--teal); }
 
-/* Tan theme: toast */
-body.theme-tan .toast { background: var(--surface2); border-color: var(--border2); }
-body.theme-tan .qc-toast { color: #faf7f2; }
+/* Premium theme: toast */
+body.theme-tan .toast { background: var(--surface2); border-color: var(--border2); box-shadow: var(--shadow-lg); }
+body.theme-tan .qc-toast { color: #fffefb; }
 
-/* ── Theme toggle button ── */
-.theme-toggle {
-  display: flex; align-items: center; gap: 0.4rem;
-  padding: 0.28rem 0.7rem;
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-pill);
-  background: var(--surface2);
-  cursor: pointer;
-  font-family: var(--display);
-  font-size: 0.68rem; font-weight: 700;
-  color: var(--text-muted);
-  transition: all var(--t-base);
-  white-space: nowrap;
-}
-.theme-toggle:hover { border-color: var(--border3); color: var(--text); }
-.theme-toggle-icon { font-size: 0.8rem; transition: transform 0.3s ease; }
-body.theme-tan .theme-toggle { background: var(--surface2); border-color: var(--border2); }
-body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
+/* Premium theme: hero banner gets a hairline gold accent */
+body.theme-tan .pf-hero-badge { border-color: rgba(168,121,26,0.35); color: var(--gold); background: rgba(168,121,26,0.08); }
 
 /* ══════════════════════════════════════
    MOBILE / RESPONSIVE
@@ -1128,11 +1161,31 @@ body.sidebar-open .sidebar-backdrop { display: block; }
   .prompt-textarea { min-height: 200px; }
   .stats-bar { gap: 0.3rem; padding: 0.35rem 0.75rem; }
   .stat { padding: 2px 7px; font-size: 0.62rem; }
+
+  /* Editor header: title gets its own row, actions scroll instead of clipping */
+  .editor-header { flex-wrap: wrap; padding: 0.6rem 0.875rem; gap: 0.5rem; }
+  .editor-title { flex: 1 1 100%; }
+  .editor-actions {
+    flex: 1 1 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding-bottom: 2px;
+  }
+  .editor-actions::-webkit-scrollbar { display: none; }
+
+  /* Hero banner: compact single-line treatment on phones */
+  .pf-hero { padding: 0.7rem 0.875rem; gap: 0.6rem; }
+  .pf-hero-badge { display: none; }
+  .pf-hero-title { font-size: 0.92rem; }
+  .pf-hero-actions { gap: 0.4rem; }
+
+  /* Footer: single line, drop the repo link to make room */
+  #pf-credit { flex-wrap: nowrap; padding: 0.3rem 0.75rem; }
+  #pf-credit a { display: none; }
+  #pf-credit span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 
 </style>
 </head>
-<body>
+<body class="theme-tan">
 <div class="app">
 
 <header>
@@ -1156,10 +1209,6 @@ body.sidebar-open .sidebar-backdrop { display: block; }
         <option value="claude-opus-4-8">Opus 4.8</option>
         <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
       </select>
-      <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">
-        <span class="theme-toggle-icon" id="theme-toggle-icon">☀</span>
-        <span id="theme-toggle-label">Tan</span>
-      </button>
       <span class="version-tag">v4.0 · AI Studio</span>
     </div>
   </div>
@@ -1176,6 +1225,19 @@ body.sidebar-open .sidebar-backdrop { display: block; }
     <button class="nav-btn" onclick="setView('scout')" id="nav-scout" style="color:var(--accent)">📡 Scout</button>
   </nav>
 </header>
+
+<!-- Premium hero banner — dismissible first impression -->
+<div class="pf-hero" id="pf-hero">
+  <span class="pf-hero-badge">📡 New — AI Intelligence Scout</span>
+  <div class="pf-hero-copy">
+    <div class="pf-hero-title">The prompt studio serious builders switch to.</div>
+    <div class="pf-hero-sub">600+ battle-tested prompts, a 5-model Council that stress-tests every idea before you ship it, and a governed Scout that discovers tomorrow's skills today — one workspace, zero busywork.</div>
+  </div>
+  <div class="pf-hero-actions">
+    <button class="btn btn-primary btn-sm" onclick="setView('ecc');document.getElementById('pf-hero').style.display='none';localStorage.setItem('pf-hero-dismissed','1')">Browse the Library →</button>
+    <button class="pf-hero-close" onclick="dismissHero()" title="Dismiss">✕</button>
+  </div>
+</div>
 
 <!-- Sidebar backdrop (mobile) -->
 <div class="sidebar-backdrop" onclick="closeSidebar()"></div>
@@ -6500,6 +6562,164 @@ Use this when diagnosing why a prompt is underperforming, reviewing prompts befo
 Topic for this prompt review: {{paste_prompt_to_review_here}}`},
 ];
 
+// ─── PREMIUM WEBSITE SPECIALIST PACK ─────────────────────────────────────────
+const WEBSITE_SPECIALIST_SKILLS = [
+  {id:'pws-01', name:'The Premium Website Architect', cat:'design', origin:'Premium Website Specialist Pack',
+   desc:'Blueprints a stunning, interactive site in 30 minutes: the exact sections, the design details that read as $10K, and copy that drives action.',
+   prompt:`Act as a premium website specialist who has shipped hundreds of high-converting sites for {{business_type}}.
+
+## Goal
+Give me everything needed to build a stunning, interactive website for {{business_type}} in the next 30 minutes.
+
+## Deliverables
+
+### 1. Exact Section Order
+List every section top to bottom (hero, social proof, offer breakdown, process, proof/testimonials, FAQ, final CTA, footer) with a one-line purpose for each — why it exists and what it must accomplish before the visitor scrolls past it.
+
+### 2. The "$10K Tells"
+Name the specific design elements that make a site feel premium instead of template-generic: typography pairing, whitespace rhythm, motion/micro-interactions, photography vs. illustration choice, color restraint, and the small details (custom cursors, scroll-triggered reveals, real shadows vs. flat cards) that separate a $500 template from a $10K build. Be concrete — not "use good design," but exactly what to change.
+
+### 3. Action-Driving Copy
+Write the copy for the two highest-leverage moments: the hero and the final CTA block. Every line must earn its place — no filler adjectives, no "we are passionate about."
+
+## Constraints
+- Assume the visitor decides to stay or leave in under 3 seconds.
+- Optimize for {{primary_goal}} (e.g. booked calls, purchases, signups).
+- Keep the whole plan buildable by one person in 30 minutes using an existing component library.`},
+
+  {id:'pws-02', name:'The First Impression Engineer', cat:'design', origin:'Premium Website Specialist Pack',
+   desc:'Designs a hero section that stops visitors in under 3 seconds — headline, subheadline, and the CTA that makes clicking obvious.',
+   prompt:`Act as a website first-impression specialist. My site needs to impress visitors in under 3 seconds.
+
+## Context
+Business / offer: {{business_or_offer}}
+Target visitor: {{target_visitor}}
+What they're likely comparing us to: {{alternatives_they_consider}}
+
+## Design the Hero Section
+
+**Headline** — the line that stops the scroll. It should name the outcome or the problem in a way generic competitors can't copy. Give me 3 variants ranked by strength, with a one-line reason each.
+
+**Subheadline** — the line that makes them keep scrolling instead of bouncing. It should resolve the "wait, how?" the headline creates, without repeating the headline's words.
+
+**CTA** — the button copy and its supporting microcopy (the line right below or beside it) that makes clicking feel like the obvious next step, not a commitment. Explain why this CTA reduces friction for {{target_visitor}} specifically.
+
+## Output Format
+1. Headline (3 ranked options)
+2. Subheadline (paired with the winning headline)
+3. CTA button text + microcopy
+4. One sentence on the visual treatment (layout, imagery, motion) that supports this copy in the first 3 seconds`},
+
+  {id:'pws-03', name:'The Conversion Page Copywriter', cat:'writing', origin:'Premium Website Specialist Pack',
+   desc:'Writes a complete homepage — hook, problem, solution reveal, proof, and CTA — that makes buying feel like the smartest decision today.',
+   prompt:`Act as a conversion optimization specialist. Write my complete homepage for {{offer}} aimed at {{audience}}.
+
+## Structure to Write
+
+1. **The Hook** — opens with the exact tension {{audience}} feels right now. No generic greetings.
+2. **The Problem Section** — names the problem in {{audience}}'s own language, and shows you understand why the obvious fixes haven't worked.
+3. **The Solution Reveal** — introduces {{offer}} as the mechanism, not just the product. Explain what makes this approach different, not just what it does.
+4. **The Proof Element** — the strongest form of evidence available (testimonial, result, credential, before/after). If I haven't given you real proof, flag exactly what proof to go collect instead of inventing it.
+5. **The CTA** — the final push that reframes buying as the safe, obvious choice, not a risk.
+
+## Rules
+- Write in the voice a busy {{audience}} member would actually read to the end.
+- No invented statistics, testimonials, or credentials — mark any placeholder clearly as {{needs_real_proof}}.
+- Every section should end with a reason to keep reading, not a hard stop.`},
+
+  {id:'pws-04', name:'The Portfolio Creator', cat:'design', origin:'Premium Website Specialist Pack',
+   desc:'Designs a portfolio for a given profession that makes clients contact immediately — showcase, About, and a frictionless contact CTA.',
+   prompt:`Act as a portfolio website specialist. I want a portfolio for {{profession}} that makes clients contact me immediately.
+
+## Design the Three Core Pieces
+
+### 1. Project Showcase
+How to present {{number_of_projects}} projects so the work looks premium, not like a photo dump: layout pattern, how much context per project (before/after, the brief, the constraint solved), and the one visual signal that separates amateur portfolios from ones that win high-ticket clients.
+
+### 2. About Section
+An About section that builds instant trust for a {{profession}}. Cover: what to lead with (credentials vs. story vs. results), what to leave out, and how long it should actually be before it becomes self-indulgent.
+
+### 3. Contact CTA
+The contact flow that makes hiring feel effortless — form vs. calendar link vs. direct message, what fields to ask for (and which to cut), and the microcopy that lowers the "am I bothering them" anxiety a prospect feels before reaching out.
+
+## Output
+Give me the section-by-section layout plus the exact copy for the About section opening line and the contact CTA.`},
+
+  {id:'pws-05', name:'The Service Page Copywriter', cat:'writing', origin:'Premium Website Specialist Pack',
+   desc:'Writes a complete service page — headline, value-obvious description, and a booking CTA that makes saying yes feel natural.',
+   prompt:`Act as a service page copywriting specialist. Write my complete service page for {{service}}, priced at {{price}}.
+
+## Structure
+
+1. **Headline** — speaks directly to my ideal client's situation, not to "everyone." It should make the right person think "this is for me" and the wrong person self-select out.
+2. **Service Description** — makes the value obvious before the price does the talking. Cover what's included, what the client walks away with, and why {{price}} is reasonable for that outcome (without being defensive about the price).
+3. **Booking CTA** — the close that makes saying yes feel like the natural next step rather than a sales pitch. Include the button copy and one line of reassurance placed right before it.
+
+## Constraints
+- Ideal client: {{ideal_client}}
+- Do not justify the price with generic value language ("you'll save time and money") — tie it to the specific outcome {{service}} produces.
+- Keep the whole page skimmable in under 90 seconds.`},
+
+  {id:'pws-06', name:'The About Page Storyteller', cat:'writing', origin:'Premium Website Specialist Pack',
+   desc:'Writes an About page — an opening that builds instant trust, a story that stays relevant to the reader, and a human element that closes the gap.',
+   prompt:`Act as an About page storytelling specialist. Write my complete About page for {{business}}.
+
+## Structure
+
+1. **Opening** — the first two sentences that make a visitor trust me instantly. Not a bio — a signal that I understand exactly where they are right now.
+2. **The Story** — my journey, told so that every beat stays relevant to the reader's own problem instead of becoming a personal memoir. Use this shape: the moment the problem became personal → what I tried that didn't work → what changed → why that qualifies me to help {{business}}'s clients specifically.
+3. **The Human Element** — a specific, small, real detail that makes visitors want to work with me over a faceless competitor. Not a hobbies list — something that reveals how I actually work.
+
+## Inputs I'll give you
+Background: {{background_details}}
+Who I serve: {{who_i_serve}}
+
+## Rules
+- No generic "I'm passionate about helping people" language.
+- Keep the story in service of the reader's decision to reach out — cut anything that doesn't earn that.`},
+
+  {id:'pws-07', name:'The Mobile Optimizer', cat:'frontend', origin:'Premium Website Specialist Pack',
+   desc:'Diagnoses and fixes a website that looks bad on phones — layout, tap targets, and load speed — so mobile visitors stop leaving.',
+   prompt:`Act as a mobile website optimization specialist. My website looks bad on phones and I'm losing customers because of it.
+
+## Context
+Site type: {{site_type}}
+Current stack: {{current_stack}}
+Known symptoms: {{symptoms_eg_cramped_layout_slow_load_tiny_buttons}}
+
+## Fix It Completely
+
+### 1. Layout
+Redesign the layout logic for mobile so it feels premium, not squeezed — stacking order, spacing rhythm at small viewports, and what desktop-only decoration should be cut entirely rather than shrunk.
+
+### 2. Tap Targets
+Give exact minimum sizes and spacing for every interactive element (buttons, nav items, form fields) so tapping feels effortless on a real thumb, not a mouse cursor. Flag any current element likely to be a mis-tap magnet.
+
+### 3. Load Speed
+List the highest-impact fixes for perceived and actual load speed on mobile networks (image strategy, font loading, above-the-fold JS, lazy loading) ranked by effort vs. impact, so I know what to fix first.
+
+## Output Format
+A prioritized checklist: [Issue] → [Fix] → [Why it matters for mobile conversion], ordered by impact.`},
+
+  {id:'pws-08', name:'The Website Copy System', cat:'writing', origin:'Premium Website Specialist Pack',
+   desc:'Writes every section of copy a site needs in one pass — headline, About, Services, testimonial prompts, FAQ, and footer CTA.',
+   prompt:`Act as a complete website copywriting specialist. Write all the copy for my {{business_type}} website.
+
+## Sections to Write
+
+1. **Homepage Headline** — the single line that has to work hardest on the whole site.
+2. **About Section** — short-form, trust-building, written for a visitor deciding whether to keep reading, not a full biography.
+3. **Services Section** — one clear line per service that makes the value obvious at a glance, not a feature list.
+4. **Testimonial Suggestions** — since I may not have real testimonials yet, write 3 specific questions I should ask past clients so their answers become usable testimonial copy (don't invent fake quotes).
+5. **FAQ Section** — the 5 questions that are actually stopping {{target_audience}} from buying, each answered in a way that removes the objection instead of dodging it.
+6. **Footer CTA** — the last chance to convert someone who scrolled the whole page without acting.
+
+## Rules
+- Every word must earn its place — cut anything that could be deleted without losing meaning.
+- Match the tone to {{brand_tone}} (e.g. premium & minimal, warm & approachable, bold & direct).
+- Flag with {{needs_input}} anywhere you need real business details you don't have.`},
+];
+
 // ─── MATT POCOCK SKILLS ──────────────────────────────────────────────────────
 const MATTPOCOCK_SKILLS = [
   {id:'mps-01', name:'TDD Vertical Slices', cat:'testing', origin:'mattpocock/skills', desc:'Drive development with one test per behavior, vertical slice at a time — red-green-refactor with no speculative tests.',
@@ -8745,7 +8965,7 @@ Connects to external tools through Model Context Protocol. Searches registry bef
 CLARIT4S_PROMPTS.forEach(a => SYSTEM_PROMPTS_DATA.push(a));
 
 let _eccId = 10000;
-[...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...SCOUT_SKILLS].forEach(s => {
+[...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...WEBSITE_SPECIALIST_SKILLS, ...SCOUT_SKILLS].forEach(s => {
   PROMPTS.push({id: _eccId++, title: s.name, category: s.cat, type: s.cat, prompt: s.prompt});
 });
 
@@ -8772,7 +8992,7 @@ function setEccCat(cat, el) {
   renderEccSkills();
 }
 function renderEccSkills() {
-  const ALL_SKILLS = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...SCOUT_SKILLS];
+  const ALL_SKILLS = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...WEBSITE_SPECIALIST_SKILLS, ...SCOUT_SKILLS];
   const filtered = eccCatFilter === 'all' ? ALL_SKILLS : ALL_SKILLS.filter(s => s.cat === eccCatFilter);
   const catColors = {security:'#ff7070',testing:'#ff6464',code:'var(--accent)',frontend:'var(--accent2)',backend:'#a89cff',agent:'var(--accent3)',devops:'var(--accent4)',ml:'#4285f4',research:'#00c864',product:'#c8b8ff',writing:'#ffb400',marketing:'#ff64c8',design:'var(--accent2)'};
   document.getElementById('ecc-grid').innerHTML = filtered.map(s => {
@@ -8788,7 +9008,7 @@ function renderEccSkills() {
   }).join('');
 }
 function loadEccSkill(id) {
-  const skill = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...SCOUT_SKILLS].find(s => s.id === id);
+  const skill = [...ECC_SKILLS, ...AI_ENG_SKILLS, ...MEMORY_SKILLS, ...SKILLKIT_SKILLS, ...OPENSWARM_SKILLS, ...LLM_APPS_SKILLS, ...GRAPHIFY_SKILLS, ...QMD_SKILLS, ...LAST30DAYS_SKILLS, ...PAI_SKILLS, ...SUPERPOWERS_SKILLS, ...OPENNOTEBOOK_SKILLS, ...OPENCLAW_SKILLS, ...LDR_SKILLS, ...DEERFLOW_SKILLS, ...OMNIROUTE_SKILLS, ...VERCEL_SKILLS_SKILLS, ...FINANCE_SKILLS, ...PROMPTSCHAT_SKILLS, ...PM_SKILLS, ...RUFLO_SKILLS, ...PROMPTMASTER_SKILLS, ...MATTPOCOCK_SKILLS, ...WEBSITE_SPECIALIST_SKILLS, ...SCOUT_SKILLS].find(s => s.id === id);
   if (!skill) return;
   document.getElementById('prompt-textarea').value = skill.prompt;
   document.getElementById('prompt-title').value = skill.name;
@@ -8857,7 +9077,14 @@ function loadAgentPrompt(name) {
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
+function dismissHero() {
+  const el = document.getElementById('pf-hero');
+  if (el) el.style.display = 'none';
+  try { localStorage.setItem('pf-hero-dismissed', '1'); } catch(e){}
+}
+
 function init() {
+  try { if (localStorage.getItem('pf-hero-dismissed') === '1') { const el = document.getElementById('pf-hero'); if (el) el.style.display = 'none'; } } catch(e){}
   renderPromptList();
   renderAdvisors();
   renderCouncilCards();
@@ -9296,24 +9523,6 @@ function renderLibrary() {
   `).join('');
 }
 
-// ─── THEME TOGGLE ────────────────────────────────────────────────────────────
-function toggleTheme() {
-  const isTan = document.body.classList.toggle('theme-tan');
-  document.getElementById('theme-toggle-icon').textContent = isTan ? '🌙' : '☀';
-  document.getElementById('theme-toggle-label').textContent = isTan ? 'Dark' : 'Tan';
-  try { localStorage.setItem('pf-theme', isTan ? 'tan' : 'dark'); } catch(e){}
-}
-// Restore saved theme on load
-(function(){
-  try {
-    if (localStorage.getItem('pf-theme') === 'tan') {
-      document.body.classList.add('theme-tan');
-      document.getElementById('theme-toggle-icon').textContent = '🌙';
-      document.getElementById('theme-toggle-label').textContent = 'Dark';
-    }
-  } catch(e){}
-})();
-
 // ─── VIEW & TAB ──────────────────────────────────────────────────────────────
 function setView(v) {
   state.view=v;
@@ -9325,6 +9534,11 @@ function setView(v) {
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const navEl=document.getElementById(`nav-${v}`);
   if(navEl) navEl.classList.add('active');
+  // The hamburger only opens the Editor's prompt-list sidebar — it doesn't
+  // exist on other views, so hide it there and clear any stale open state.
+  const toggleBtn=document.querySelector('.sidebar-toggle-btn');
+  if(toggleBtn) toggleBtn.style.display=v==='editor'?'':'none';
+  if(v!=='editor') closeSidebar();
 }
 
 function setTab(t) {
@@ -10174,8 +10388,8 @@ function toggleSidebarDesktop() {
 <!-- Attribution footer — required by license -->
 <div id="pf-credit" style="
   position:fixed;bottom:0;left:0;right:0;z-index:50;
-  background:rgba(10,10,15,0.85);backdrop-filter:blur(12px);
-  border-top:1px solid rgba(124,108,240,0.15);
+  background:rgba(250,249,245,0.9);backdrop-filter:blur(12px);
+  border-top:1px solid var(--border2);
   padding:0.3rem 1.25rem;
   display:flex;align-items:center;justify-content:space-between;
   font-size:0.6rem;color:var(--text-muted);font-family:var(--mono);
