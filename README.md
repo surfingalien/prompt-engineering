@@ -92,6 +92,17 @@ Every run is appended to a SHA-256 **hash-chained audit log** (`scout-audit.json
 
 Run the governance test suite with `npm test` (zero extra dependencies — Node's built-in test runner).
 
+### Operations: caching, rate limiting, observability, evals
+
+| Layer | What it does |
+|-------|-------------|
+| **Prompt caching** | The Scout's system prompt (`prompts/scout-system.txt`) is sent with `cache_control: {type: "ephemeral"}` — repeated Scout calls only pay full input-token price on the first request per cache window |
+| **Rate limiting** | `/api/chat` (30 req / 15 min) and `/api/scout` (10 req / 15 min) are rate-limited per IP via `express-rate-limit`, since `ANTHROPIC_API_KEY` lives server-side and is otherwise unprotected from abuse |
+| **Helicone (optional)** | Set `HELICONE_API_KEY` and every Anthropic call routes through Helicone's proxy instead — per-request cost, latency, token counts, and prompt-version comparison, no code changes needed. Unset, calls go straight to the Anthropic API |
+| **promptfoo eval suite** | `promptfooconfig.yaml` runs the real `prompts/scout-system.txt` against live Anthropic calls and asserts the JSON contract holds (skills/agents shape, category enums, required fields). Run with `npm run eval` (needs `ANTHROPIC_API_KEY`) |
+
+`prompts/scout-system.txt` is the single source of truth for the Scout's system prompt — `server.js` reads it at request time and `promptfooconfig.yaml` evals the same file, so a prompt edit that breaks the JSON contract shows up in `npm run eval` before it ships. A lighter, API-key-free structural check on the same file also runs in `npm test`.
+
 ---
 
 ## Features at a Glance

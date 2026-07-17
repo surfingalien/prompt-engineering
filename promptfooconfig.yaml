@@ -1,0 +1,72 @@
+# Regression suite for the Scout system prompt (prompts/scout-system.txt).
+# server.js reads that same file at request time, so a prompt edit that
+# breaks the JSON contract fails here before it ships.
+#
+# Run with: npm run eval   (requires ANTHROPIC_API_KEY — same var the app uses)
+description: "PromptForge Scout system-prompt regression tests"
+
+prompts:
+  - file://prompts/scout-eval-messages.json
+
+providers:
+  - id: anthropic:messages:claude-haiku-4-5-20251001
+    config:
+      max_tokens: 4000
+
+defaultTest:
+  vars:
+    system_prompt: file://prompts/scout-system.txt
+
+tests:
+  - description: "Both skills and agents requested — response has both arrays"
+    vars:
+      topic: "AI agents and prompt engineering"
+      count: 2
+      type_instruction: "skills AND agents"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const parsed = JSON.parse(output);
+          return Array.isArray(parsed.skills) && Array.isArray(parsed.agents)
+            && parsed.skills.length > 0 && parsed.agents.length > 0;
+
+  - description: "Skills-only request — agents array must stay empty"
+    vars:
+      topic: "prompt caching strategies"
+      count: 2
+      type_instruction: "skills only (agents array empty)"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const parsed = JSON.parse(output);
+          return Array.isArray(parsed.skills) && parsed.skills.length > 0
+            && Array.isArray(parsed.agents) && parsed.agents.length === 0;
+
+  - description: "Every generated skill category is from the allowed enum"
+    vars:
+      topic: "retrieval augmented generation"
+      count: 3
+      type_instruction: "skills AND agents"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const allowed = ['research','code','agent','ml','writing','devops','security',
+            'testing','frontend','backend','product','design'];
+          const parsed = JSON.parse(output);
+          return (parsed.skills || []).every(s => allowed.includes(s.cat));
+
+  - description: "Every generated skill has the required fields and a template variable"
+    vars:
+      topic: "multi-agent orchestration"
+      count: 2
+      type_instruction: "skills AND agents"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const parsed = JSON.parse(output);
+          return (parsed.skills || []).every(s =>
+            s.id && s.name && s.cat && s.desc && s.prompt && /\{\{[\w-]+\}\}/.test(s.prompt));
