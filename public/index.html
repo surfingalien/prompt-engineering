@@ -898,44 +898,45 @@ body.theme-tan #model-selector { background:var(--surface2);border-color:var(--b
 }
 
 /* ══════════════════════════════════════
-   TAN LIGHT THEME
+   PREMIUM THEME (sole theme — dark mode retired)
    body.theme-tan overrides all vars
 ══════════════════════════════════════ */
 body.theme-tan {
-  --bg: #f7f4ee;
-  --surface: #faf8f3;
-  --surface2: #f0ece3;
-  --surface3: #e8e3d8;
-  --surface4: #ddd8cc;
-  --surface5: #d2cab8;
-  --border: #e0dbd0;
-  --border2: #d4cfc4;
-  --border3: #c4bfb4;
-  --border4: #b5ab98;
-  --accent: #6d4fa0;
-  --accent2: #8b6fc7;
-  --accent-hover: #7d5fb0;
-  --accent-dim: rgba(109,79,160,0.1);
-  --accent-dim2: rgba(109,79,160,0.18);
-  --accent-glow: rgba(109,79,160,0.3);
-  --grad-primary: linear-gradient(135deg, #6d4fa0 0%, #c45c7e 100%);
-  --pink: #c45c7e;
-  --teal: #2a8c85;
-  --amber: #b87c1a;
-  --blue: #2d6cbf;
-  --green: #2a8c5e;
-  --text: #1a1814;
-  --text-dim: #4a4640;
-  --text-muted: #8a8680;
-  --text-faint: #d0c8b8;
-  --success: #2a8c5e;
-  --danger: #b83232;
-  --warning: #b87c1a;
-  --shadow-sm: 0 1px 3px rgba(60,40,10,0.12),0 1px 2px rgba(60,40,10,0.08);
-  --shadow: 0 4px 16px rgba(60,40,10,0.12),0 2px 4px rgba(60,40,10,0.08);
-  --shadow-lg: 0 16px 48px rgba(60,40,10,0.16),0 4px 16px rgba(60,40,10,0.1);
-  --glow-accent: 0 0 32px rgba(107,91,158,0.15),0 0 8px rgba(107,91,158,0.1);
-  --glow-sm: 0 0 16px rgba(107,91,158,0.1);
+  --bg: #faf9f5;
+  --surface: #ffffff;
+  --surface2: #f4f1ea;
+  --surface3: #eae5da;
+  --surface4: #ddd5c4;
+  --surface5: #cfc4ac;
+  --border: #e9e4d9;
+  --border2: #ddd5c6;
+  --border3: #c8beac;
+  --border4: #ab9c81;
+  --accent: #5b3e8f;
+  --accent2: #8362c4;
+  --accent-hover: #6c4ba3;
+  --accent-dim: rgba(91,62,143,0.09);
+  --accent-dim2: rgba(91,62,143,0.16);
+  --accent-glow: rgba(91,62,143,0.28);
+  --grad-primary: linear-gradient(135deg, #5b3e8f 0%, #c2577a 100%);
+  --pink: #c2577a;
+  --teal: #1f7a72;
+  --gold: #a8791a;
+  --amber: #a8791a;
+  --blue: #2f5fa8;
+  --green: #257a52;
+  --text: #18140f;
+  --text-dim: #47413a;
+  --text-muted: #857c6d;
+  --text-faint: #ddd4c0;
+  --success: #257a52;
+  --danger: #b03232;
+  --warning: #a8791a;
+  --shadow-sm: 0 1px 3px rgba(35,25,10,0.08),0 1px 2px rgba(35,25,10,0.05);
+  --shadow: 0 6px 20px rgba(35,25,10,0.09),0 2px 6px rgba(35,25,10,0.05);
+  --shadow-lg: 0 22px 60px rgba(35,25,10,0.13),0 6px 20px rgba(35,25,10,0.07);
+  --glow-accent: 0 0 32px rgba(91,62,143,0.14),0 0 10px rgba(91,62,143,0.09);
+  --glow-sm: 0 0 16px rgba(91,62,143,0.09);
   /* Legacy compat */
   --accent3: var(--teal);
   --accent4: var(--amber);
@@ -943,18 +944,19 @@ body.theme-tan {
 
 body.theme-tan::before {
   background:
-    radial-gradient(ellipse 70% 50% at 20% -5%, rgba(107,91,158,0.07) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(196,92,126,0.05) 0%, transparent 55%),
-    radial-gradient(ellipse 40% 35% at 5% 85%, rgba(42,140,133,0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 50% at 20% -5%, rgba(91,62,143,0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 85% 85%, rgba(194,87,122,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 5% 85%, rgba(31,122,114,0.04) 0%, transparent 50%);
 }
 
-/* Tan theme: header adjustments */
+/* Premium theme: header adjustments */
 body.theme-tan header {
-  background: rgba(247,244,238,0.95);
+  background: rgba(250,249,245,0.92);
+  backdrop-filter: blur(14px);-webkit-backdrop-filter: blur(14px);
   border-bottom-color: var(--border2);
 }
 body.theme-tan header::after {
-  background: linear-gradient(90deg, transparent, rgba(107,91,158,0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(168,121,26,0.35) 30%, rgba(91,62,143,0.3) 70%, transparent);
 }
 body.theme-tan .header-nav {
   background: var(--surface2);
@@ -963,12 +965,13 @@ body.theme-tan .header-nav {
 body.theme-tan .nav-btn.active {
   background: var(--surface);
   color: var(--text);
+  box-shadow: var(--shadow-sm);
 }
 body.theme-tan .logo-icon {
-  box-shadow: 0 2px 8px rgba(107,91,158,0.25);
+  box-shadow: 0 2px 10px rgba(91,62,143,0.3);
 }
 
-/* Tan theme: sidebar */
+/* Premium theme: sidebar */
 body.theme-tan .sidebar,
 body.theme-tan .right-panel {
   background: var(--surface);
@@ -982,25 +985,25 @@ body.theme-tan .prompt-item:hover {
   background: var(--surface2);
 }
 body.theme-tan .prompt-item.selected {
-  background: rgba(107,91,158,0.08);
+  background: rgba(91,62,143,0.07);
 }
 
-/* Tan theme: editor */
+/* Premium theme: editor */
 body.theme-tan .main { background: var(--bg); }
 body.theme-tan .editor-header,
 body.theme-tan .stats-bar,
 body.theme-tan .editor-tabs { background: var(--surface); }
 body.theme-tan .prompt-textarea {
-  background: #faf7f2;
+  background: #fffefb;
   border-color: var(--border2);
   color: var(--text);
 }
 body.theme-tan .prompt-textarea:focus {
-  border-color: rgba(107,91,158,0.5);
+  border-color: rgba(91,62,143,0.45);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
-/* Tan theme: cards */
+/* Premium theme: cards */
 body.theme-tan .technique-card,
 body.theme-tan .council-card,
 body.theme-tan .brain-card,
@@ -1009,6 +1012,7 @@ body.theme-tan .ds-card,
 body.theme-tan .sp-card {
   background: var(--surface);
   border-color: var(--border);
+  box-shadow: var(--shadow-sm);
 }
 body.theme-tan .technique-card:hover,
 body.theme-tan .council-card:hover,
@@ -1017,10 +1021,11 @@ body.theme-tan .lib-card:hover,
 body.theme-tan .ds-card:hover,
 body.theme-tan .sp-card:hover {
   border-color: var(--border3);
-  background: #f0ebe0;
+  background: #fdfbf6;
+  box-shadow: var(--shadow);
 }
 
-/* Tan theme: right panel */
+/* Premium theme: right panel */
 body.theme-tan .rpanel-section { border-bottom-color: var(--border); }
 body.theme-tan .advisor-chip,
 body.theme-tan .model-card,
@@ -1033,47 +1038,32 @@ body.theme-tan .quick-insert-btn {
 }
 body.theme-tan .score-bar { background: var(--border); }
 body.theme-tan .opt-result,
-body.theme-tan .council-result { background: #faf7f2; color: var(--text); }
+body.theme-tan .council-result { background: #fffefb; color: var(--text); }
 
-/* Tan theme: modals */
+/* Premium theme: modals */
 body.theme-tan .var-modal,
 body.theme-tan .qc-panel {
   background: var(--surface);
   border-color: var(--border2);
+  box-shadow: var(--shadow-lg);
 }
 body.theme-tan .vm-input,
 body.theme-tan .qc-select,
 body.theme-tan .qc-input,
-body.theme-tan .qc-textarea { background: #faf7f2; color: var(--text); }
+body.theme-tan .qc-textarea { background: #fffefb; color: var(--text); }
 
-/* Tan theme: chips & tabs */
+/* Premium theme: chips & tabs */
 body.theme-tan .chip { border-color: var(--border2); color: var(--text-muted); }
-body.theme-tan .chip.active { background: rgba(107,91,158,0.12); border-color: rgba(107,91,158,0.35); color: var(--accent); }
+body.theme-tan .chip.active { background: rgba(91,62,143,0.1); border-color: rgba(91,62,143,0.32); color: var(--accent); }
 body.theme-tan .role-tab { border-color: var(--border2); color: var(--text-muted); }
-body.theme-tan .role-tab.active { background: rgba(42,140,133,0.08); border-color: rgba(42,140,133,0.35); color: var(--teal); }
+body.theme-tan .role-tab.active { background: rgba(31,122,114,0.08); border-color: rgba(31,122,114,0.32); color: var(--teal); }
 
-/* Tan theme: toast */
-body.theme-tan .toast { background: var(--surface2); border-color: var(--border2); }
-body.theme-tan .qc-toast { color: #faf7f2; }
+/* Premium theme: toast */
+body.theme-tan .toast { background: var(--surface2); border-color: var(--border2); box-shadow: var(--shadow-lg); }
+body.theme-tan .qc-toast { color: #fffefb; }
 
-/* ── Theme toggle button ── */
-.theme-toggle {
-  display: flex; align-items: center; gap: 0.4rem;
-  padding: 0.28rem 0.7rem;
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-pill);
-  background: var(--surface2);
-  cursor: pointer;
-  font-family: var(--display);
-  font-size: 0.68rem; font-weight: 700;
-  color: var(--text-muted);
-  transition: all var(--t-base);
-  white-space: nowrap;
-}
-.theme-toggle:hover { border-color: var(--border3); color: var(--text); }
-.theme-toggle-icon { font-size: 0.8rem; transition: transform 0.3s ease; }
-body.theme-tan .theme-toggle { background: var(--surface2); border-color: var(--border2); }
-body.theme-tan .theme-toggle-icon { transform: rotate(180deg); }
+/* Premium theme: hero banner gets a hairline gold accent */
+body.theme-tan .pf-hero-badge { border-color: rgba(168,121,26,0.35); color: var(--gold); background: rgba(168,121,26,0.08); }
 
 /* ══════════════════════════════════════
    MOBILE / RESPONSIVE
@@ -1175,7 +1165,7 @@ body.sidebar-open .sidebar-backdrop { display: block; }
 
 </style>
 </head>
-<body>
+<body class="theme-tan">
 <div class="app">
 
 <header>
@@ -1199,10 +1189,6 @@ body.sidebar-open .sidebar-backdrop { display: block; }
         <option value="claude-opus-4-8">Opus 4.8</option>
         <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
       </select>
-      <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn">
-        <span class="theme-toggle-icon" id="theme-toggle-icon">☀</span>
-        <span id="theme-toggle-label">Tan</span>
-      </button>
       <span class="version-tag">v4.0 · AI Studio</span>
     </div>
   </div>
@@ -9517,24 +9503,6 @@ function renderLibrary() {
   `).join('');
 }
 
-// ─── THEME TOGGLE ────────────────────────────────────────────────────────────
-function toggleTheme() {
-  const isTan = document.body.classList.toggle('theme-tan');
-  document.getElementById('theme-toggle-icon').textContent = isTan ? '🌙' : '☀';
-  document.getElementById('theme-toggle-label').textContent = isTan ? 'Dark' : 'Tan';
-  try { localStorage.setItem('pf-theme', isTan ? 'tan' : 'dark'); } catch(e){}
-}
-// Restore saved theme on load
-(function(){
-  try {
-    if (localStorage.getItem('pf-theme') === 'tan') {
-      document.body.classList.add('theme-tan');
-      document.getElementById('theme-toggle-icon').textContent = '🌙';
-      document.getElementById('theme-toggle-label').textContent = 'Dark';
-    }
-  } catch(e){}
-})();
-
 // ─── VIEW & TAB ──────────────────────────────────────────────────────────────
 function setView(v) {
   state.view=v;
@@ -10395,8 +10363,8 @@ function toggleSidebarDesktop() {
 <!-- Attribution footer — required by license -->
 <div id="pf-credit" style="
   position:fixed;bottom:0;left:0;right:0;z-index:50;
-  background:rgba(10,10,15,0.85);backdrop-filter:blur(12px);
-  border-top:1px solid rgba(124,108,240,0.15);
+  background:rgba(250,249,245,0.9);backdrop-filter:blur(12px);
+  border-top:1px solid var(--border2);
   padding:0.3rem 1.25rem;
   display:flex;align-items:center;justify-content:space-between;
   font-size:0.6rem;color:var(--text-muted);font-family:var(--mono);
