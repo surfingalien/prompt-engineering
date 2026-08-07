@@ -209,3 +209,59 @@ test('verifier model always differs from scout model', () => {
     assert.notEqual(governance.verifierModel(m), m);
   }
 });
+
+// ── Client-side attribute escaping ────────────────────────────────────────────
+// jsAttr lives in the inline script of public/index.html (there is no client
+// module boundary to import), so the test extracts and evaluates it. It guards
+// a real bug: a model-generated Scout item name containing a quote used to
+// truncate the onclick attribute and produce a dead/malformed button.
+
+function loadClientEscapers() {
+  const fs = require('fs');
+  const path = require('path');
+  const src = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
+  const jsAttrSrc = src.match(/function jsAttr\(s\) \{[\s\S]*?\n\}/);
+  const escSrc = src.match(/function escapeHtmlLite\(s\) \{[\s\S]*?\n\}/);
+  assert.ok(jsAttrSrc && escSrc, 'jsAttr and escapeHtmlLite must exist in index.html');
+  const scope = {};
+  // eslint-disable-next-line no-eval
+  eval(`${jsAttrSrc[0]}\n${escSrc[0]}\nscope.jsAttr = jsAttr; scope.escapeHtmlLite = escapeHtmlLite;`);
+  return scope;
+}
+
+const ADVERSARIAL_NAMES = [
+  'The "Best" Agent',
+  "O'Brien's Agent",
+  'back\\slash',
+  '</script><img src=x onerror=alert(1)>',
+  'Tom & "Jerry"',
+];
+
+test('jsAttr keeps the onclick attribute intact for adversarial names', () => {
+  const { jsAttr } = loadClientEscapers();
+  for (const name of ADVERSARIAL_NAMES) {
+    const html = `<button onclick="removeSavedScoutItem('agent','${jsAttr(name)}')">x</button>`;
+    const attr = /onclick="([^"]*)"/.exec(html);
+    assert.ok(attr, `attribute missing for ${name}`);
+    assert.ok(attr[1].trim().endsWith(')'), `attribute truncated for ${name}: ${attr[1]}`);
+  }
+});
+
+test('jsAttr round-trips the exact name through browser decode + JS eval', () => {
+  const { jsAttr } = loadClientEscapers();
+  for (const name of ADVERSARIAL_NAMES) {
+    const attrValue = `removeSavedScoutItem('agent','${jsAttr(name)}')`;
+    // What a browser does: decode entities, then evaluate as JS.
+    const decoded = attrValue.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    let received;
+    // eslint-disable-next-line no-new-func
+    new Function('removeSavedScoutItem', decoded)((_kind, value) => { received = value; });
+    assert.equal(received, name);
+  }
+});
+
+test('escapeHtmlLite escapes the quote that breaks attributes', () => {
+  const { escapeHtmlLite } = loadClientEscapers();
+  assert.equal(escapeHtmlLite('a"b'), 'a&quot;b');
+  assert.equal(escapeHtmlLite('<i>&</i>'), '&lt;i&gt;&amp;&lt;/i&gt;');
+});

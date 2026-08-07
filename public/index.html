@@ -10198,11 +10198,11 @@ function renderMaintenanceResults(data) {
   wrap.innerHTML = rows.map(r => {
     const col = actionColor[r.action] || 'var(--text-muted)';
     const tier = r.trust ? `${r.trust.tier} ${r.trust.score}` : '';
-    const key = (r.key || r.name || '').replace(/'/g, "\\'");
+    const key = jsAttr(r.key || r.name || '');
     return `<div style="border:1px solid ${col}33;border-left:3px solid ${col};border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.5rem">
       <div style="display:flex;align-items:center;gap:0.5rem">
         <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;color:${col}">${r.action}</span>
-        <span style="font-weight:600;font-size:0.82rem">${(r.name || r.key || '').replace(/</g,'&lt;')}</span>
+        <span style="font-weight:600;font-size:0.82rem">${escapeHtmlLite(r.name || r.key || '')}</span>
         <span style="font-size:0.62rem;color:var(--text-muted)">${r.kind} · ${tier}</span>
         <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:0.66rem;color:${col}" onclick="removeSavedScoutItem('${r.kind}','${key}')">Remove</button>
       </div>
@@ -10212,7 +10212,24 @@ function renderMaintenanceResults(data) {
 }
 
 function escapeHtmlLite(s) {
-  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Escape a value that is interpolated into a JS string literal inside a
+// double-quoted HTML attribute, e.g. onclick="fn('HERE')". Two layers, in
+// order: JS-escape backslash + single quote so the literal can't be closed,
+// then entity-escape & and " so the attribute can't be closed. Single quotes
+// are deliberately NOT entity-escaped — the browser would decode them back
+// before evaluating the JS and re-break the literal.
+// Scout item names are model-generated; one containing a quote used to
+// truncate the onclick attribute and produce a dead (or malformed) button.
+function jsAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
 }
 
 function clearScoutDiscoveries() {
@@ -10233,7 +10250,7 @@ function renderSavedScoutGrid(skills, agents) {
   const catColors = {security:'#f87171',testing:'#f87171',code:'var(--accent)',frontend:'var(--pink)',backend:'#b8aeff',agent:'var(--teal)',devops:'var(--amber)',ml:'var(--blue)',research:'var(--green)',product:'#c4b8ff',writing:'var(--amber)',design:'var(--pink)'};
   const skillCards = skills.map(s => {
     const col = catColors[s.cat] || 'var(--accent)';
-    const sid = String(s.id).replace(/'/g, "\\'");
+    const sid = jsAttr(s.id);
     return `<div class="technique-card" onclick="loadEccSkill('${s.id}')">
       <div class="tc-header">
         <div class="tc-name">${s.name}</div>
@@ -10249,7 +10266,7 @@ function renderSavedScoutGrid(skills, agents) {
     </div>`;
   });
   const agentCards = agents.map(a => {
-    const an = String(a.name).replace(/'/g, "\\'");
+    const an = jsAttr(a.name);
     return `<div class="technique-card" onclick="loadAgentPrompt('${an}')">
     <div class="tc-header">
       <div class="tc-name">${a.name}</div>
