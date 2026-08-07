@@ -112,6 +112,55 @@ test('verification failure drags score down', () => {
   assert.ok(failed.score < passed.score - 40);
 });
 
+// ── Skill maintainer ──────────────────────────────────────────────────────────
+
+test('maintainer prunes items the policy now denies', () => {
+  const v = governance.classifyMaintenance({
+    policy: { decision: 'deny', reasons: ['prompt-injection: instruction override'] },
+    verification: { verdict: 'pass' },
+    trust: { score: 0, tier: 'denied' },
+  });
+  assert.equal(v.action, 'prune');
+  assert.ok(v.reasons.some(r => r.includes('policy now denies')));
+});
+
+test('maintainer prunes items a second model now fails', () => {
+  const v = governance.classifyMaintenance({
+    policy: { decision: 'allow', reasons: [] },
+    verification: { verdict: 'fail', reason: 'placeholder junk' },
+    trust: { score: 30, tier: 'quarantined' },
+  });
+  assert.equal(v.action, 'prune');
+  assert.ok(v.reasons.some(r => r.includes('verification failed')));
+});
+
+test('maintainer flags review-policy or quarantined-trust items', () => {
+  const review = governance.classifyMaintenance({
+    policy: { decision: 'review', reasons: ['destructive commands'] },
+    verification: { verdict: 'pass' },
+    trust: { score: 55, tier: 'bronze' },
+  });
+  assert.equal(review.action, 'flag');
+
+  const quarantined = governance.classifyMaintenance({
+    policy: { decision: 'allow', reasons: [] },
+    verification: null,
+    trust: { score: 35, tier: 'quarantined' },
+  });
+  assert.equal(quarantined.action, 'flag');
+  assert.ok(quarantined.reasons.some(r => r.includes('quarantined')));
+});
+
+test('maintainer keeps clean, verified, well-scored items', () => {
+  const v = governance.classifyMaintenance({
+    policy: { decision: 'allow', reasons: [] },
+    verification: { verdict: 'pass' },
+    trust: { score: 85, tier: 'gold' },
+  });
+  assert.equal(v.action, 'keep');
+  assert.deepEqual(v.reasons, []);
+});
+
 // ── Audit chain ──────────────────────────────────────────────────────────────
 
 test('intact chain verifies; entries link', () => {
@@ -159,4 +208,60 @@ test('verifier model always differs from scout model', () => {
   for (const m of ['claude-sonnet-4-6', 'claude-opus-4-8', 'claude-haiku-4-5-20251001']) {
     assert.notEqual(governance.verifierModel(m), m);
   }
+});
+
+// ── Client-side attribute escaping ────────────────────────────────────────────
+// jsAttr lives in the inline script of public/index.html (there is no client
+// module boundary to import), so the test extracts and evaluates it. It guards
+// a real bug: a model-generated Scout item name containing a quote used to
+// truncate the onclick attribute and produce a dead/malformed button.
+
+function loadClientEscapers() {
+  const fs = require('fs');
+  const path = require('path');
+  const src = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
+  const jsAttrSrc = src.match(/function jsAttr\(s\) \{[\s\S]*?\n\}/);
+  const escSrc = src.match(/function escapeHtmlLite\(s\) \{[\s\S]*?\n\}/);
+  assert.ok(jsAttrSrc && escSrc, 'jsAttr and escapeHtmlLite must exist in index.html');
+  const scope = {};
+  // eslint-disable-next-line no-eval
+  eval(`${jsAttrSrc[0]}\n${escSrc[0]}\nscope.jsAttr = jsAttr; scope.escapeHtmlLite = escapeHtmlLite;`);
+  return scope;
+}
+
+const ADVERSARIAL_NAMES = [
+  'The "Best" Agent',
+  "O'Brien's Agent",
+  'back\\slash',
+  '</script><img src=x onerror=alert(1)>',
+  'Tom & "Jerry"',
+];
+
+test('jsAttr keeps the onclick attribute intact for adversarial names', () => {
+  const { jsAttr } = loadClientEscapers();
+  for (const name of ADVERSARIAL_NAMES) {
+    const html = `<button onclick="removeSavedScoutItem('agent','${jsAttr(name)}')">x</button>`;
+    const attr = /onclick="([^"]*)"/.exec(html);
+    assert.ok(attr, `attribute missing for ${name}`);
+    assert.ok(attr[1].trim().endsWith(')'), `attribute truncated for ${name}: ${attr[1]}`);
+  }
+});
+
+test('jsAttr round-trips the exact name through browser decode + JS eval', () => {
+  const { jsAttr } = loadClientEscapers();
+  for (const name of ADVERSARIAL_NAMES) {
+    const attrValue = `removeSavedScoutItem('agent','${jsAttr(name)}')`;
+    // What a browser does: decode entities, then evaluate as JS.
+    const decoded = attrValue.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    let received;
+    // eslint-disable-next-line no-new-func
+    new Function('removeSavedScoutItem', decoded)((_kind, value) => { received = value; });
+    assert.equal(received, name);
+  }
+});
+
+test('escapeHtmlLite escapes the quote that breaks attributes', () => {
+  const { escapeHtmlLite } = loadClientEscapers();
+  assert.equal(escapeHtmlLite('a"b'), 'a&quot;b');
+  assert.equal(escapeHtmlLite('<i>&</i>'), '&lt;i&gt;&amp;&lt;/i&gt;');
 });

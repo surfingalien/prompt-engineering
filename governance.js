@@ -188,9 +188,33 @@ ITEMS:
 ${listing}`;
 }
 
+// ── Skill maintainer ──────────────────────────────────────────────────────────
+// Scout only ever ADDED to the library; it never revisited what was already
+// there. This re-scores an existing saved item against today's policy + a fresh
+// cross-model verification and decides what to do with it. Pure — takes the
+// already-computed policy/verification/trust so it's trivially testable.
+//
+//   prune — policy now denies it, or a second model judges it broken/unsafe
+//   flag  — policy flags it for review, or its trust fell to quarantined
+//   keep  — still clean and useful
+function classifyMaintenance({ policy, verification, trust }) {
+  const reasons = []
+  if (policy && policy.decision === 'deny') {
+    return { action: 'prune', reasons: ['policy now denies this item', ...(policy.reasons || [])], trust }
+  }
+  if (verification && verification.verdict === 'fail') {
+    return { action: 'prune', reasons: [`cross-model verification failed: ${verification.reason || 'unusable'}`], trust }
+  }
+  if (policy && policy.decision === 'review') reasons.push(...(policy.reasons || []))
+  if (trust && trust.tier === 'quarantined') reasons.push(`trust fell to ${trust.tier} (${trust.score})`)
+  if (reasons.length) return { action: 'flag', reasons, trust }
+  return { action: 'keep', reasons: [], trust }
+}
+
 module.exports = {
   evaluateItem,
   trustScore,
+  classifyMaintenance,
   appendAudit,
   verifyAuditChain,
   readAuditLog,
