@@ -9759,6 +9759,23 @@ function setModel(model) {
 function initModelSelector() {
   const sel = document.getElementById('model-selector');
   if (sel && state.selectedModel) sel.value = state.selectedModel;
+  // Add every provider the server has configured (OpenRouter, OpenAI, Groq, …).
+  fetch('/api/providers').then(r => r.json()).then(({ providers }) => {
+    if (!sel) return;
+    for (const p of providers) {
+      if (!p.configured || !p.models.length) continue;
+      const group = document.createElement('optgroup');
+      group.label = p.label;
+      for (const id of p.models) {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id.slice(id.indexOf(':') + 1);
+        group.appendChild(opt);
+      }
+      sel.appendChild(group);
+    }
+    if (state.selectedModel) sel.value = state.selectedModel;
+  }).catch(() => {});
 }
 
 function showToast(msg,type='success') {
