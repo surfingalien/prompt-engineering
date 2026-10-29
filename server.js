@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { rateLimit } = require('express-rate-limit');
 const governance = require('./governance');
+const providers = require('./providers');
 const app = express();
 
 app.use(express.json());
@@ -26,6 +27,20 @@ function anthropicRequest(apiKey, body) {
   return fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
 }
 
+// Provider-agnostic call: routes by model id (claude-* → Anthropic, or
+// "<provider>:<model>" for OpenRouter/OpenAI/Groq/Mistral/Gemini/Ollama) and
+// always returns {ok, status, data} with data in Anthropic Messages shape.
+const callModel = body => providers.callModel(body, { anthropicRequest });
+
+// Claude ids stay allow-listed as before; other providers are allowed only
+// when configured on this server (see providers.js / .env.example).
+const CLAUDE_MODELS = ['claude-sonnet-4-6', 'claude-opus-4-8', 'claude-haiku-4-5-20251001'];
+const resolveScoutModel = model => {
+  if (CLAUDE_MODELS.includes(model)) return model;
+  const t = providers.resolve(model);
+  return t && t.provider !== 'anthropic' && providers.isConfigured(t.provider) ? model : 'claude-sonnet-4-6';
+};
+
 // ── Rate limiting ──────────────────────────────────────────────────────────
 // ANTHROPIC_API_KEY lives server-side, so these routes are the only thing
 // standing between a public deployment and an open-ended API bill.
@@ -40,28 +55,34 @@ const scoutLimiter = rateLimit({
 
 // Proxy endpoint — keeps ANTHROPIC_API_KEY server-side only
 app.post('/api/chat', chatLimiter, async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
+  const target = providers.resolve(req.body && req.body.model);
+  if (!target) return res.status(400).json({ error: 'Unknown or malformed model id.' });
+  if (!providers.isConfigured(target.provider)) {
+    const p = providers.PROVIDERS[target.provider];
+    return res.status(500).json({ error: `${p.keyEnv} not configured on server.` });
   }
   try {
-    const upstream = await anthropicRequest(apiKey, req.body);
-    const data = await upstream.json();
-    res.status(upstream.status).json(data);
+    const r = await callModel(req.body);
+    res.status(r.status).json(r.data);
   } catch (err) {
     res.status(502).json({ error: 'Upstream API request failed.', detail: err.message });
   }
 });
 
+// Which providers/models this server can reach (names only — no keys or URLs).
+app.get('/api/providers', (req, res) => {
+  res.json({ providers: providers.listProviders() });
+});
+
 // Scout endpoint — generates new skills & agents using Claude's knowledge
 app.post('/api/scout', scoutLimiter, async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
-  }
   const { topic = 'AI agents and prompt engineering', count = 3, type = 'both', model = 'claude-sonnet-4-6' } = req.body;
-  const ALLOWED_MODELS = ['claude-sonnet-4-6','claude-opus-4-8','claude-haiku-4-5-20251001'];
-  const scoutModel = ALLOWED_MODELS.includes(model) ? model : 'claude-sonnet-4-6';
+  const scoutModel = resolveScoutModel(model);
+  const scoutTarget = providers.resolve(scoutModel);
+  if (!providers.isConfigured(scoutTarget.provider)) {
+    return res.status(500).json({ error: `${providers.PROVIDERS[scoutTarget.provider].keyEnv} not configured on server.` });
+  }
+  const verifier = providers.pickVerifier(scoutModel, governance.verifierModel(scoutModel));
 
   // Single-sourced from prompts/scout-system.txt so the promptfoo eval suite
   // (promptfooconfig.yaml) tests the exact prompt this endpoint runs.
@@ -84,13 +105,13 @@ Topic focus: ${topic}`;
   try {
     // The system prompt is identical on every call — cache it so repeated
     // Scout runs only pay full price for the first request in the window.
-    const upstream = await anthropicRequest(apiKey, {
+    const upstream = await callModel({
       model: scoutModel,
       max_tokens: 8000,
       system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMsg }],
     });
-    const data = await upstream.json();
+    const data = upstream.data;
     if (!upstream.ok) return res.status(upstream.status).json({ error: data.error?.message || JSON.stringify(data.error) || 'API error', detail: JSON.stringify(data).slice(0, 300) });
 
     const rawText = data.content?.[0]?.text || '';
@@ -146,12 +167,12 @@ Topic focus: ${topic}`;
     const verifyEnabled = process.env.SCOUT_VERIFY !== '0' && (skills.length || agents.length);
     if (verifyEnabled) {
       try {
-        const vres = await anthropicRequest(apiKey, {
-          model: governance.verifierModel(scoutModel),
+        const vres = await callModel({
+          model: verifier,
           max_tokens: 120 * (skills.length + agents.length) + 100,
           messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
         });
-        const vdata = await vres.json();
+        const vdata = vres.data;
         if (vres.ok) {
           verifyTokens = { input: vdata.usage?.input_tokens || 0, output: vdata.usage?.output_tokens || 0 };
           const vtext = vdata.content?.[0]?.text || '';
@@ -186,7 +207,7 @@ Topic focus: ${topic}`;
     const auditEntry = governance.appendAudit({
       topic,
       scout_model: scoutModel,
-      verifier_model: verifyEnabled ? governance.verifierModel(scoutModel) : null,
+      verifier_model: verifyEnabled ? verifier : null,
       accepted: [
         ...skills.map(s => ({ kind: 'skill', key: s.id, digest: governance.itemDigest('skill', s), tier: s.trust.tier, score: s.trust.score })),
         ...agents.map(a => ({ kind: 'agent', key: a.name, digest: governance.itemDigest('agent', a), tier: a.trust.tier, score: a.trust.score })),
@@ -234,17 +255,14 @@ app.get('/api/scout/audit/verify', (req, res) => {
 // verdict. The client applies pruning to its own localStorage. Read-only on the
 // server except for an audit-log entry.
 app.post('/api/scout/maintain', async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
-
   const skills = Array.isArray(req.body?.skills) ? req.body.skills.filter(s => s && s.id && s.prompt) : [];
   const agents = Array.isArray(req.body?.agents) ? req.body.agents.filter(a => a && a.name && a.text) : [];
   if (!skills.length && !agents.length) {
     return res.json({ skills: [], agents: [], summary: { keep: 0, flag: 0, prune: 0 }, note: 'Library is empty — nothing to maintain.' });
   }
 
-  const model = req.body?.model || 'claude-sonnet-4-6';
-  const scoutModel = ['claude-sonnet-4-6', 'claude-opus-4-8', 'claude-haiku-4-5-20251001'].includes(model) ? model : 'claude-sonnet-4-6';
+  const scoutModel = resolveScoutModel(req.body?.model || 'claude-sonnet-4-6');
+  const verifier = providers.pickVerifier(scoutModel, governance.verifierModel(scoutModel));
 
   // One cross-model verification pass over the whole library (assess-only,
   // fail-open). Disable with SCOUT_VERIFY=0, same knob as generation.
@@ -252,16 +270,12 @@ app.post('/api/scout/maintain', async (req, res) => {
   let verifyTokens = { input: 0, output: 0 };
   if (process.env.SCOUT_VERIFY !== '0') {
     try {
-      const vres = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: governance.verifierModel(scoutModel),
-          max_tokens: 120 * (skills.length + agents.length) + 100,
-          messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
-        }),
+      const vres = await callModel({
+        model: verifier,
+        max_tokens: 120 * (skills.length + agents.length) + 100,
+        messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
       });
-      const vdata = await vres.json();
+      const vdata = vres.data;
       if (vres.ok) {
         verifyTokens = { input: vdata.usage?.input_tokens || 0, output: vdata.usage?.output_tokens || 0 };
         const vtext = vdata.content?.[0]?.text || '';

@@ -123,6 +123,14 @@ Run the governance test suite with `npm test` (zero extra dependencies — Node'
 | **Helicone (optional)** | Set `HELICONE_API_KEY` and every Anthropic call routes through Helicone's proxy instead — per-request cost, latency, token counts, and prompt-version comparison, no code changes needed. Unset, calls go straight to the Anthropic API |
 | **promptfoo eval suite** | `promptfooconfig.yaml` runs the real `prompts/scout-system.txt` against live Anthropic calls and asserts the JSON contract holds (skills/agents shape, category enums, required fields). Run with `npm run eval` (needs `ANTHROPIC_API_KEY`) |
 
+### Multi-provider models
+
+Beyond Claude, the server can route any request to **OpenRouter, OpenAI, Groq, Mistral, Gemini, or a local Ollama/LM Studio/vLLM server** (`providers.js`). Set a provider's key in `.env` (see `.env.example`) and its models appear in the header model picker; `GET /api/providers` lists what is configured (names only — keys and URLs never leave the server).
+
+- Model ids are `claude-*` (Anthropic, unchanged) or `<provider>:<model>`, e.g. `openrouter:google/gemini-2.5-pro`.
+- The browser and Scout keep using the Anthropic request/response shape; `providers.js` translates to and from OpenAI-compatible APIs at the edge, so prompt caching, rate limits, Helicone, governance, and the audit log apply unchanged.
+- Set `SCOUT_VERIFIER_MODEL` to judge Scout output with a **different vendor** than the generator for stronger cross-model verification.
+
 `prompts/scout-system.txt` is the single source of truth for the Scout's system prompt — `server.js` reads it at request time and `promptfooconfig.yaml` evals the same file, so a prompt edit that breaks the JSON contract shows up in `npm run eval` before it ships. A lighter, API-key-free structural check on the same file also runs in `npm test`.
 
 ---

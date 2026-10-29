@@ -4,6 +4,6 @@ COPY package*.json ./
 RUN npm install --omit=dev
 COPY public ./public
 COPY prompts ./prompts
-COPY server.js governance.js ./
+COPY server.js governance.js providers.js ./
 EXPOSE 3000
 CMD ["node", "server.js"]
