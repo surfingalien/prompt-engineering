@@ -82,7 +82,7 @@ Search by task ("code review", "PRD", "RAG"), then filter by type, domain and le
 
 ## 8. Skill collections
 
-At the top of the **Library**, six collections group 56 installable skills: a log-first trading desk, market microstructure, the volatility surface, quant research rigor, autoresearch loops, and agent & context engineering. Click a collection to filter. Open a skill to run it in the Workbench, add it to a harness, or **Download SKILL.md** to use it in Claude Code (put it in `.claude/skills/<name>/`).
+At the top of the **Library**, six collections group 58 installable skills: a log-first trading desk, market microstructure, the volatility surface, quant research rigor, autoresearch and loop prompts, and agent & context engineering. Click a collection to filter. Open a skill to run it in the Workbench, add it to a harness, or **Download SKILL.md** to use it in Claude Code (put it in `.claude/skills/<name>/`).
 
 The **MCP servers** collection lists 16 servers that connect agents to other systems. Open one to see what it can do, its security notes, a ready `.mcp.json` for your repository, and the `claude mcp add` command for your own machine. **Add to a harness** puts it in the Harness studio.
 

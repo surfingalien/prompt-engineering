@@ -64,7 +64,7 @@ Every lesson pairs a principle with a scored before/after example, a checklist, 
 |---|---|
 | **Home** | Your path, progress, recent prompts and a live before/after demo |
 | **Learning path** | 18 lessons across 4 levels; progress is saved locally |
-| **Library** | 586 items: 514 curated skills, prompts, agents, techniques and reference system prompts, plus 56 installable skills in 6 collections and 16 MCP servers. Faceted by collection, type, domain and level, with instant search and favorites |
+| **Library** | 588 items: 514 curated skills, prompts, agents, techniques and reference system prompts, plus 58 installable skills in 6 collections and 16 MCP servers. Faceted by collection, type, domain and level, with instant search and favorites |
 | **Prompt builder** | 8 blueprints (write, analyze, code, extract, summarize, classify, brainstorm, agent). Guided and Pro modes compose a best-practice prompt live, with a quality score |
 | **Workbench** | Prompt workspace with system + user fields, **Deep review** (Claude critiques the prompt like an expert editor), **graded exercises** (Check my answer against the lesson checklist), **share links**, `{{variables}}`, streaming runs, reasoning summaries, A/B compare (model vs model or version vs version), follow-up turns, version history with diffs, and **Improve with Claude** (six rewrite modes, reviewed as a diff before applying) |
 | **Analyzer** | Deterministic prompt linter: clarity, context, structure, specificity, output and robustness, plus findings like "wrap untrusted input in tags", each with a fix |
@@ -94,7 +94,7 @@ Model pickers show the logo of the provider behind each model: Claude, or the up
 
 ## Skill collections
 
-56 original, installable [Agent Skills](https://github.com/anthropics/skills) live in `skills/<name>/SKILL.md`. Each one appears in the Library (filter by collection) and can be opened in the Workbench, added to a harness, or downloaded. To install one in Claude Code, copy its folder into your project's `.claude/skills/`.
+58 original, installable [Agent Skills](https://github.com/anthropics/skills) live in `skills/<name>/SKILL.md`. Each one appears in the Library (filter by collection) and can be opened in the Workbench, added to a harness, or downloaded. To install one in Claude Code, copy its folder into your project's `.claude/skills/`.
 
 | Collection | Skills | What's inside |
 |---|---|---|
@@ -102,7 +102,7 @@ Model pickers show the logo of the provider behind each model: Claude, or the up
 | **Market microstructure** | 8 | Bid-ask spread, order book depth, market impact (square-root law), adverse selection (Glosten–Milgrom), queue position, latency arbitrage (Budish et al. 2015), maker–taker fees, slippage / implementation shortfall |
 | **Volatility surface** | 8 | Skew, smile, term structure, sticky strike, sticky delta, 25Δ risk reversal, 25Δ butterfly, variance swaps |
 | **Quant research rigor** | 17 | Look-ahead and survivorship audits, leakage audit, walk-forward/CPCV, deflated Sharpe, overfitting reviewer, cost model, triple-barrier labels, regimes, vol forecasting, mean reversion, pairs, tearsheet, hypothesis design, pre-trade gate, prediction markets, LP math |
-| **Autoresearch loops** | 5 | The Karpathy loop, a program.md writer, the morning results.tsv review, an overfit-safe loop for trading strategies, and an eval-driven loop for prompts |
+| **Autoresearch loops** | 7 | The Karpathy loop, a program.md writer, the morning results.tsv review, an overfit-safe loop for trading strategies, an eval-driven loop for prompts, loop prompts for `/loop` and scheduled tasks, and fresh-context Ralph build loops |
 | **Agent & context engineering** | 11 | Context degradation, compression, long-horizon briefs, memory design, filesystem context, harness engineering, LLM-as-judge, multi-agent patterns, skill creator, tool contracts, Socratic tutor |
 
 Five skills ship **calculators** (`scripts/*.py`, standard-library Python) that Claude runs instead of doing arithmetic by hand: market impact (`micro-market-impact`), deflated Sharpe (`quant-deflated-sharpe`), impermanent loss (`quant-lp-impermanent-loss`), variance-swap strike (`vol-variance-swap`) and position size (`desk-position-sizer`). Each is regression-tested against values you can derive by hand. In the Library, these skills download as a .zip with their scripts.
@@ -163,7 +163,7 @@ public/
   index.html                  app shell (no inline scripts)
   css/tokens.css              design tokens: color, type, space, light + dark
   css/app.css · views.css     components and views
-  data/catalog.json           586-item library, built by scripts/build-catalog.js (lazy-loaded)
+  data/catalog.json           588-item library, built by scripts/build-catalog.js (lazy-loaded)
   img/logos/                  provider and MCP-server logos (dashboard-icons, Apache-2.0)
   js/app.js                   router, sidebar, command palette, settings
   js/core/                    store (localStorage), API client (SSE), catalog, templating, UI primitives
@@ -174,7 +174,7 @@ prompts/scout-system.txt      Scout system prompt (single source for server + pr
 scripts/build-catalog.js      validates skills/ and mcp/ and merges them into catalog.json
 scripts/smoke-live.js         live smoke test against the real API (npm run smoke:live)
 scripts/extract-legacy-data.js  one-time migration of v4 content into catalog.json
-skills/                       56 installable Agent Skills (SKILL.md + optional scripts/)
+skills/                       58 installable Agent Skills (SKILL.md + optional scripts/)
 mcp/servers.json              16 curated MCP servers (Library collection + Harness studio)
 docs/archive/                 reference material from earlier versions (not loaded by the app)
 .github/workflows/ci.yml      tests on every PR; optional live smoke test
