@@ -1,67 +1,51 @@
 # About PromptForge
 
-## What It Is
+## What it is
 
-PromptForge is an AI Prompt Engineering Studio — a web application that helps you write better instructions for AI systems like Claude, ChatGPT, and Gemini.
+PromptForge is a prompt engineering studio for Claude. It takes you from your very first prompt to designing the harness around a production agent: learn the principles, build prompts with guidance, test them against Claude, measure them with evals, and export the files an agent needs.
 
-Think of it as a professional writing desk for talking to AI. Instead of typing a random message and hoping for the best, PromptForge gives you templates, techniques, agents, and tools to craft precise, effective prompts every time.
+## Why it exists
 
-## Why It Exists
+Most people write prompts like text messages (short, vague, full of assumptions) and then wonder why the answer is generic. Prompt engineering is the skill of giving a model the context, structure and success criteria it needs. As work moves from single prompts to agents, the skill grows into *harness engineering*: the system prompt, project memory, tools, skills, subagents, guardrails and evals that make an agent dependable.
 
-Most people write AI prompts the same way they send a text message — short, vague, and full of assumptions. Then they wonder why the AI gave them something useless.
+PromptForge teaches both in one place, for free and open source, with every lesson connected to a tool you can use right away.
 
-Prompt engineering is the skill of writing clear, structured instructions that produce reliable, high-quality AI outputs. It's the difference between asking "write me an email" and getting something generic, versus using a structured template and getting something you can actually send.
+## The path
 
-PromptForge was built to democratize that skill. Everything you need — from beginner-friendly templates to production-grade agent workflows — is in one place, free, and open source.
+1. **Foundations.** Clear and direct, context and why, output format, examples.
+2. **Structure.** XML tags, system prompts, long documents, thinking and effort.
+3. **Systems.** Prompt chaining, structured output, tool design, prompt-injection defense.
+4. **Harness.** What a harness is, CLAUDE.md, skills and subagents, evals.
 
-## Who Built It
+## What makes it different
 
-Built by [@surfingalien](https://github.com/surfingalien), synthesizing work from 15+ open-source repositories and community contributors across the AI/ML ecosystem.
-
-The application stands on the shoulders of contributors to:
-- DAIR.AI's Prompt Engineering Guide (75k+ stars)
-- affaan-m/ECC — real AI engineering patterns
-- rohitg00's AI Engineering from Scratch curriculum
-- awesome-claude-code-toolkit agent library
-- tenfoldmarc's LLM Council methodology
-- huytieu's COG Second Brain system
-- And many more (see README for full list)
-
-## What Makes It Different
-
-**It's not just a prompt library.** Every other prompt collection is a static list you scroll through. PromptForge is a studio — you write, optimize, test with AI, score, and iterate. The prompts are starting points, not endpoints.
-
-**It's opinionated about quality.** Every skill and template in the library comes from engineers who ran these patterns in production. Nothing is aspirational fluff.
-
-**It's the whole stack.** Single editor for writing. Skills library for patterns. Agents library for system prompts. Council for decisions. Optimizer for refinement. Design system generator. Second brain. All in one page, no signup required.
+- **It teaches, then hands you the tool.** Each lesson ends with an exercise that opens in the Workbench.
+- **It's opinionated about quality.** The analyzer explains *why* something is weak and how to fix it, grounded in current Claude guidance.
+- **It goes past prompts.** The Harness studio and Evals cover what separates a demo from an agent you can trust.
+- **It's yours.** Everything is stored in your browser; export it any time. No account required.
 
 ## Technology
 
-- **Frontend:** Vanilla JS + HTML/CSS — no framework, loads instantly
-- **Backend:** Node.js + Express — minimal server with one job: proxy AI API calls safely
-- **AI:** Anthropic Claude API (via server-side proxy — API key never reaches the browser)
-- **Deployment:** Railway (Docker, auto-deploy on push to `main`)
-- **Data:** All prompts, skills, and agents are embedded directly in `index.html` — works offline after first load
+- **Front end:** framework-free ES modules with no build step, an editorial design system, light and dark themes
+- **Back end:** Node.js + Express 5 using the official Anthropic SDK (streaming, effort control, structured outputs, refusal fallbacks)
+- **Models:** Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.2
+- **Deployment:** Docker (Railway-ready); offline mode when no API key is set
 
 ## Numbers
 
-| Metric | Count |
-|--------|-------|
-| Prompt skills | 300+ |
-| Specialist agents | 190+ |
-| Source repositories synthesized | 15+ |
-| Views / modes | 9 |
-| Lines of source | ~2,300 |
-| External dependencies | 1 (Express) |
+| | |
+|---|---|
+| Lessons | 16 across 4 levels |
+| Library items | 514 unique (skills, prompts, agents, techniques, references) |
+| Builder blueprints | 8 |
+| Harness templates | 3 |
+| Automated tests | 60 |
+| Runtime dependencies | 4 |
 
-## Roadmap Ideas
+## Who built it
 
-- Prompt version history with diff view
-- Team sharing and collaboration
-- Eval harness — test prompts against a suite of cases
-- Custom agent builder — compose agents from skill blocks
-- Export to CLAUDE.md / system prompt files
+Built by [@surfingalien](https://github.com/surfingalien), synthesizing work from 30+ open-source repositories (see the README for the full list). The AI Intelligence Scout is an original feature; attribution is required for derivative works.
 
 ## License
 
-MIT — use it, fork it, build on it.
+MIT, with attribution required. See the README.

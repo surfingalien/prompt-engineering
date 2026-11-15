@@ -1,6 +1,6 @@
-# ⚡ PromptForge v4 — AI Prompt Engineering Studio
+# PromptForge v5 — Prompt engineering studio for Claude
 
-> **The most complete open-source AI prompt engineering platform.** Write, optimize, score, and deploy prompts — powered by 350+ skills, 220+ specialist agents, and a live AI Intelligence Scout that discovers new skills and agents autonomously.
+> **From your first prompt to a production agent harness.** Learn the principles, build prompts with guidance, test them against Claude, measure them with evals, and ship the scaffolding that makes agents dependable, all in one calm workspace.
 
 **Live at:** [prompt-engineering-production-67f2.up.railway.app](https://prompt-engineering-production-67f2.up.railway.app)
 
@@ -24,310 +24,230 @@
 
 ---
 
-## What is PromptForge?
+## What's new in v5
 
-PromptForge is a single-page AI studio that turns anyone into a skilled prompt engineer. It is the only open-source tool that combines:
+v5 is a ground-up rebuild. The 10,500-line single HTML file is now a modular, dependency-free front end on a hardened server that uses the official Anthropic SDK.
 
-- A live **prompt editor** with real-time scoring, variable fill-in, and AI optimization
-- A **350+ skill library** covering every major AI engineering domain
-- A **220+ agent library** of production-grade system prompts
-- A **5-advisor Council** for AI-assisted decision making
-- A live **AI Intelligence Scout** that autonomously discovers and adds new skills and agents from the internet
+| | v4 | v5 |
+|---|---|---|
+| **Structure** | One 814 KB `index.html` (data + code + styles) | ES modules, three stylesheets, content in lazily loaded JSON |
+| **Learning** | Static technique cards | A 4-level, 16-lesson path with before/after examples, checklists and runnable exercises |
+| **Creating** | Free-text editor + regex score | Guided prompt builder plus a Workbench with streaming runs, A/B compare, multi-turn follow-ups, versions and diffs |
+| **Quality** | Keyword-count score | A teaching analyzer: 6 dimensions, findings with concrete fixes, grounded in current Claude guidance |
+| **Shipping** | — | Harness studio (CLAUDE.md, skills, subagents, tools, guardrails, evals → .zip) and an Evals runner with Claude-graded rubrics and promptfoo export |
+| **Claude API** | Raw `fetch`, any model and body forwarded | Official SDK, Claude 5 models, SSE streaming, effort control, structured outputs, refusal fallbacks, strict validation |
+| **Security** | Inline `onclick` handlers, no CSP | No inline handlers or scripts, strict CSP, escaped templating, capped tokens, rate limits |
+| **Design** | Dark "glass" theme | Warm editorial design system, light + dark, responsive, keyboard-first (⌘K) |
 
-No sign-up. No account. No API key in the browser. Open source.
+Everything you saved in v4 carries over: Workbench imports your v4 prompt history on first load, and the Scout library keeps its storage key.
 
 ---
 
-## 📡 AI Intelligence Scout — Flagship Feature
+## The learning path: entry to expert
+
+| Level | Theme | Lessons |
+|---|---|---|
+| **1 · Foundations** | Write prompts Claude understands the first time | Be clear and direct · Give context and say why · Specify the output · Examples |
+| **2 · Structure** | Organize complex prompts so nothing gets lost | XML tags · Roles and system prompts · Long documents · Thinking and effort |
+| **3 · Systems** | Chain prompts, use tools, get reliable outputs | Prompt chaining · Structured output · Designing tools · Prompt-injection defense |
+| **4 · Harness** | Build and verify the scaffolding around an agent | What is a harness? · CLAUDE.md · Skills and subagents · Evals |
+
+Every lesson pairs a principle with a scored before/after example, a checklist, and an exercise that opens in the Workbench. The guidance reflects current Claude models: adaptive thinking controlled by **effort** rather than "think step by step", structured outputs instead of assistant prefill, and calm instructions instead of ALL-CAPS emphasis.
+
+---
+
+## Features
+
+| Area | What it does |
+|---|---|
+| **Home** | Your path, progress, recent prompts and a live before/after demo |
+| **Learning path** | 16 lessons across 4 levels; progress is saved locally |
+| **Library** | 514 unique skills, prompts, agents, techniques and reference system prompts. Faceted by type, domain and level, with instant search and favorites |
+| **Prompt builder** | 8 blueprints (write, analyze, code, extract, summarize, classify, brainstorm, agent). Guided and Pro modes compose a best-practice prompt live, with a quality score |
+| **Workbench** | Prompt workspace with system + user fields, `{{variables}}`, streaming runs, reasoning summaries, A/B compare (model vs model or version vs version), follow-up turns, version history with diffs, and **Improve with Claude** (six rewrite modes, reviewed as a diff before applying) |
+| **Analyzer** | Deterministic prompt linter: clarity, context, structure, specificity, output and robustness, plus findings like "wrap untrusted input in tags", each with a fix |
+| **Harness studio** | Design mission, guardrails, project memory, tools, skills, subagents and evals, with a readiness checklist. Exports `CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`, strict `tools.json`, a runnable SDK `agent.ts`, and `evals.yaml` as a .zip |
+| **Evals** | Suites of cases with checks (contains, regex, word limits, JSON, JSON keys, Claude-graded rubric). Run history with pass rates; export to promptfoo for CI |
+| **Council** | Five advisors run as independent parallel calls, then a chairman synthesizes. A working example of the parallel-agents pattern |
+| **📡 Scout** | Generates new skills and agents through a governance pipeline (below) |
+| **Everywhere** | ⌘K command palette, light/dark theme, local-first storage with export/import, a usage and cost meter with a spend alert, offline mode |
+
+---
+
+## 📡 AI Intelligence Scout
 
 > *Original invention by [@surfingalien](https://github.com/surfingalien). Attribution required for any use or derivative.*
 
-The **AI Intelligence Scout** is PromptForge's most powerful and unique feature — an autonomous AI agent that discovers, evaluates, and injects new skills and agents directly into your running instance of PromptForge.
-
-### How It Works
+Scout asks Claude to generate new, production-grade skill templates and agent system prompts on any topic, then gates every item before it can enter your library.
 
 ```
-Topic Input → /api/scout → Claude generates JSON skills + agents → Live injection → localStorage persistence
+Topic → /api/scout → Claude (structured JSON output) → policy gate → cross-model verification → trust score → audit chain → your library
 ```
 
-1. **Open the `📡 Scout` tab** in the navigation
-2. **Enter a topic** (e.g. `"multi-agent orchestration"`, `"RAG systems"`, `"browser automation"`)
-3. **Choose type**: Skills + Agents / Skills only / Agents only
-4. **Click `Run Scout`** — Claude analyzes the latest AI ecosystem and generates production-quality prompts
-5. **Save discoveries** — one click adds them to your live Skills and Agents libraries, persisted across sessions
-
-### What It Generates
-
-| Output | Description |
-|--------|-------------|
-| **Skills** | Full prompt templates with `{{variables}}`, categorized, ready to load into editor |
-| **Agents** | Complete system prompts with identity, capabilities, operating procedures |
-| **Live injection** | Saved items appear immediately in Skills Library and Agents view — no reload |
-| **Persistent storage** | Saved discoveries survive page refresh via `localStorage` |
-
-### Quick Topics
-Multi-agent orchestration · Browser automation · RAG systems · LLM code generation ·
-Agent memory · Prompt compression · MCP servers · AI safety · Multimodal workflows · Data + AI pipelines
-
-### Technical Implementation
-- **Server**: `POST /api/scout` endpoint in `server.js` — calls `claude-sonnet-4-6` with a structured JSON schema prompt
-- **Validation**: Server validates and sanitizes all generated JSON before returning
-- **Security**: API key stays server-side; Scout results are AI-generated, not scraped
-- **Frontend**: Results injected into `SCOUT_SKILLS` and `SYSTEM_PROMPTS_DATA` live arrays; `loadPersistedScoutDiscoveries()` runs on boot
-
-### Governance, Trust & Audit (`governance.js`)
-
-Every Scout discovery now passes three gates before it can enter your library:
+### Governance, trust & audit (`src/governance.js`)
 
 | Gate | What it does |
 |------|-------------|
-| **Policy engine** | Deterministic allow / review / deny rules: prompt-injection markers, secret-exfiltration instructions, and user-deception patterns are **denied** and never reach the browser; destructive-command content, unknown categories, and size violations are flagged **review** and require an explicit confirm before saving |
-| **Cross-model verification** | A *different* Claude model (never the generator grading itself) judges each item pass/fail for coherence and safety; failures are dropped. Disable with `SCOUT_VERIFY=0` |
-| **Trust scoring** | Each surviving item gets a 0–100 score and a **gold / silver / bronze / quarantined** tier from structure quality, policy outcome, and verification verdict — shown as a chip on every result card |
+| **Structured output** | The generator's response is constrained to a JSON schema (`output_config.format`), so it always parses. No more regex-scraping JSON out of prose |
+| **Policy engine** | Deterministic allow / review / deny rules: prompt-injection markers, secret-exfiltration instructions and user-deception patterns are **denied** and never reach the browser; destructive commands, unknown categories and size violations are flagged **review** and need an explicit confirm before saving |
+| **Cross-model verification** | A *different* Claude model (the generator never grades itself) judges each item pass/fail for coherence and safety; failures are dropped. Disable with `SCOUT_VERIFY=0` |
+| **Trust scoring** | Each surviving item gets a 0–100 score and a **gold / silver / bronze / quarantined** tier |
 
 Every run is appended to a SHA-256 **hash-chained audit log** (`scout-audit.jsonl`): each entry's hash covers its content plus the previous entry's hash, so any tampering with history is detectable.
 
-- `GET /api/scout/audit` — recent runs with accepted/rejected items and hash linkage
-- `GET /api/scout/audit/verify` — recomputes the whole chain, pinpoints the first broken link
+- `GET /api/scout/audit` returns recent runs with accepted/rejected items and hash linkage
+- `GET /api/scout/audit/verify` recomputes the whole chain and pinpoints the first broken link
 
-### Skill maintainer — keep the library fresh
+### Library maintainer and editable memory
 
-Scout only ever *added* to your library; it never revisited what was already
-there. **🩺 Maintain library** (in the Scout tab) re-scores every saved item
-against today's policy plus a fresh cross-model verification and returns a
-verdict per item:
-
-- **prune** — the policy now denies it, or a second model judges it broken/unsafe
-- **flag** — the policy flags it for review, or its trust fell to *quarantined*
-- **keep** — still clean and useful
-
-`POST /api/scout/maintain` does the re-validation (read-only except for an audit
-entry); the client applies pruning to its own library.
-
-### White-box, editable library memory
-
-The saved Scout library is PromptForge's persistent, self-accumulated memory —
-and it's now **curatable**, not append-only. Every saved card has **Note** and
-**✕** controls: annotate an item or delete it outright, so you shape the memory
-rather than just piling onto it. Combined with the maintainer, the library stays
-a trusted set instead of an ever-growing pile of stale AI output.
-
-Run the governance test suite with `npm test` (zero extra dependencies — Node's built-in test runner).
-
-### Operations: caching, rate limiting, observability, evals
-
-| Layer | What it does |
-|-------|-------------|
-| **Prompt caching** | The Scout's system prompt (`prompts/scout-system.txt`) is sent with `cache_control: {type: "ephemeral"}` — repeated Scout calls only pay full input-token price on the first request per cache window |
-| **Rate limiting** | `/api/chat` (30 req / 15 min) and `/api/scout` (10 req / 15 min) are rate-limited per IP via `express-rate-limit`, since `ANTHROPIC_API_KEY` lives server-side and is otherwise unprotected from abuse |
-| **Helicone (optional)** | Set `HELICONE_API_KEY` and every Anthropic call routes through Helicone's proxy instead — per-request cost, latency, token counts, and prompt-version comparison, no code changes needed. Unset, calls go straight to the Anthropic API |
-| **promptfoo eval suite** | `promptfooconfig.yaml` runs the real `prompts/scout-system.txt` against live Anthropic calls and asserts the JSON contract holds (skills/agents shape, category enums, required fields). Run with `npm run eval` (needs `ANTHROPIC_API_KEY`) |
-
-`prompts/scout-system.txt` is the single source of truth for the Scout's system prompt — `server.js` reads it at request time and `promptfooconfig.yaml` evals the same file, so a prompt edit that breaks the JSON contract shows up in `npm run eval` before it ships. A lighter, API-key-free structural check on the same file also runs in `npm test`.
-
----
-
-## Features at a Glance
-
-| View | What It Does |
-|------|-------------|
-| **Editor** | Write prompts with live stats, `{{variable}}` fill-in, scoring, history, keyboard shortcuts |
-| **⚔ Council** | 5-advisor AI decision engine — Contrarian, First Principles, Expansionist, Outsider, Executor |
-| **Techniques** | 12 interactive cards — CoT, ToT, ReAct, RAG, few-shot, meta-prompting |
-| **Design System** | Generate design tokens, UI styles, brand voice, color systems |
-| **COG Brain** | Second-brain skills — braindump, daily brief, PRD generator, deep research |
-| **Sys Prompts** | 30+ real system prompts from Claude, ChatGPT, Cursor, Copilot, Lovable |
-| **Library** | 600+ full prompts across all categories |
-| **⚡ Skills** | 350+ production workflow skills across 13 categories |
-| **🤖 Agents** | 220+ specialist agent system prompts across 13 source collections |
-| **📡 Scout** | **Live AI discovery engine** — generates and injects new skills + agents autonomously |
-
----
-
-## Optimizer Modes
-
-| Mode | What It Does |
-|------|-------------|
-| **Clarity** | Removes ambiguity, tightens language |
-| **Chain-of-Thought** | Adds step-by-step reasoning structure |
-| **Few-Shot** | Generates examples for the prompt |
-| **System Prompt** | Converts to professional system prompt format |
-| **Concise** | Cuts to essentials without losing meaning |
-| **Structured XML** | Adds `<task>`, `<context>`, `<constraints>`, `<output_format>` tags |
-
-Results include **Copy** and **Apply to Editor** buttons.
-
----
-
-## Skills Library (510+)
-
-| Source | Skills | Categories |
-|--------|--------|-----------|
-| **PromptForge Finance** | 8 | Stock analysis, portfolio review, options, earnings, macro, quant screening |
-| [f/prompts.chat](https://github.com/f/prompts.chat) | 70 | Role personas, interview prep, domain experts, creative writing |
-| [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | 68 | Discovery, Strategy, Execution, Market Research, Data Analytics, GTM, Marketing, AI Shipping |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 36 | Security, Testing, Code, Frontend, Backend, Agent, DevOps, ML, Research, Product, Writing |
-| [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) | 14 | RAG, Chain-of-Thought, LangGraph, Multi-Agent, LLM Infra, Safety |
-| [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) | 8 | Agent memory workflows |
-| [rohitg00/skillkit](https://github.com/rohitg00/skillkit) | 3 | SOUL Philosophy, Skill Discovery, Composition |
-| [VRSEN/OpenSwarm](https://github.com/VRSEN/OpenSwarm) | 8 | Orchestrator, Research, Data Analyst, Document, Presentation, Portfolio |
-| [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps) | 14 | Strategy, UX, Planning, Research, Debugging, Content |
-| [safishamsi/graphify](https://github.com/safishamsi/graphify) | 6 | Codebase graphs, architecture, multi-file context, AGENTS.md |
-| [tobi/qmd](https://github.com/tobi/qmd) | 6 | Hybrid RAG, query expansion, chunking, re-ranking, search eval |
-| [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) | 4 | Trend research, competitive intel, community consensus, GitHub velocity |
-| [danielmiessler/PAI](https://github.com/danielmiessler/Personal_AI_Infrastructure) | 6 | 7-phase solver, ISA, red team, systems thinking, root cause, daily brief |
-| [obra/superpowers](https://github.com/obra/superpowers) | 5 | TDD, systematic debugging, code review, feature planning, spec refiner |
-| [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | 4 | Research notebook, podcast script, multi-source synthesis, study guide |
-| [vercel-labs/skills](https://github.com/vercel-labs/skills) | 2 | Agent skill discovery, AI skill recommendation engine |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | 10 | TDD vertical slices, six-phase bug diagnosis, PRD synthesis, vertical-slice issues, architecture review, deep module design, domain modeling, session handoff, multi-session teaching, design interview with ADRs |
-| [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 8 | Swarm coordination, SPARC coder, GOAP planner, TDD London, code review swarm, performance analyzer |
-| [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | 6 | Prompt engineering expert, deep research pro, 3-pass code review, OWASP security audit, memory manager, parallel agent dispatcher |
-| [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | 2 | ReAct deep research agent, structured report generator |
-| [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 4 | Deep research coordinator, structured report builder, slide deck creator, sub-agent driven development |
-| [diegosouzapw/OmniRoute](https://github.com/diegosouzapw/OmniRoute) | 2 | AI provider router design, token compression strategist |
-| **📡 Scout (live-generated)** | ∞ | Any topic — generated on demand and saved to your library |
-
----
-
-## Agent Library (220+)
-
-| Source | Agents | Domains |
-|--------|--------|---------|
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 7 | Architect, Code Reviewer, Security, TDD, Planner, Performance, Simplifier |
-| [rohitg00/awesome-claude-code-toolkit](https://github.com/rohitg00/awesome-claude-code-toolkit) | 136 | Business, Core Dev, Data/AI, Infrastructure, Language Experts, Orchestration, QA, Research |
-| [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) | 8 | Memory management workflows |
-| [VRSEN/OpenSwarm](https://github.com/VRSEN/OpenSwarm) | 8 | Orchestrator, Research, Data, Slides, Portfolio, Investment |
-| [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps) | 4 | Strategy, UX, Planning, Research |
-| [safishamsi/graphify](https://github.com/safishamsi/graphify) | 1 | Codebase Graph Analyst |
-| [tobi/qmd](https://github.com/tobi/qmd) | 2 | RAG Architect, Query Expansion Specialist |
-| [danielmiessler/PAI](https://github.com/danielmiessler/Personal_AI_Infrastructure) | 1 | Life OS Digital Assistant |
-| [obra/superpowers](https://github.com/obra/superpowers) | 1 | Superpowers Dev Agent |
-| [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | 1 | Research Notebook Curator |
-| [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 5 | Swarm Orchestrator, SPARC Agent, Code Review Swarm, GOAP Planner, TDD London School |
-| [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | 2 | Prompt Engineering Expert, OpenClaw Security Auditor |
-| [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | 1 | Local Deep Research Agent |
-| [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 2 | DeerFlow Research Orchestrator, Sub-Agent Development Controller |
-| [x1xhlol/system-prompts-and-models-of-ai-tools](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools) | 23 | Cursor, Windsurf, Devin, v0, Claude Code, VSCode Copilot, Lovable, Replit, Perplexity, Kiro, Same.dev, Junie, Augment, Traycer, Cluely, Emergent + more |
-| **📡 Scout (surfingalien — original)** | ∞ | Any domain — generated and saved on demand |
+**Maintain library** re-scores every saved item against today's policy plus a fresh cross-model verification and returns **keep / flag / prune** per item (`POST /api/scout/maintain`). Saved items can be annotated or deleted, so the library stays curated rather than append-only. Saved Scout items appear in the main Library.
 
 ---
 
 ## Architecture
 
 ```
-prompt-engineering/
-├── public/
-│   └── index.html        # Full SPA — 10 views, 350+ skills, 220+ agents, Scout engine
-├── server.js             # Express — /api/chat proxy + /api/scout discovery endpoint
-├── Dockerfile            # Node 22 Alpine — Railway-ready
-├── docker-compose.yml    # PromptForge (3000) + Open Design (7456)
-├── package.json
-└── open-design/          # Git submodule — local design agent (Node 24)
+server.js                     entry point
+src/
+  app.js                      Express app factory: security headers (CSP), compression, rate limits, static
+  anthropic.js                official SDK client, request builder (effort, caching, fallbacks), error mapping
+  models.js                   model registry: ids, labels, prices; ALLOWED_MODELS / DEFAULT_MODEL
+  validate.js                 strict request validation (roles, sizes, no prefill, token caps)
+  governance.js               Scout policy engine, trust scoring, hash-chained audit
+  routes/chat.js              GET /api/config · POST /api/chat (SSE) · POST /api/grade
+  routes/scout.js             POST /api/scout · /api/scout/maintain · GET /api/scout/audit[/verify]
+public/
+  index.html                  app shell (no inline scripts)
+  css/tokens.css              design tokens: color, type, space, light + dark
+  css/app.css · views.css     components and views
+  data/catalog.json           514-item library (lazy-loaded, ~225 KB gzipped)
+  js/app.js                   router, sidebar, command palette, settings
+  js/core/                    store (localStorage), API client (SSE), catalog, templating, UI primitives
+  js/lib/                     pure, unit-tested modules: analyze, compose, harness, evals, zip, diff, markdown, search
+  js/data/                    curriculum, builder blueprints, harness templates
+  js/views/                   home, learn, library, build, workbench, harness, evals, council, scout
+prompts/scout-system.txt      Scout system prompt (single source for server + promptfoo evals)
+scripts/extract-legacy-data.js  one-time migration of v4 content into catalog.json
+tests/                        server integration (mock Anthropic API), library units, governance, Scout prompt
 ```
 
-### API Endpoints
+**Front end:** framework-free ES modules with no build step. Views are lazy-loaded; every interpolation goes through an escaping `html` template tag; events are delegated (no inline handlers). The heavy library JSON loads only when needed.
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/chat` | POST | Proxies all AI calls (optimizer, council) — API key never reaches browser |
-| `/api/scout` | POST | **Scout engine** — generates new skills + agents as validated JSON |
+**Back end:** Node 20+ and Express 5 with the official `@anthropic-ai/sdk`. The browser never chooses arbitrary request bodies: the server whitelists fields, resolves models against a registry, caps `max_tokens`, and streams results as Server-Sent Events.
 
-### API Key Security
+### API
 
-The Anthropic API key **never reaches the browser**. All AI calls go through the server-side proxy. Set `ANTHROPIC_API_KEY` as a Railway environment variable — never in code, never in the client.
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/config` | Models (with prices), efforts, limits, whether a key is configured |
+| `POST /api/chat` | `{model, system, messages, effort, maxTokens, showThinking}` → SSE events `delta`, `thinking`, `notice`, `done`, `error` |
+| `POST /api/grade` | LLM-as-judge for eval rubrics. Structured output `{pass, score, reason}` from a cheaper model than the one under test |
+| `POST /api/scout` · `/api/scout/maintain` | Scout generation and library maintenance |
+| `GET /api/scout/audit` · `/api/scout/audit/verify` | Audit log and chain verification |
+| `GET /api/health` | Liveness |
+
+### Claude API usage
+
+- **Models:** Claude Opus 5.5 (default), Sonnet 5.5, Haiku 5.5 and Fable 5.2. Restrict with `ALLOWED_MODELS`.
+- **Effort, not temperature:** depth is set with `output_config.effort` (low → max). Sampling parameters are never sent.
+- **Adaptive thinking:** on by default on current models; the UI can request a readable reasoning summary.
+- **Prompt caching:** system prompts are sent with `cache_control`, so repeated runs of the same prompt are cheaper and faster. Cached tokens appear in run stats.
+- **Refusal fallbacks:** Opus, Sonnet and Fable requests opt into server-side fallbacks (`fallbacks: "default"`), so a false-positive safety decline is retried on another model instead of failing. Refusals that remain are reported clearly.
+- **Structured outputs:** Scout and grading use JSON schemas, so responses always parse.
+
+### Security
+
+- The API key lives only on the server. Without it, the app runs in **offline mode**.
+- Strict Content Security Policy: `script-src 'self'`, no inline scripts or handlers (enforced by a test).
+- Request validation: roles, sizes and message order are checked, unknown fields dropped, `max_tokens` capped (`MAX_OUTPUT_TOKENS`).
+- Per-IP rate limits on chat (60 / 15 min) and Scout (10 / 15 min), configurable. `TRUST_PROXY` controls client-IP detection.
+- Upstream errors are mapped to safe messages; raw API error bodies never reach the browser.
+- Prompts the app sends on your behalf (improver, grader, council, Scout) fence user content in tags and tell Claude to treat it as data.
 
 ---
 
-## Quick Start
+## Quick start
 
 ```bash
-# Clone and run locally
 git clone https://github.com/surfingalien/prompt-engineering.git
-cd prompt-engineering
-npm install
-npm start
-# Open http://localhost:3000
 ```
 
-**Deploy on Railway** (recommended):
-1. Fork this repo on GitHub
-2. Connect your fork in the [Railway dashboard](https://railway.app)
-3. Add environment variable: `ANTHROPIC_API_KEY=your_key_here`
-4. Deploy — auto-detected via `Dockerfile`
+```bash
+cd prompt-engineering && npm install
+```
 
-> If you fork and deploy publicly, attribution to `@surfingalien` is required (see [Attribution](#️-attribution-required)).
+```bash
+ANTHROPIC_API_KEY=sk-ant-... npm start
+```
 
----
+Open http://localhost:3000. Without a key the studio still runs in offline mode.
 
-## Theme System
+**Docker:**
 
-PromptForge ships with two themes, toggled via the `☀ Tan / 🌙 Dark` button in the header:
+```bash
+ANTHROPIC_API_KEY=sk-ant-... docker compose up --build promptforge
+```
 
-| Theme | Background | Feel |
-|-------|-----------|------|
-| **Dark** | `#0a0a0f` warm near-black | Default — professional dark studio |
-| **Tan** | `#f5f0e8` warm parchment | Light mode — warm, editorial |
+**Deploy on Railway:** connect your fork in the [Railway dashboard](https://railway.app), set `ANTHROPIC_API_KEY` as a service variable, and deploy. The Dockerfile is production-ready (non-root user, `npm ci`, health check). See `.env.example` for every option.
 
-Theme preference is saved to `localStorage` and restored on next visit.
+### Tests
 
----
+```bash
+npm test
+```
 
-## Source Repositories
+This runs 60 tests with no API key and no extra dependencies (Node's built-in test runner):
+- **Server integration:** a local mock of the Anthropic API checks the exact request the SDK sends (effort, cache control, fallbacks, no sampling params, token caps), SSE streaming, refusal and error mapping, validation, Scout governance and the audit chain.
+- **Library units:** analyzer (including "every lesson's after beats its before"), composer, harness exports, eval assertions, promptfoo export, zip (verified with `unzip`), diff, markdown sanitization, search, catalog integrity.
+- **Governance:** policy, trust scoring, hash chain, plus the no-inline-handler invariant.
 
-| Repo | Stars | Contribution |
-|------|-------|-------------|
-| [dair-ai/Prompt-Engineering-Guide](https://github.com/dair-ai/Prompt-Engineering-Guide) | 75k★ | Techniques library |
-| [asgeirtj/system_prompts_leaks](https://github.com/asgeirtj/system_prompts_leaks) | 41k★ | System prompt gallery |
-| [elder-plinius/CL4R1T4S](https://github.com/elder-plinius/CL4R1T4S) | 26k★ | Leaked system prompts |
-| [f/prompts.chat](https://github.com/f/prompts.chat) | — | Role & persona library |
-| [tenfoldmarc/llm-council-skill](https://github.com/tenfoldmarc/llm-council-skill) | — | LLM Council methodology |
-| [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | — | Design system generator |
-| [huytieu/COG-second-brain](https://github.com/huytieu/COG-second-brain) | — | COG Brain skills |
-| [Leonxlnx/prompt-library](https://github.com/Leonxlnx/prompt-library) | — | UI patterns |
-| [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | — | 68 PM skills across discovery, strategy, execution, GTM, analytics, AI shipping |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | — | 251 production skills + 7 agents |
-| [rohitg00/awesome-claude-code-toolkit](https://github.com/rohitg00/awesome-claude-code-toolkit) | — | 136 specialist agents |
-| [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) | — | AI engineering curriculum |
-| [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) | — | Agent memory skills |
-| [rohitg00/skillkit](https://github.com/rohitg00/skillkit) | — | Skill composition |
-| [VRSEN/OpenSwarm](https://github.com/VRSEN/OpenSwarm) | — | OpenSwarm agents + skills |
-| [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps) | — | LLM app patterns |
-| [safishamsi/graphify](https://github.com/safishamsi/graphify) | — | Codebase graph skills |
-| [tobi/qmd](https://github.com/tobi/qmd) | — | Semantic search skills |
-| [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) | — | Trend research skills |
-| [danielmiessler/Personal_AI_Infrastructure](https://github.com/danielmiessler/Personal_AI_Infrastructure) | — | PAI life OS skills |
-| [obra/superpowers](https://github.com/obra/superpowers) | — | Dev methodology skills |
-| [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | — | Research notebook skills |
-| [nexu-io/open-design](https://github.com/nexu-io/open-design) | — | Design agent integration |
-| [vercel-labs/skills](https://github.com/vercel-labs/skills) | — | Agent skill discovery + recommendation engine skills |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | 138k★ | TDD, bug diagnosis, PRD synthesis, vertical-slice issues, architecture review, deep module design, domain modeling, handoff, teaching, design grilling |
-| [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | 58k★ | Swarm orchestration skills + agents (SPARC, GOAP, TDD, consensus) |
-| [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) | — | Prompt engineering, deep research, code review, OWASP security, memory, parallel agents |
-| [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) | — | ReAct research agent, structured report generator |
-| [bytedance/deer-flow](https://github.com/bytedance/deer-flow) | 70k★ | Research orchestration, report builder, slide creator, sub-agent development |
+```bash
+npm run eval
+```
+
+This runs the promptfoo regression suite for the Scout system prompt against the live API (needs a key).
 
 ---
 
-## Contributing
+## Contributing content
 
-PRs welcome. To add content:
+Library items live in `public/data/catalog.json`. Each item:
 
-- **Skills** → add entries to the appropriate `*_SKILLS` array in `public/index.html`
-- **Agents** → add entries to `SYSTEM_PROMPTS_DATA` with `source`, `cat`, `tags`, `text`
-- **Techniques** → add to the `TECHNIQUES` array
-- **Scout topics** → suggest new quick-topic chips or Scout evaluation criteria
+```json
+{
+  "id": "skill-unique-slug",
+  "kind": "skill | prompt | agent | technique | reference",
+  "title": "Code Review",
+  "summary": "One sentence shown on cards.",
+  "domain": "coding | agents | research | product | writing | data-ml | thinking | design | testing | security | devops | business | specialized | system-prompts",
+  "level": "beginner | intermediate | advanced | expert",
+  "source": "where it came from",
+  "body": "The prompt text, with {{variables}}",
+  "vars": ["variables"]
+}
+```
 
-Please open an issue before large changes.
+`npm test` validates the catalog (unique ids, required fields, valid levels). Lessons live in `public/js/data/curriculum.js` and builder blueprints in `public/js/data/blueprints.js`. Please open an issue before large changes.
+
+---
+
+## Source repositories
+
+The library synthesizes work from the open-source prompt-engineering community. Thank you to the authors of:
+
+[dair-ai/Prompt-Engineering-Guide](https://github.com/dair-ai/Prompt-Engineering-Guide) · [f/prompts.chat](https://github.com/f/prompts.chat) · [asgeirtj/system_prompts_leaks](https://github.com/asgeirtj/system_prompts_leaks) · [elder-plinius/CL4R1T4S](https://github.com/elder-plinius/CL4R1T4S) · [x1xhlol/system-prompts-and-models-of-ai-tools](https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools) · [tenfoldmarc/llm-council-skill](https://github.com/tenfoldmarc/llm-council-skill) · [phuryn/pm-skills](https://github.com/phuryn/pm-skills) · [affaan-m/ECC](https://github.com/affaan-m/ECC) · [rohitg00/awesome-claude-code-toolkit](https://github.com/rohitg00/awesome-claude-code-toolkit) · [rohitg00/ai-engineering-from-scratch](https://github.com/rohitg00/ai-engineering-from-scratch) · [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) · [rohitg00/skillkit](https://github.com/rohitg00/skillkit) · [VRSEN/OpenSwarm](https://github.com/VRSEN/OpenSwarm) · [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps) · [safishamsi/graphify](https://github.com/safishamsi/graphify) · [tobi/qmd](https://github.com/tobi/qmd) · [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) · [danielmiessler/Personal_AI_Infrastructure](https://github.com/danielmiessler/Personal_AI_Infrastructure) · [obra/superpowers](https://github.com/obra/superpowers) · [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) · [nexu-io/open-design](https://github.com/nexu-io/open-design) · [vercel-labs/skills](https://github.com/vercel-labs/skills) · [mattpocock/skills](https://github.com/mattpocock/skills) · [ruvnet/ruflo](https://github.com/ruvnet/ruflo) · [LeoYeAI/openclaw-master-skills](https://github.com/LeoYeAI/openclaw-master-skills) · [LearningCircuit/local-deep-research](https://github.com/LearningCircuit/local-deep-research) · [bytedance/deer-flow](https://github.com/bytedance/deer-flow) · [nidhinjs/prompt-master](https://github.com/nidhinjs/prompt-master) · [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) · [huytieu/COG-second-brain](https://github.com/huytieu/COG-second-brain)
+
+Items of kind `reference` are community-collected product system prompts kept for study. Their authenticity is not verified, and the UI says so.
 
 ---
 
 ## License
 
-MIT
+MIT, with the attribution requirement above for the Scout engine and the PromptForge platform.
 
 ---
 
 <div align="center">
   <strong>Built by <a href="https://github.com/surfingalien">@surfingalien</a></strong><br>
-  <sub>PromptForge v4 · AI Intelligence Scout · Open source with attribution</sub>
+  <sub>PromptForge v5 · AI Intelligence Scout · Open source with attribution</sub>
 </div>

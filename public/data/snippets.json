@@ -1,0 +1,10 @@
+{
+ "cot": "\n\nLet's think through this step by step:\n1. First, I'll identify...\n2. Then, I'll consider...\n3. Finally, I'll conclude...",
+ "role": "You are an expert {{role}} with {{years}} years of experience in {{domain}}. ",
+ "council_frame": "\n\nCouncil context:\n- Decision: {{decision}}\n- Stakes: {{stakes}}\n- Key constraints: {{constraints}}\n- My current lean: {{current_lean}}\n\nRun all 5 advisors and synthesize a Chairman verdict.",
+ "xml": "\n\n<context>\n{{context}}\n</context>\n\n<task>\n{{task}}\n</task>\n\n<constraints>\n{{constraints}}\n</constraints>\n\n<output_format>\n{{format}}\n</output_format>",
+ "output": "\n\nRespond in this format:\n- **Summary**: One sentence\n- **Details**: Full explanation\n- **Recommendation**: Actionable next step",
+ "brand_voice": "\n\nBrand voice guidelines:\n- Tone: {{tone}} (formal↔casual spectrum)\n- Personality: {{traits}}\n- Do: {{do_examples}}\n- Don't: {{dont_examples}}\n- Target reader: {{audience}}",
+ "braindump": "\n\nCapture mode:\n1. Classify: personal / professional / project ({{project_name}})\n2. Extract: insights vs action items vs questions\n3. Flag: competitive intel, strategic signals\n4. Priority: high / medium / background\n5. Next actions: 3 concrete steps",
+ "design_tokens": "\n\nDesign token requirements:\n- Primitive layer (raw values)\n- Semantic layer (purpose aliases)\n- Component layer (specific tokens)\n- Format: CSS custom properties\n- WCAG AA contrast compliance\n- Dark mode variants"
+}
