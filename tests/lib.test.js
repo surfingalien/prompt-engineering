@@ -258,3 +258,29 @@ test('the shipped catalog is well-formed', () => {
     assert.ok(['beginner', 'intermediate', 'advanced', 'expert'].includes(it.level));
   }
 });
+
+// ── share links ─────────────────────────────────────────────────────────────
+test('share links round-trip prompts and harnesses and drop unknown fields', async () => {
+  const share = await import('../public/js/lib/share.js');
+  const data = await share.encodeShare(share.sharePrompt({ title: 'T', system: 'S', user: 'Hi {{name}}', vars: { name: 'secret value' } }));
+  assert.match(data, /^[\w-]+$/);
+  const back = await share.decodeShare(data);
+  assert.deepEqual(back, { kind: 'prompt', title: 'T', system: 'S', user: 'Hi {{name}}', vars: {} }, 'variable values are not shared');
+
+  const h = await share.decodeShare(await share.encodeShare(share.shareHarness({ id: 'h_1', updatedAt: 1, name: 'Agent', mission: 'm', evil: '<script>', tools: [{ name: 't', params: [{ name: 'p', type: 'object' }] }], guardrails: { injection: true, x: 'yes' } })));
+  assert.equal(h.kind, 'harness');
+  assert.equal(h.harness.name, 'Agent');
+  assert.equal(h.harness.evil, undefined);
+  assert.equal(h.harness.id, undefined);
+  assert.equal(h.harness.tools[0].params[0].type, 'string', 'unknown param types are coerced');
+  assert.deepEqual(h.harness.guardrails, { injection: true, x: false });
+});
+
+test('share decoder rejects malformed, truncated and foreign payloads', async () => {
+  const share = await import('../public/js/lib/share.js');
+  await assert.rejects(share.decodeShare(''), /malformed/);
+  await assert.rejects(share.decodeShare('abc$%'), /malformed/);
+  const good = await share.encodeShare(share.sharePrompt({ title: 'x', system: '', user: 'y'.repeat(500) }));
+  await assert.rejects(share.decodeShare(good.slice(0, Math.floor(good.length / 2))), /corrupted|valid data/);
+  await assert.rejects(share.decodeShare(await share.encodeShare({ k: 'virus' })), /Unknown share link type/);
+});

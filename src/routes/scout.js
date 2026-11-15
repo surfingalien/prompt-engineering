@@ -8,8 +8,25 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const governance = require('../governance');
-const { getClient, complete, describeError } = require('../anthropic');
-const { resolveModel } = require('../models');
+const llm = require('../llm');
+const { authorize, recordSpend } = require('../guard');
+const { resolveModel, refreshModels, judgeModel, isGateway } = require('../models');
+
+// Cross-model verifier: Claude pairs Haiku/Sonnet (governance.verifierModel);
+// gateway models use LLM_GATEWAY_JUDGE_MODEL when set.
+const verifierFor = scoutModel => (isGateway(scoutModel) ? judgeModel(scoutModel) : governance.verifierModel(scoutModel));
+
+// Resolve the requested model and a credential for it (and for the verifier,
+// which may be on a different provider).
+async function authorizeScout(req, requested) {
+  await refreshModels();
+  const model = resolveModel(requested);
+  const auth = authorize(req, model);
+  if (auth.status) return { refusal: auth };
+  const vModel = resolveModel(verifierFor(model.id));
+  const vAuth = vModel.provider === model.provider ? auth : authorize(req, vModel);
+  return { model, auth, verifier: vAuth.status ? null : { model: vModel, auth: vAuth } };
+}
 
 const PROMPT_PATH = path.join(__dirname, '..', '..', 'prompts', 'scout-system.txt');
 const SKILL_CATS = ['research', 'code', 'agent', 'ml', 'writing', 'devops', 'security', 'testing', 'frontend', 'backend', 'product', 'design'];
@@ -58,18 +75,19 @@ function parseJsonLoose(text, opener) {
 }
 
 // One cross-model pass (assess-only, fail-open).
-async function verify(client, scoutModel, skills, agents) {
+async function verify(verifier, skills, agents) {
   const verdicts = new Map();
   let usage = { input: 0, output: 0 };
-  if (process.env.SCOUT_VERIFY === '0' || !(skills.length || agents.length)) return { verdicts, usage, enabled: false };
+  if (process.env.SCOUT_VERIFY === '0' || !verifier || !(skills.length || agents.length)) return { verdicts, usage, enabled: false };
   try {
-    const { text, message } = await complete(client, {
-      model: governance.verifierModel(scoutModel),
+    const { text, message } = await llm.complete(verifier.auth, {
+      model: verifier.model.id,
       maxTokens: 160 * (skills.length + agents.length) + 400,
       effort: 'low',
       messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
     });
     usage = { input: message.usage?.input_tokens || 0, output: message.usage?.output_tokens || 0 };
+    recordSpend(verifier.auth, message.model, message.usage);
     for (const v of parseJsonLoose(text, '[') || []) {
       if (v && v.key && (v.verdict === 'pass' || v.verdict === 'fail')) verdicts.set(`${v.kind}:${v.key}`, { verdict: v.verdict, reason: v.reason || '' });
     }
@@ -83,14 +101,16 @@ module.exports = function scoutRoutes({ scoutLimiter }) {
   const router = express.Router();
 
   router.post('/scout', scoutLimiter, async (req, res) => {
-    const client = getClient();
-    if (!client) return res.status(503).json({ error: 'ANTHROPIC_API_KEY is not configured on the server.', code: 'no_api_key' });
-
     const body = req.body || {};
+    const access = await authorizeScout(req, body.model);
+    if (access.refusal) return res.status(access.refusal.status).json(access.refusal.body);
+    const { auth, verifier } = access;
+    const track = m => recordSpend(auth, m.model, m.usage);
+
     const topic = String(body.topic || 'AI agents and prompt engineering').replace(/[\r\n]+/g, ' ').slice(0, 200).trim();
     const count = Math.max(1, Math.min(6, parseInt(body.count, 10) || 3));
     const type = ['skills', 'agents', 'both'].includes(body.type) ? body.type : 'both';
-    const scoutModel = resolveModel(body.model).id;
+    const scoutModel = access.model.id;
     const systemPrompt = fs.readFileSync(PROMPT_PATH, 'utf8');
 
     const userMsg = `Discover and generate ${count} new ${type === 'skills' ? 'skills only (agents array empty)' : type === 'agents' ? 'agents only (skills array empty)' : 'skills AND agents'} focused on the topic in <topic>.
@@ -108,10 +128,11 @@ Requirements:
 Today's date: ${new Date().toISOString().split('T')[0]}`;
 
     try {
-      const { text, message } = await complete(client, {
+      const { text, message } = await llm.complete(auth, {
         model: scoutModel, maxTokens: 12000, effort: 'medium', system: systemPrompt,
         messages: [{ role: 'user', content: userMsg }], format: SCOUT_FORMAT,
       });
+      track(message);
       const parsed = parseJsonLoose(text, '{');
       if (!parsed) return res.status(502).json({ error: 'Scout returned an unparseable response.' });
 
@@ -134,7 +155,7 @@ Today's date: ${new Date().toISOString().split('T')[0]}`;
       skills = gate('skill', skills);
       agents = gate('agent', agents);
 
-      const { verdicts, usage: vUsage, enabled: verifyEnabled } = await verify(client, scoutModel, skills, agents);
+      const { verdicts, usage: vUsage, enabled: verifyEnabled } = await verify(verifier, skills, agents);
 
       const finalize = (kind, items) => items.filter(item => {
         const key = kind === 'skill' ? item.id : item.name;
@@ -153,7 +174,7 @@ Today's date: ${new Date().toISOString().split('T')[0]}`;
       const auditEntry = governance.appendAudit({
         topic,
         scout_model: scoutModel,
-        verifier_model: verifyEnabled ? governance.verifierModel(scoutModel) : null,
+        verifier_model: verifyEnabled ? verifier.model.id : null,
         accepted: [
           ...skills.map(s => ({ kind: 'skill', key: s.id, digest: governance.itemDigest('skill', s), tier: s.trust.tier, score: s.trust.score })),
           ...agents.map(a => ({ kind: 'agent', key: a.name, digest: governance.itemDigest('agent', a), tier: a.trust.tier, score: a.trust.score })),
@@ -174,7 +195,7 @@ Today's date: ${new Date().toISOString().split('T')[0]}`;
         },
       });
     } catch (err) {
-      const e = describeError(err);
+      const e = llm.describeError(err);
       res.status(e.status).json({ error: e.message });
     }
   });
@@ -188,15 +209,15 @@ Today's date: ${new Date().toISOString().split('T')[0]}`;
 
   // Skill maintainer — re-validate a saved library; keep / flag / prune.
   router.post('/scout/maintain', scoutLimiter, async (req, res) => {
-    const client = getClient();
-    if (!client) return res.status(503).json({ error: 'ANTHROPIC_API_KEY is not configured on the server.', code: 'no_api_key' });
+    const access = await authorizeScout(req, req.body?.model);
+    if (access.refusal) return res.status(access.refusal.status).json(access.refusal.body);
     const skills = (Array.isArray(req.body?.skills) ? req.body.skills : []).filter(s => s && s.id && s.prompt).slice(0, 100);
     const agents = (Array.isArray(req.body?.agents) ? req.body.agents : []).filter(a => a && a.name && a.text).slice(0, 100);
     if (!skills.length && !agents.length) {
       return res.json({ skills: [], agents: [], summary: { keep: 0, flag: 0, prune: 0 }, note: 'Library is empty — nothing to maintain.' });
     }
-    const scoutModel = resolveModel(req.body?.model).id;
-    const { verdicts, usage } = await verify(client, scoutModel, skills, agents);
+    const scoutModel = access.model.id;
+    const { verdicts, usage } = await verify(access.verifier, skills, agents);
 
     const summary = { keep: 0, flag: 0, prune: 0 };
     const review = (kind, items) => items.map(item => {

@@ -1,11 +1,46 @@
 // ─── API client ──────────────────────────────────────────────────────────────
 import { state, recordUsage } from './store.js';
 
+// Credentials the visitor may supply (Settings). The user key is sent only to
+// this app's own server, used for that request, and never stored server-side.
+export function authHeaders() {
+  const h = {};
+  if (state.settings.userApiKey) h['x-user-api-key'] = state.settings.userApiKey;
+  if (state.settings.accessPassword) h['x-access-password'] = state.settings.accessPassword;
+  return h;
+}
+
 let configPromise = null;
 export function getConfig(force = false) {
   if (!configPromise || force) {
     configPromise = fetch('/api/config').then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .catch(() => ({ ready: false, offline: true, models: [], efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultModel: 'claude-opus-5-5', maxOutputTokens: 16000 }));
+      .catch(() => ({ ready: false, offline: true, models: [], efforts: ['low', 'medium', 'high', 'xhigh', 'max'], defaultModel: 'claude-opus-5-5', maxOutputTokens: 16000 }))
+      .then(c => {
+        const hasUserKey = Boolean(state.settings.userApiKey);
+        const unlocked = !c.access?.passwordRequired || Boolean(state.settings.accessPassword);
+        const serverKey = Boolean(c.providers?.anthropic?.serverKey ?? c.ready);
+        const gateway = c.providers?.gateway || null;
+        const claudeLeft = !c.budget?.daily || c.budget.remaining > 0;
+        const gatewayLeft = !c.budget?.gateway?.limit || c.budget.gateway.remaining > 0;
+        const budgetLeft = (serverKey && claudeLeft) || (Boolean(gateway) && gatewayLeft);
+        const allModels = c.models || [];
+        // Hide Claude models nobody here can run (no server key, no user key)
+        // when free gateway models are available instead.
+        const runnable = allModels.filter(m => !m.requiresUserKey || hasUserKey);
+        const models = runnable.length ? runnable : allModels;
+        return {
+          ...c,
+          allModels,
+          models,
+          defaultModel: models.some(m => m.id === c.defaultModel) ? c.defaultModel : models[0]?.id || c.defaultModel,
+          gateway,
+          serverReady: Boolean(c.ready),
+          // "ready" = this visitor can run prompts right now.
+          ready: hasUserKey || (Boolean(c.ready) && unlocked && budgetLeft),
+          via: hasUserKey ? 'user-key' : serverKey ? 'server' : gateway ? 'gateway' : 'none',
+          lockedReason: hasUserKey ? null : !c.ready ? 'no_key' : !unlocked ? 'password' : !budgetLeft ? (serverKey ? 'budget' : 'quota') : null,
+        };
+      });
   }
   return configPromise;
 }
@@ -23,7 +58,9 @@ export class ApiError extends Error {
 async function errorFrom(res) {
   let body = {};
   try { body = await res.json(); } catch {}
-  if (body.code === 'no_api_key') return new ApiError('Live runs are off: the server has no ANTHROPIC_API_KEY. Everything else works offline.', res.status, 'no_api_key');
+  if (body.code === 'no_api_key') return new ApiError(body.error || 'Live runs are off: the server has no API key. Add your own key in Settings, or keep working offline.', res.status, 'no_api_key');
+  if (body.code === 'auth_required') return new ApiError(state.settings.accessPassword ? 'The access password was rejected. Check it in Settings.' : 'This server needs an access password, or your own API key. Add one in Settings.', res.status, 'auth_required');
+  if (body.code === 'budget_exhausted' || body.code === 'quota_exhausted') getConfig(true);
   return new ApiError(body.error || `Request failed (${res.status})`, res.status, body.code);
 }
 
@@ -33,7 +70,7 @@ async function errorFrom(res) {
  */
 export async function streamChat({ model, system, messages, effort, maxTokens, showThinking, signal, onDelta, onThinking, onNotice }) {
   const res = await fetch('/api/chat', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, signal,
     body: JSON.stringify({ model, system, messages, effort, maxTokens, showThinking }),
   });
   if (!res.ok) throw await errorFrom(res);
@@ -66,13 +103,25 @@ export async function streamChat({ model, system, messages, effort, maxTokens, s
 }
 
 async function postJson(path, body, signal) {
-  const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
+  const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body), signal });
   if (!res.ok) throw await errorFrom(res);
   return res.json();
 }
 
 export async function grade({ output, rubric, input, model, signal }) {
   const r = await postJson('/api/grade', { output, rubric, input, model }, signal);
+  const cfg = await getConfig();
+  recordUsage(r.usage, cfg.models.find(m => r.model?.startsWith(m.id))?.price);
+  return r;
+}
+export async function review(body, signal) {
+  const r = await postJson('/api/review', body, signal);
+  const cfg = await getConfig();
+  recordUsage(r.usage, cfg.models.find(m => r.model?.startsWith(m.id))?.price);
+  return r;
+}
+export async function generateCases(body, signal) {
+  const r = await postJson('/api/cases', body, signal);
   const cfg = await getConfig();
   recordUsage(r.usage, cfg.models.find(m => r.model?.startsWith(m.id))?.price);
   return r;

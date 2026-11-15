@@ -4,8 +4,9 @@ import { state, createPrompt } from '../core/store.js';
 import { navigate } from '../core/nav.js';
 import { LEVELS, LESSONS, lessonsForLevel } from '../data/curriculum.js';
 import { analyzePrompt } from '../lib/analyze.js';
-import { analysisPanel } from './shared.js';
+import { analysisPanel, lockedNotice } from './shared.js';
 import { getConfig } from '../core/api.js';
+import { PACKS } from '../core/catalog.js';
 
 const DEMO_BEFORE = 'write a blog post about our product';
 const DEMO_AFTER = `You are a B2B content strategist.
@@ -45,7 +46,7 @@ export default {
           <a class="btn btn-lg" href="#/build">${raw(icon('build'))}Build a prompt</a>
           <button class="btn btn-ghost btn-lg" data-act="blank">${raw(icon('workbench'))}Open a blank workbench</button>
         </div>
-        ${cfg.ready ? '' : html`<div class="callout warn" style="margin-top:24px;max-width:640px">${raw(icon('info'))}<div><b>Offline mode.</b> The server has no <code>ANTHROPIC_API_KEY</code>, so running prompts against Claude is off. Learning, building, the analyzer, the library and harness exports all still work.</div></div>`}
+        ${cfg.ready ? '' : html`<div style="margin-top:24px;max-width:720px">${lockedNotice(cfg, 'Learning, building, the analyzer, the library and harness exports all still work.')}</div>`}
       </section>
 
       <section class="section">
@@ -68,16 +69,21 @@ export default {
       <section class="section">
         <h2 class="section-title">See the difference</h2>
         <div class="grid grid-2 compare">
-          <div class="card"><div class="card-head"><span class="badge bad">Before</span></div><pre class="code" style="min-height:80px">${DEMO_BEFORE}</pre><div style="margin-top:16px">${analysisPanel(before, { compact: true, limit: 3 })}</div></div>
-          <div class="card"><div class="card-head"><span class="badge good">After</span><button class="btn btn-sm" data-act="demo">${raw(icon('workbench'))}Open in workbench</button></div><pre class="code" style="max-height:260px">${DEMO_AFTER}</pre><div style="margin-top:16px">${analysisPanel(after, { compact: true, limit: 3 })}</div></div>
+          <div class="card"><div class="card-head"><span class="badge bad">Before</span></div><pre class="code" tabindex="0" style="min-height:80px">${DEMO_BEFORE}</pre><div style="margin-top:16px">${analysisPanel(before, { compact: true, limit: 3 })}</div></div>
+          <div class="card"><div class="card-head"><span class="badge good">After</span><button class="btn btn-sm" data-act="demo">${raw(icon('workbench'))}Open in workbench</button></div><pre class="code" tabindex="0" style="max-height:260px">${DEMO_AFTER}</pre><div style="margin-top:16px">${analysisPanel(after, { compact: true, limit: 3 })}</div></div>
         </div>
+      </section>
+
+      <section class="section">
+        <div class="row between" style="margin-bottom:16px"><h2 class="section-title" style="margin:0">New skill collections</h2><a href="#/library" class="subtle">Browse the library →</a></div>
+        <div class="grid grid-3">${PACKS.map(p => html`<a class="card feature" href="#/library?pack=${p.id}"><div class="feature-ic">${raw(icon(p.icon))}</div><div class="card-title">${p.title}</div><p class="muted" style="font-size:var(--fs-sm);margin-top:4px">${p.blurb}</p></a>`)}</div>
       </section>
 
       <section class="section">
         <h2 class="section-title">Everything you need, in order</h2>
         <div class="grid grid-3">
           ${[
-            ['learn', 'Learn', 'Sixteen focused lessons, each with a before/after example and an exercise you run for real.', 'learn'],
+            ['learn', 'Learn', 'Seventeen focused lessons, each with a before/after example and an exercise you run for real.', 'learn'],
             ['build', 'Build', 'Answer a few plain-language questions; get a structured, best-practice prompt with a live quality score.', 'build'],
             ['workbench', 'Test', 'Run against Claude with streaming, compare models or versions side by side, and track every revision.', 'workbench'],
             ['evals', 'Measure', 'Turn success criteria into test suites with code checks and Claude-graded rubrics. Export to promptfoo.', 'evals'],

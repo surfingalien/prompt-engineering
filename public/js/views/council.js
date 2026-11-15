@@ -67,7 +67,7 @@ export default {
           <label class="field"><span class="label">The decision</span><textarea class="textarea" rows="4" data-decision placeholder="Should we move from monthly to annual-only pricing for our team plan?">${state.councilDraft || ''}</textarea>
           <span class="help">Include the stakes, constraints and your current lean. The more context, the sharper the advice.</span></label>
           <div class="label" style="margin-top:14px">Advisors</div>
-          <div class="chips" style="margin-top:6px">${ADVISORS.map(a => html`<button class="chip" data-adv="${a.id}" aria-pressed="${active.has(a.id)}" title="${a.brief}">${a.name}</button>`)}</div>
+          <div class="chips" style="margin-top:6px">${ADVISORS.map(a => html`<button class="chip" data-adv="${a.id}" aria-pressed="${String(active.has(a.id))}" title="${a.brief}">${a.name}</button>`)}</div>
           <div class="btn-row" style="margin-top:16px">
             ${ctrl ? html`<button class="btn btn-dark" data-act="stop">${raw(icon('stop'))}Stop</button>` : html`<button class="btn btn-primary" data-act="run" ${cfg.ready ? '' : raw('disabled')}>${raw(icon('council'))}Convene the council</button>`}
             <span class="subtle">${active.size} parallel calls + 1 synthesis${cfg.ready ? '' : ' · runs disabled (no API key on server)'}</span>

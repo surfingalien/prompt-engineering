@@ -18,6 +18,45 @@ services:
       HELICONE_API_KEY: ${HELICONE_API_KEY:-}
       ALLOWED_MODELS: ${ALLOWED_MODELS:-}
       TRUST_PROXY: ${TRUST_PROXY:-0}
+      DAILY_BUDGET_USD: ${DAILY_BUDGET_USD:-10}
+      ACCESS_PASSWORD: ${ACCESS_PASSWORD:-}
+      # Free models through an OpenAI-compatible gateway (no Anthropic key needed).
+      # With the `free` profile below: LLM_GATEWAY_URL=http://omniroute:20128/v1
+      LLM_GATEWAY_URL: ${LLM_GATEWAY_URL:-}
+      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY:-}
+      LLM_GATEWAY_NAME: ${LLM_GATEWAY_NAME:-}
+      LLM_GATEWAY_MODELS: ${LLM_GATEWAY_MODELS:-}
+      LLM_GATEWAY_DEFAULT_MODEL: ${LLM_GATEWAY_DEFAULT_MODEL:-}
+      LLM_GATEWAY_JUDGE_MODEL: ${LLM_GATEWAY_JUDGE_MODEL:-}
+      GATEWAY_DAILY_REQUEST_LIMIT: ${GATEWAY_DAILY_REQUEST_LIMIT:-1000}
+
+  # OmniRoute — self-hosted AI gateway that routes to providers' free tiers
+  # (https://github.com/diegosouzapw/OmniRoute). Opt-in:
+  #   docker compose --profile free up -d
+  # Then open http://localhost:20128, connect providers with your OWN free API
+  # keys (Groq, Cerebras, Gemini API, OpenRouter, NVIDIA NIM, ...), create an
+  # API key under Endpoints, and set LLM_GATEWAY_KEY to it.
+  omniroute:
+    container_name: omniroute
+    image: ${OMNIROUTE_IMAGE:-docker.io/diegosouzapw/omniroute:latest}
+    profiles: ["free"]
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /app/data
+      PORT: 20128
+      # Required by OmniRoute. Set both in .env; generate each with: openssl rand -hex 32
+      JWT_SECRET: "${OMNIROUTE_JWT_SECRET:-}"
+      API_KEY_SECRET: "${OMNIROUTE_API_KEY_SECRET:-}"
+      # Leave empty to choose the dashboard password in the first-run wizard.
+      INITIAL_PASSWORD: "${OMNIROUTE_INITIAL_PASSWORD:-}"
+      # PromptForge always sends a key; require one so the proxy is never open.
+      REQUIRE_API_KEY: "true"
+    ports:
+      - "127.0.0.1:20128:20128"
+    volumes:
+      - omniroute_data:/app/data
+    security_opt:
+      - no-new-privileges:true
 
   # Open Design — local-first design agent tool (port 7456)
   open-design:
@@ -57,3 +96,4 @@ services:
 
 volumes:
   open_design_data:
+  omniroute_data:

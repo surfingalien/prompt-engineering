@@ -30,34 +30,79 @@ const MODELS = [
   },
 ];
 
+MODELS.forEach(m => { m.provider = 'anthropic'; });
+
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
+
+// Lazy require: providers/gateway has no dependency on this module, but keep
+// the registry loadable on its own.
+const gw = () => require('./providers/gateway');
+const hasServerKey = () => Boolean(process.env.ANTHROPIC_API_KEY);
 
 // ALLOWED_MODELS (comma-separated ids) lets an operator restrict a public
 // deployment — e.g. leave Fable off to cap spend. Unknown ids are ignored.
-function enabledModels() {
+function enabledClaude() {
   const raw = (process.env.ALLOWED_MODELS || '').split(',').map(s => s.trim()).filter(Boolean);
   if (!raw.length) return MODELS;
   const allowed = MODELS.filter(m => raw.includes(m.id));
   return allowed.length ? allowed : MODELS;
 }
 
-function defaultModel() {
-  const enabled = enabledModels();
+// Every model a request may name: Claude models, then models discovered on the
+// OpenAI-compatible gateway (LLM_GATEWAY_URL, see providers/gateway.js).
+// Claude models are marked `requiresUserKey` when the server has no
+// ANTHROPIC_API_KEY: they still work with a visitor's own key.
+function enabledModels() {
+  const claude = enabledClaude().map(m => ({ ...m, requiresUserKey: !hasServerKey() }));
+  const gateway = gw().cachedModels();
+  return hasServerKey() ? [...claude, ...gateway] : [...gateway, ...claude];
+}
+
+/** Refresh the gateway's model list (cached for 5 minutes). */
+async function refreshModels(force) {
+  if (gw().configured()) await gw().refreshModels(force);
+  return enabledModels();
+}
+
+function claudeDefault() {
+  const enabled = enabledClaude();
   const wanted = process.env.DEFAULT_MODEL;
   return (enabled.find(m => m.id === wanted) || enabled.find(m => m.id === 'claude-opus-5-5') || enabled[0]).id;
 }
 
+// With a server key, Claude is the default. Without one, a configured gateway
+// is (so the app runs with no Anthropic key at all). DEFAULT_MODEL may name
+// either kind ("gw:auto" works).
+function defaultModel() {
+  const wanted = process.env.DEFAULT_MODEL;
+  if (wanted && wanted.startsWith(gw().PREFIX) && gw().resolve(wanted)) return wanted;
+  if (!hasServerKey() && gw().configured()) return gw().defaultId();
+  return claudeDefault();
+}
+
 function resolveModel(id) {
-  const enabled = enabledModels();
-  return enabled.find(m => m.id === id) || enabled.find(m => m.id === defaultModel());
+  if (typeof id === 'string' && id.startsWith(gw().PREFIX)) {
+    const m = gw().resolve(id);
+    if (m) return m;
+  } else {
+    const m = enabledClaude().find(x => x.id === id);
+    if (m) return m;
+  }
+  const def = defaultModel();
+  return def.startsWith(gw().PREFIX) ? gw().resolve(def) || gw().resolve(gw().defaultId()) : enabledClaude().find(m => m.id === def);
 }
 
-// Cheaper model for grading / verification work. A judge should be a
-// different model from the one that produced the output when possible.
+// Model for grading / verification work. A judge should differ from the model
+// that produced the output when possible. On the gateway, set
+// LLM_GATEWAY_JUDGE_MODEL to get that; otherwise the producer judges itself.
 function judgeModel(producerId) {
-  const enabled = enabledModels().map(m => m.id);
+  if (typeof producerId === 'string' && producerId.startsWith(gw().PREFIX)) return gw().judgeId(producerId);
+  if (!producerId && !hasServerKey() && gw().configured()) return gw().judgeId(defaultModel());
+  const enabled = enabledClaude().map(m => m.id);
   const pick = producerId === 'claude-haiku-5-5' ? 'claude-sonnet-5-5' : 'claude-haiku-5-5';
-  return enabled.includes(pick) ? pick : defaultModel();
+  return enabled.includes(pick) ? pick : claudeDefault();
 }
 
-module.exports = { MODELS, EFFORTS, enabledModels, defaultModel, resolveModel, judgeModel };
+const isGateway = id => typeof id === 'string' && id.startsWith(gw().PREFIX);
+
+module.exports = { MODELS, EFFORTS, enabledModels, enabledClaude, refreshModels, defaultModel, resolveModel, judgeModel, isGateway, hasServerKey };

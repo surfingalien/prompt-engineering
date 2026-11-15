@@ -12,8 +12,10 @@ export const KINDS = [
 export const DOMAINS = {
   coding: 'Coding', agents: 'Agents & orchestration', research: 'Research', product: 'Product & strategy', writing: 'Writing',
   'data-ml': 'Data & ML', thinking: 'Thinking & decisions', design: 'Design', testing: 'Testing & QA', security: 'Security',
-  devops: 'DevOps', business: 'Business', specialized: 'Specialized', 'system-prompts': 'System prompts',
+  devops: 'DevOps', business: 'Business', trading: 'Trading & markets', specialized: 'Specialized', 'system-prompts': 'System prompts',
 };
+
+export { PACKS, packById } from '../data/packs.js';
 export const LEVELS = [
   { id: 'beginner', label: 'Beginner', n: 1 },
   { id: 'intermediate', label: 'Intermediate', n: 2 },

@@ -10,6 +10,7 @@ const chatRoutes = require('./routes/chat');
 const scoutRoutes = require('./routes/scout');
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const SKILLS_DIR = path.join(__dirname, '..', 'skills');
 
 function securityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy', [
@@ -56,6 +57,12 @@ function createApp() {
   app.use('/api', scoutRoutes({ scoutLimiter }));
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 
+  // Installable skill packs (skills/<name>/SKILL.md), served as plain text so
+  // the Library can offer a one-click SKILL.md download.
+  app.use('/skills', express.static(SKILLS_DIR, {
+    index: false, dotfiles: 'ignore',
+    setHeaders(res, file) { res.setHeader('Content-Type', file.endsWith('.md') ? 'text/markdown; charset=utf-8' : 'text/plain; charset=utf-8'); res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate'); },
+  }));
   app.use(express.static(PUBLIC_DIR, {
     extensions: ['html'],
     setHeaders(res, file) {
@@ -64,7 +71,7 @@ function createApp() {
     },
   }));
   // Client-side routes use the hash, so any other path just gets the shell.
-  app.get(/^\/(?!api\/).*/, (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+  app.get(/^\/(?!api\/|skills\/).*/, (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
   // Malformed JSON and other errors → JSON, never an HTML stack trace.
   // eslint-disable-next-line no-unused-vars

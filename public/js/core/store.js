@@ -80,7 +80,10 @@ export function setLessonDone(id, done = true) { update('progress', p => ({ ...p
 
 // ── Import / export ────────────────────────────────────────────────────────
 export function exportWorkspace() {
-  return { app: 'PromptForge', version: 5, exportedAt: new Date().toISOString(), ...Object.fromEntries(Object.keys(DEFAULTS).map(k => [k, state[k]])) };
+  const data = Object.fromEntries(Object.keys(DEFAULTS).map(k => [k, state[k]]));
+  // Never put credentials in an export file.
+  const { userApiKey, accessPassword, ...settings } = data.settings;
+  return { app: 'PromptForge', version: 5, exportedAt: new Date().toISOString(), ...data, settings };
 }
 export function importWorkspace(data) {
   if (!data || data.app !== 'PromptForge') throw new Error('Not a PromptForge export file.');

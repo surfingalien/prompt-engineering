@@ -8,7 +8,7 @@ export const LEVELS = [
   { id: 'beginner', n: 1, title: 'Foundations', tagline: 'Write prompts Claude understands the first time.', outcome: 'You can turn a vague request into a clear, specific prompt with context, format and examples.' },
   { id: 'intermediate', n: 2, title: 'Structure', tagline: 'Organize complex prompts so nothing gets lost.', outcome: 'You can structure long prompts with XML tags, system prompts and documents, and tune thinking depth.' },
   { id: 'advanced', n: 3, title: 'Systems', tagline: 'Chain prompts, use tools and get reliable outputs.', outcome: 'You can design multi-step pipelines with tools, structured outputs and injection defenses.' },
-  { id: 'expert', n: 4, title: 'Harness', tagline: 'Build and verify the scaffolding around an agent.', outcome: 'You can ship an agent harness with project memory, skills, subagents, guardrails and evals.' },
+  { id: 'expert', n: 4, title: 'Harness', tagline: 'Build and verify the scaffolding around an agent.', outcome: 'You can ship an agent harness with project memory, skills, subagents, guardrails and evals, and run it in an autonomous loop.' },
 ];
 
 const L = (level, o) => ({ level, levelN: LEVELS.find(l => l.id === level).n, ...o });
@@ -458,6 +458,47 @@ Result: v2 → 9/14 passing, v3 → 13/14 passing. Remaining failure: non-Englis
     whyBetter: '“Seems better” is replaced by measurable criteria, a deliberate mix of cases, and a pass-rate comparison that points to the next fix.',
     checklist: ['Success criteria are measurable', 'Cases include typical, edge and adversarial inputs', 'Deterministic checks where possible', 'Suite runs on every change'],
     exercise: { title: 'Write success criteria', user: 'Here is a prompt I use:\n\n{{your_prompt}}\n\nPropose 5 measurable success criteria for it, and for each one say whether to check it with code (and how) or with a model-graded rubric. Then propose 8 test cases: 4 typical, 2 edge, 2 adversarial.', hint: 'Paste one of your prompts into the variable, then build the suite in the Evals view.' },
+  }),
+  L('expert', {
+    id: 'autonomous-loops', title: 'Autonomous experiment loops', minutes: 9,
+    summary: 'The Karpathy loop: let an agent edit, run, measure, keep or discard, and log while you sleep.',
+    body: `Andrej Karpathy's **autoresearch** turns an agent into a tireless researcher: it changes one file, runs a fixed-length experiment, checks one number, keeps the change if the number improved and resets it if not. Then it does it again, about 100 times a night. The human stops editing code and starts editing **program.md**, the instructions that steer the loop.
+
+The pattern works for anything with a scriptable score: model loss, API latency, bundle size, test coverage, eval pass rate, or (carefully) a trading strategy. It needs four things:
+
+1. **One scalar metric** with a direction, printed by a command the agent cannot modify
+2. **A constrained scope**: one editable file, everything else read-only
+3. **A fixed time budget** per experiment, so results are comparable
+4. **Git as memory**: commit every attempt, \`git reset --hard\` the failures, and log every run to \`results.tsv\`
+
+The loop runs without asking permission, so the harness has to carry the safety: hard caps on iterations and spend, guards (tests must pass), a simplicity rule (a tiny gain that adds hacky code is not worth keeping), and anti-gaming checks such as re-measuring against the original baseline and a hold-out the agent never sees. In the morning, you read the log, not the terminal.`,
+    before: { user: 'Keep improving my server overnight and make it faster. Try lots of stuff and use your judgment.' },
+    after: { user: `# program.md: make server.py faster
+
+## Goal
+Cut average response time of server.py for our checkout API, because p95 latency is hurting conversion.
+
+## Metric
+Run \`python benchmark.py\`; it prints \`avg_ms: X\`. Lower is better. Run-to-run noise is about 2 ms, so only count gains above 4 ms.
+
+## Scope
+- You may edit only server.py
+- Do not modify benchmark.py, test_server.py or any dependency
+
+## Loop
+1. Make one targeted change and commit it with a short reason
+2. Run the benchmark (60-second budget) and the tests: \`pytest test_server.py\`
+3. If avg_ms improved by more than 4 ms and tests pass, keep it; otherwise run \`git reset --hard HEAD~1\`
+4. Append a row to results.tsv: commit, avg_ms, status, description
+
+## Rules
+- All else equal, simpler is better: a gain from deleting code beats one that adds complexity
+- Every 20 runs, re-measure the best commit and the original baseline
+- Stop after 100 experiments or 6 hours, whichever comes first
+- Keep going without asking for confirmation until a stop condition is met` },
+    whyBetter: 'The improved version defines one metric with a noise threshold, a single editable file, a keep/discard rule tied to tests, a log format, and hard stop conditions. The vague version gives an unattended agent no way to know what “better” means, or when to stop.',
+    checklist: ['One scriptable metric with a direction and noise threshold', 'One editable file; evaluation is read-only', 'Fixed time budget per run', 'Keep/discard rule with guards', 'Every run logged to results.tsv', 'Hard caps on iterations and spend'],
+    exercise: { title: 'Write your program.md', user: 'Write a program.md for an autonomous experiment loop on this project:\n\n{{describe_project_and_what_to_optimize}}\n\nInclude: goal and why, the single metric command and direction with a noise threshold, the one editable file, read-only files, the keep/discard rule, guards, the results.tsv columns, and stop conditions.', hint: 'Then open the Library’s “Autoresearch loops” collection for the runner, the morning review and the trading-safe variant.' },
   }),
 ];
 

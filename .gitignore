@@ -8,9 +8,8 @@ node_modules/
 agency-swarm/
 awesome-llm/
 
-# Open Design runtime data
-open-design/.od/
-open-design/deploy/.env
 
 # Scout audit chain (runtime data)
 scout-audit.jsonl
+spend-state.json
+__pycache__/
