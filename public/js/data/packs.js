@@ -5,7 +5,7 @@ export const PACKS = [
   { id: 'microstructure', title: 'Market microstructure', icon: 'layers', blurb: 'How prices really form: spread, depth, impact, adverse selection, queues, latency, fees and slippage.' },
   { id: 'vol-surface', title: 'Volatility surface', icon: 'sparkle', blurb: 'How options price fear across strikes and time: skew, smile, term structure, sticky regimes, RR, fly, variance swaps.' },
   { id: 'quant-research', title: 'Quant research rigor', icon: 'evals', blurb: 'Leakage-safe research: bias audits, walk-forward and CPCV, deflated Sharpe, cost models, regimes and more.' },
-  { id: 'autoresearch', title: 'Autoresearch loops', icon: 'history', blurb: 'The Karpathy loop: agents that edit, run, measure, keep or discard, and log, all night long.' },
+  { id: 'autoresearch', title: 'Autoresearch loops', icon: 'history', blurb: 'The Karpathy loop: agents that edit, run, measure, keep or discard, and log, all night long. Plus loop prompts for /loop and scheduled tasks, and fresh-context Ralph build loops.' },
   { id: 'agent-engineering', title: 'Agent & context engineering', icon: 'harness', blurb: 'Context, memory, harnesses, judges, tools, multi-agent patterns, skill authoring and a Socratic tutor.' },
   { id: 'mcp-servers', title: 'MCP servers', icon: 'plug', unit: 'servers', blurb: 'Official and reference MCP servers that connect agents to GitHub, browsers, docs, issue trackers and more. Each comes with a ready .mcp.json, the claude mcp add command, and security notes.' },
 ];
