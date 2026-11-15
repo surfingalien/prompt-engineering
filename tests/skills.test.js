@@ -4,7 +4,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { build, loadSkills, parseFrontmatter } = require('../scripts/build-catalog');
+const { build, loadSkills, loadMcp, parseFrontmatter } = require('../scripts/build-catalog');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -23,10 +23,10 @@ test('catalog.json is in sync with skills/', () => {
   assert.equal(fs.readFileSync(path.join(ROOT, 'public', 'data', 'catalog.json'), 'utf8'), json, 'run `npm run build:catalog`');
 });
 
-test('every pack used by a skill is a known collection, and every collection has skills', async () => {
+test('every pack used by a skill or MCP server is a known collection, and every collection has items', async () => {
   const { PACKS } = await import('../public/js/data/packs.js');
   const ids = new Set(PACKS.map(p => p.id));
-  const used = new Set(loadSkills().map(s => s.pack));
+  const used = new Set([...loadSkills(), ...loadMcp()].map(s => s.pack));
   for (const p of used) assert.ok(ids.has(p), `unknown pack ${p}`);
   for (const p of ids) assert.ok(used.has(p), `empty pack ${p}`);
 });

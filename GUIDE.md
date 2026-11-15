@@ -71,7 +71,7 @@ Start from a template (code review, support, research) or a blank harness, then 
 - **Mission & identity:** the agent's role, goal and definition of done
 - **Guardrails:** safety behaviors added to the system prompt
 - **Project memory:** becomes `CLAUDE.md`
-- **Tools, Skills, Subagents:** the agent's capabilities
+- **Tools, MCP servers, Skills, Subagents:** the agent's capabilities. MCP servers connect it to other systems (GitHub, a browser, Linear, Notion…): pick one from the list or add your own, and it becomes `.mcp.json`. Keep secrets as `${ENV_VAR}` references and start read-only
 - **Evals:** cases that prove it works
 
 The **Readiness** checklist shows what's missing. **Download .zip** gives you the files, ready for Claude Code and the Claude API.
@@ -83,6 +83,8 @@ Search by task ("code review", "PRD", "RAG"), then filter by type, domain and le
 ## 8. Skill collections
 
 At the top of the **Library**, six collections group 56 installable skills: a log-first trading desk, market microstructure, the volatility surface, quant research rigor, autoresearch loops, and agent & context engineering. Click a collection to filter. Open a skill to run it in the Workbench, add it to a harness, or **Download SKILL.md** to use it in Claude Code (put it in `.claude/skills/<name>/`).
+
+The **MCP servers** collection lists 16 servers that connect agents to other systems. Open one to see what it can do, its security notes, a ready `.mcp.json` for your repository, and the `claude mcp add` command for your own machine. **Add to a harness** puts it in the Harness studio.
 
 The trading skills are for learning and research, not financial advice. The trading-desk harness template runs in paper mode by default.
 

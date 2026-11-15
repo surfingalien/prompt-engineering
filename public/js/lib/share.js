@@ -47,6 +47,11 @@ export function sanitize(payload) {
         tools: arr(h.tools).map(x => ({ name: str(x?.name, 120), description: str(x?.description, 5000), params: arr(x?.params, 30).map(pr => ({ name: str(pr?.name, 80), type: ['string', 'integer', 'number', 'boolean'].includes(pr?.type) ? pr.type : 'string', description: str(pr?.description, 1000) })) })),
         guardrails: Object.fromEntries(Object.entries(h.guardrails && typeof h.guardrails === 'object' ? h.guardrails : {}).slice(0, 20).map(([k, v]) => [str(k, 40), v === true])),
         evals: arr(h.evals, 100).map(x => ({ input: str(x?.input, 20_000), expect: str(x?.expect, 2000) })),
+        mcp: arr(h.mcp, 30).map(x => ({
+          name: str(x?.name, 120), ref: str(x?.ref, 80), logo: /^[a-z0-9-]{1,60}$/.test(x?.logo || '') ? x.logo : '', light: x?.light === true,
+          transport: x?.transport === 'stdio' ? 'stdio' : 'http', access: x?.access === 'read' ? 'read' : 'read-write',
+          url: str(x?.url, 2000), headers: str(x?.headers, 4000), command: str(x?.command, 200), args: str(x?.args, 4000), env: str(x?.env, 4000), purpose: str(x?.purpose, 1000),
+        })),
       },
     };
   }

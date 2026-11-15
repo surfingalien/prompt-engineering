@@ -8,6 +8,7 @@ export const KINDS = [
   { id: 'agent', label: 'Agents', one: 'Agent', desc: 'System prompts for specialist agents' },
   { id: 'technique', label: 'Techniques', one: 'Technique', desc: 'Core prompting patterns' },
   { id: 'reference', label: 'References', one: 'Reference', desc: 'Community-collected product system prompts' },
+  { id: 'mcp', label: 'MCP servers', one: 'MCP server', desc: 'External tools and data for agents, via the Model Context Protocol' },
 ];
 export const DOMAINS = {
   coding: 'Coding', agents: 'Agents & orchestration', research: 'Research', product: 'Product & strategy', writing: 'Writing',

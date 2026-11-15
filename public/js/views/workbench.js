@@ -11,7 +11,7 @@ import { renderMarkdown } from '../lib/markdown.js';
 import { lineDiff, diffStats } from '../lib/diff.js';
 import { toPlainText } from '../lib/compose.js';
 import { lessonById } from '../data/curriculum.js';
-import { analysisPanel, pageHead, lockedNotice, ring as ringFor, modelOptions as groupedModels, isGatewayModel } from './shared.js';
+import { analysisPanel, pageHead, lockedNotice, ring as ringFor, modelOptions as groupedModels, isGatewayModel, providerMark } from './shared.js';
 
 const IMPROVE_MODES = [
   { id: 'fix', label: 'Fix analyzer findings', desc: 'Address every warning and tip the analyzer raised.' },
@@ -175,7 +175,7 @@ export default {
         ${cfg.ready ? '' : html`<div style="margin-bottom:12px">${lockedNotice(cfg, 'Or use Copy to run this prompt elsewhere.')}</div>`}
         ${isGatewayModel(ui.model) ? html`<p class="help" style="margin:0 0 10px">Free model via ${cfg.gateway?.name || 'the gateway'}. Effort and reasoning summaries are Claude features; answers may differ from Claude’s.</p>` : ''}
         <div class="run-controls">
-          <label class="field"><span class="label">Model</span><select class="select select-sm" data-ui="model">${modelOptions(ui.model)}</select></label>
+          <label class="field"><span class="label">Model</span><span class="model-pick">${providerMark(cfg, ui.model)}<select class="select select-sm" data-ui="model">${modelOptions(ui.model)}</select></span></label>
           <label class="field"><span class="label">Effort</span><select class="select select-sm" data-ui="effort" ${isGatewayModel(ui.model) ? raw('disabled title="Effort applies to Claude models only"') : ''}>${effortOptions(ui.effort)}</select></label>
           <label class="field"><span class="label">Max tokens</span><input class="input input-sm" type="number" min="64" max="${cfg.maxOutputTokens}" step="256" data-ui="maxTokens" value="${ui.maxTokens}"></label>
         </div>
@@ -206,7 +206,7 @@ export default {
       if (!o) return html`<div class="out-card empty-out"><span class="subtle">${label ? `${label}: ` : ''}Output appears here.</span></div>`;
       const meta = o.meta;
       return html`<div class="out-card">
-        ${label ? html`<div class="out-label">${label} <span class="subtle">${o.modelLabel}${o.effort ? ` · ${o.effort}` : ''}</span></div>` : ''}
+        ${label ? html`<div class="out-label">${label} ${providerMark(cfg, o.modelId, { size: 16 })}<span class="subtle">${o.modelLabel}${o.effort ? ` · ${o.effort}` : ''}</span></div>` : ''}
         ${slot === 'a' && thread.length > 2 ? html`<div class="thread">${thread.slice(0, -1).map(t => html`<div class="turn ${t.role}"><div class="subtle">${t.role === 'user' ? 'You' : 'Claude'}</div><div class="md">${raw(renderMarkdown(t.content.length > 1200 ? `${t.content.slice(0, 1200)}…` : t.content))}</div></div>`)}</div>` : ''}
         ${o.thinking ? html`<details class="thinking" ${o.running && !o.text ? raw('open') : ''}><summary>${raw(icon('brain'))}Reasoning summary</summary><div class="md">${raw(renderMarkdown(o.thinking))}</div></details>` : ''}
         ${o.notice ? html`<div class="callout" style="margin-bottom:10px">${raw(icon('info'))}<div>${o.notice}</div></div>` : ''}
@@ -214,7 +214,7 @@ export default {
         <div class="md ${o.running ? 'caret' : ''}">${raw(renderMarkdown(o.text))}</div>
         ${o.running && !o.text && !o.thinking ? html`<div class="row subtle" style="gap:8px"><span class="spinner"></span>Claude is thinking…</div>` : ''}
         ${meta ? html`<div class="out-meta">
-          <span>${meta.model}</span><span>${meta.usage.input_tokens.toLocaleString()} in · ${meta.usage.output_tokens.toLocaleString()} out${meta.usage.cache_read_input_tokens ? ` · ${meta.usage.cache_read_input_tokens.toLocaleString()} cached` : ''}</span><span>${(meta.ms / 1000).toFixed(1)}s</span>${meta.cost ? html`<span>${formatCost(meta.cost)}</span>` : ''}
+          <span class="row" style="gap:6px">${providerMark(cfg, o.modelId, { size: 14 })}${meta.model}</span><span>${meta.usage.input_tokens.toLocaleString()} in · ${meta.usage.output_tokens.toLocaleString()} out${meta.usage.cache_read_input_tokens ? ` · ${meta.usage.cache_read_input_tokens.toLocaleString()} cached` : ''}</span><span>${(meta.ms / 1000).toFixed(1)}s</span>${meta.cost ? html`<span>${formatCost(meta.cost)}</span>` : ''}
           ${meta.stopReason === 'max_tokens' ? html`<span class="badge warn">hit max tokens</span>` : ''}
           <span class="spacer"></span><button class="btn btn-sm btn-ghost" data-copy="${o.text}">${raw(icon('copy'))}Copy</button>
         </div>` : ''}
@@ -237,7 +237,7 @@ export default {
       const ctrl = new AbortController();
       controllers[slot] = ctrl;
       const m = cfg.models.find(x => x.id === model);
-      const o = out[slot] = { text: '', thinking: '', running: true, modelLabel: m?.short || model, effort };
+      const o = out[slot] = { text: '', thinking: '', running: true, modelLabel: m?.short || model, modelId: model, effort: isGatewayModel(model) ? '' : effort };
       const t0 = performance.now();
       try {
         const r = await streamChat({

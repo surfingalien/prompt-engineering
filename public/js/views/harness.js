@@ -5,11 +5,21 @@ import { navigate } from '../core/nav.js';
 import { getConfig } from '../core/api.js';
 import { toast, openDrawer, download, confirmDialog, copyText, shareLink } from '../core/ui.js';
 import { shareHarness } from '../lib/share.js';
-import { loadCatalog, find } from '../core/catalog.js';
+import { loadCatalog, find, all as catalogItems } from '../core/catalog.js';
+import { validateServer, envOf } from '../lib/mcp.js';
 import { harnessFiles, readiness, systemPrompt, GUARDRAILS, slugify } from '../lib/harness.js';
 import { makeZip } from '../lib/zip.js';
 import { EMPTY_HARNESS, HARNESS_TEMPLATES } from '../data/harness-templates.js';
-import { ring, codeBlock, pageHead } from './shared.js';
+import { ring, codeBlock, pageHead, logoMark } from './shared.js';
+
+// A catalog MCP server (mcp/servers.json) as an editable harness entry.
+export function mcpEntry(m) {
+  return {
+    name: m.id, ref: m.id, logo: m.logo || '', light: Boolean(m.light), transport: m.transport, access: m.access, purpose: m.useWhen,
+    url: m.url || '', headers: Object.entries(m.headers || {}).map(([k, v]) => `${k}: ${v}`).join('\n'),
+    command: m.command || '', args: (m.args || []).join('\n'), env: Object.entries(m.env || {}).map(([k, d]) => `${k}  ${d}`).join('\n'),
+  };
+}
 
 const getH = id => state.harnesses.find(h => h.id === id);
 function saveH(h) { h.updatedAt = Date.now(); update('harnesses', list => list.map(x => (x.id === h.id ? h : x))); }
@@ -32,6 +42,7 @@ const LAYERS = [
   ['guardrails', 'shield', 'Guardrails', 'Trust boundaries and safety behaviors'],
   ['memory', 'brain', 'Project memory', 'CLAUDE.md: facts the agent needs every session'],
   ['tools', 'tool', 'Tools', 'Actions the agent can take'],
+  ['mcp', 'plug', 'MCP servers', 'External tools and data via the Model Context Protocol'],
   ['skills', 'layers', 'Skills', 'Expertise loaded on demand'],
   ['subagents', 'council', 'Subagents', 'Specialists with their own context'],
   ['evals', 'evals', 'Evals', 'Cases that prove it works'],
@@ -73,7 +84,7 @@ function listView(root) {
   });
 }
 
-function editorView(root, h, cfg) {
+function editorView(root, h, cfg, mcpCatalog = []) {
   let section = 'mission';
 
   const tx = (path, { rows = 3, ph = '', mono = false } = {}) => html`<textarea class="textarea ${mono ? 'mono' : ''}" rows="${rows}" data-path="${path}" placeholder="${ph}">${getPath(h, path) || ''}</textarea>`;
@@ -115,6 +126,37 @@ function editorView(root, h, cfg) {
         <button class="btn btn-sm btn-ghost" data-add="tools.${i}.params">${raw(icon('plus'))}Parameter</button>
       </div>`)}</div>
       <button class="btn btn-sm" style="margin-top:12px" data-add="tools">${raw(icon('plus'))}Add tool</button>`,
+    mcp: () => html`
+      <p class="subtle" style="margin-bottom:12px">Exported as <code>.mcp.json</code> for Claude Code. MCP servers give the agent ready-made tools (GitHub, a browser, docs, issue trackers) instead of ones you write yourself. Start read-only, and keep secrets as <code>\${ENV_VAR}</code> references.</p>
+      ${mcpCatalog.length ? html`<div class="row wrap" style="gap:8px;margin-bottom:14px">
+        <select class="select select-sm" style="width:auto" data-mcp-pick aria-label="MCP server from the library">
+          ${mcpCatalog.map(it => html`<option value="${it.id}">${it.title}: ${it.mcp.access === 'read' ? 'read-only' : 'read-write'}</option>`)}
+        </select>
+        <button class="btn btn-sm btn-primary" data-act="mcp-add">${raw(icon('plus'))}Add server</button>
+        <a class="btn btn-sm btn-ghost" href="#/library?pack=mcp-servers">${raw(icon('library'))}Browse MCP servers</a>
+      </div>` : ''}
+      <div class="stack">${(h.mcp || []).map((m, i) => {
+        const errs = validateServer(m);
+        const env = Object.keys(envOf(m));
+        return html`<div class="card flat item-card">
+          <div class="row" style="gap:8px">${logoMark({ logo: m.logo, light: m.light, label: m.name || 'MCP server' }, { size: 22, decorative: true })}${inp(`mcp.${i}.name`, 'server-name')}${rm(`mcp.${i}`)}</div>
+          <div class="grid grid-2" style="gap:10px;margin-top:10px">
+            <label class="field"><span class="label">Transport</span><select class="select" data-path="mcp.${i}.transport">${[['http', 'Remote (HTTP)'], ['stdio', 'Local (stdio)']].map(([v, l]) => html`<option value="${v}" ${m.transport === v ? raw('selected') : ''}>${l}</option>`)}</select></label>
+            <label class="field"><span class="label">Access</span><select class="select" data-path="mcp.${i}.access">${[['read', 'Read-only'], ['read-write', 'Can make changes']].map(([v, l]) => html`<option value="${v}" ${m.access === v ? raw('selected') : ''}>${l}</option>`)}</select></label>
+          </div>
+          ${m.transport === 'stdio' ? html`
+            <label class="field"><span class="label">Command</span>${inp(`mcp.${i}.command`, 'npx')}</label>
+            <label class="field"><span class="label">Arguments <span class="opt">one per line</span></span>${tx(`mcp.${i}.args`, { rows: 3, mono: true, ph: '-y\n@scope/server' })}</label>`
+          : html`
+            <label class="field"><span class="label">URL</span>${inp(`mcp.${i}.url`, 'https://example.com/mcp')}</label>
+            <label class="field"><span class="label">Headers <span class="opt">one per line, Name: value</span></span>${tx(`mcp.${i}.headers`, { rows: 2, mono: true, ph: 'Authorization: Bearer \${API_TOKEN}' })}</label>`}
+          <label class="field"><span class="label">Environment variables <span class="opt">one per line: NAME and what it is</span></span>${tx(`mcp.${i}.env`, { rows: 2, mono: true, ph: 'API_TOKEN  read-only token for the project' })}</label>
+          <label class="field"><span class="label">Use when…</span>${inp(`mcp.${i}.purpose`, 'Why the agent has this server; goes into CLAUDE.md')}</label>
+          ${env.length ? html`<p class="subtle">Each person sets ${env.map(e => html`<code>${e}</code> `)}in their environment; the file only holds references.</p>` : ''}
+          ${errs.length ? html`<div class="callout warn" style="margin-top:8px">${raw(icon('alert'))}<div>${errs.map(e => html`<div>${e}</div>`)}</div></div>` : ''}
+        </div>`;
+      })}</div>
+      <button class="btn btn-sm" style="margin-top:12px" data-add="mcp">${raw(icon('plus'))}Add custom server</button>`,
     skills: () => html`
       <p class="subtle" style="margin-bottom:12px">Each becomes <code>.claude/skills/&lt;name&gt;/SKILL.md</code>. The description is always visible to Claude; the body loads only when relevant, so write the description as “use when…”.</p>
       <div class="stack">${(h.skills || []).map((s, i) => html`<div class="card flat item-card">
@@ -146,7 +188,7 @@ function editorView(root, h, cfg) {
       <button class="btn btn-sm" style="margin-top:12px" data-add="evals">${raw(icon('plus'))}Add case</button>`,
   };
 
-  const NEW_ITEM = { tools: () => ({ name: '', description: '', params: [] }), skills: () => ({ name: '', description: '', body: '' }), subagents: () => ({ name: '', description: '', tools: '', model: 'inherit', prompt: '' }), evals: () => ({ input: '', expect: '' }), params: () => ({ name: '', type: 'string', description: '' }) };
+  const NEW_ITEM = { mcp: () => ({ name: '', transport: 'http', access: 'read', url: '', headers: '', command: '', args: '', env: '', purpose: '' }), tools: () => ({ name: '', description: '', params: [] }), skills: () => ({ name: '', description: '', body: '' }), subagents: () => ({ name: '', description: '', tools: '', model: 'inherit', prompt: '' }), evals: () => ({ input: '', expect: '' }), params: () => ({ name: '', type: 'string', description: '' }) };
 
   function drawSide() {
     const r = readiness(h);
@@ -175,7 +217,7 @@ function editorView(root, h, cfg) {
       </div>
       <div class="h-layout">
         <nav class="h-nav" aria-label="Harness layers">${LAYERS.map(([id, ic, t]) => {
-          const n = { tools: h.tools?.length, skills: h.skills?.length, subagents: h.subagents?.length, evals: h.evals?.length, guardrails: Object.values(h.guardrails || {}).filter(Boolean).length }[id];
+          const n = { mcp: h.mcp?.length, tools: h.tools?.length, skills: h.skills?.length, subagents: h.subagents?.length, evals: h.evals?.length, guardrails: Object.values(h.guardrails || {}).filter(Boolean).length }[id];
           return html`<button class="h-nav-item" data-section="${id}" aria-current="${String(section === id)}">${raw(icon(ic))}<span>${t}</span>${n ? html`<span class="count">${n}</span>` : ''}</button>`;
         })}</nav>
         <section class="card h-main"><h2 class="section-title">${LAYERS.find(l => l[0] === section)[2]}</h2>${SECTIONS[section]()}</section>
@@ -189,7 +231,7 @@ function editorView(root, h, cfg) {
 
   const offs = [
     on(root, 'input', '[data-path]', (e, el) => { setPath(h, el.dataset.path, el.value); if (el.dataset.path === 'name') root.querySelector('.page-title').textContent = el.value || 'Untitled'; persist(); }),
-    on(root, 'change', 'select[data-path]', (e, el) => { setPath(h, el.dataset.path, el.value); persist(); }),
+    on(root, 'change', 'select[data-path]', (e, el) => { setPath(h, el.dataset.path, el.value); if (/^mcp\.\d+\.transport$/.test(el.dataset.path)) { saveH(h); draw(); } else persist(); }),
     on(root, 'change', '[data-guard]', (e, el) => { h.guardrails = { ...(h.guardrails || {}), [el.dataset.guard]: el.checked }; persist(); }),
     on(root, 'click', '[data-section]', (e, b) => { section = b.dataset.section; draw(); }),
     on(root, 'click', '[data-add]', (e, b) => {
@@ -215,10 +257,16 @@ function editorView(root, h, cfg) {
     }),
     on(root, 'click', '[data-act]', async (e, b) => {
       const act = b.dataset.act;
-      if (act === 'zip') {
+      if (act === 'mcp-add') {
+        const it = mcpCatalog.find(x => x.id === $('[data-mcp-pick]', root)?.value);
+        if (!it) return;
+        h.mcp = [...(h.mcp || []), mcpEntry(it.mcp)];
+        saveH(h); draw();
+        toast(`Added ${it.title}`);
+      } else if (act === 'zip') {
         const files = harnessFiles(h);
         const folder = slugify(h.name);
-        files.push({ path: 'README.md', content: `# ${h.name} — harness\n\nGenerated by PromptForge.\n\n- \`CLAUDE.md\` and \`.claude/\` go in your repository root for Claude Code.\n- \`harness/agent.ts\` is a minimal agent loop on the Anthropic TypeScript SDK: \`npm i @anthropic-ai/sdk && npx tsx harness/agent.ts "your task"\`.\n- \`harness/evals.yaml\` runs with \`npx promptfoo eval -c harness/evals.yaml\`.\n` });
+        files.push({ path: 'README.md', content: `# ${h.name} — harness\n\nGenerated by PromptForge.\n\n- \`CLAUDE.md\` and \`.claude/\` go in your repository root for Claude Code.\n- \`harness/agent.ts\` is a minimal agent loop on the Anthropic TypeScript SDK: \`npm i @anthropic-ai/sdk && npx tsx harness/agent.ts "your task"\`.\n- \`harness/evals.yaml\` runs with \`npx promptfoo eval -c harness/evals.yaml\`.\n${(h.mcp || []).length ? '- \`.mcp.json\` lists MCP servers for Claude Code. Each person sets the environment variables it references; Claude Code asks them to approve the servers on first use.\n' : ''}` });
         download(`${folder}-harness.zip`, new Blob([makeZip(files.map(f => ({ ...f, path: `${folder}/${f.path}` })))], { type: 'application/zip' }));
         toast('Harness downloaded');
       } else if (act === 'copy-system') copyText(systemPrompt(h), 'System prompt copied');
@@ -243,12 +291,25 @@ export default {
   title: 'Harness studio',
   async mount(root, { params, query }) {
     const cfg = await getConfig();
+    let mcpCatalog = [];
+    try { await loadCatalog(); mcpCatalog = catalogItems().filter(it => it.kind === 'mcp' && it.mcp); } catch { /* offline: custom servers only */ }
     // Entry points from other views
     if (query.fromPrompt) {
       const p = getPrompt(query.fromPrompt);
       const h = newH({ name: p?.title || 'New agent', mission: p ? (p.system || p.user) : '' });
       history.replaceState(null, '', `#/harness/${h.id}`);
-      return editorView(root, h, cfg);
+      return editorView(root, h, cfg, mcpCatalog);
+    }
+    if (query.addMcp) {
+      const it = mcpCatalog.find(x => x.id === query.addMcp);
+      if (it) {
+        const h = state.harnesses[0] ? getH(state.harnesses[0].id) : newH({});
+        h.mcp = [...(h.mcp || []), mcpEntry(it.mcp)];
+        saveH(h);
+        toast(`Added ${it.title} to ${h.name}`);
+        history.replaceState(null, '', `#/harness/${h.id}`);
+        return editorView(root, h, cfg, mcpCatalog);
+      }
     }
     if (query.addSkill || query.addMission) {
       await loadCatalog();
@@ -263,11 +324,11 @@ export default {
           toast(`Added “${it.title}” to ${h.name}`);
         }
         history.replaceState(null, '', `#/harness/${h.id}`);
-        return editorView(root, h, cfg);
+        return editorView(root, h, cfg, mcpCatalog);
       }
     }
     const h = params[0] && getH(params[0]);
     if (params[0] && !h) { navigate('harness'); return null; }
-    return h ? editorView(root, h, cfg) : listView(root);
+    return h ? editorView(root, h, cfg, mcpCatalog) : listView(root);
   },
 };

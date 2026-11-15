@@ -6,7 +6,8 @@ import { copyText, openDrawer, toast, download } from '../core/ui.js';
 import { loadCatalog, query, find, counts, all as allItems, KINDS, DOMAINS, LEVELS, PACKS, packById } from '../core/catalog.js';
 import { extractVars } from '../lib/template.js';
 import { makeZip } from '../lib/zip.js';
-import { levelBadge, codeBlock, pageHead } from './shared.js';
+import { levelBadge, codeBlock, pageHead, logoMark } from './shared.js';
+import { mcpJson, claudeAddCommand, envOf } from '../lib/mcp.js';
 
 const PAGE = 36;
 
@@ -16,7 +17,48 @@ function toWorkbench(it) {
   navigate(`workbench/${p.id}`);
 }
 
+const AUTH = { none: 'No sign-in', oauth: 'OAuth sign-in', token: 'API token' };
+const mcpLogo = (m, size) => logoMark({ logo: m.logo, light: m.light, label: m.name }, { size, decorative: true });
+
+function openMcp(it, { onChange } = {}) {
+  const m = it.mcp;
+  const env = Object.entries(envOf(m));
+  const json = mcpJson([m]);
+  const cmd = claudeAddCommand(m);
+  const fav = isFavorite(it.id);
+  return openDrawer({
+    title: it.title,
+    subtitle: html`${mcpLogo(m, 20)}<span class="badge">MCP server</span><span class="badge">${m.transport === 'http' ? 'Remote (HTTP)' : 'Local (stdio)'}</span><span class="badge">${AUTH[m.auth] || m.auth}</span><span class="badge ${m.access === 'read' ? 'good' : 'warn'}">${m.access === 'read' ? 'Read-only' : 'Can make changes'}</span>`,
+    body: html`
+      <p class="muted" style="font-size:var(--fs-md);margin-bottom:12px">${it.summary}</p>
+      <p style="margin-bottom:14px"><b>Use when:</b> ${m.useWhen}</p>
+      <div class="label" style="margin-bottom:6px">What it can do</div>
+      <ul class="plain-list" style="margin-bottom:16px">${m.examples.map(e => html`<li>${e}</li>`)}</ul>
+      <div class="callout warn" style="margin-bottom:16px">${raw(icon('shield'))}<div><b>Security</b><ul class="plain-list">${m.security.map(e => html`<li>${e}</li>`)}</ul></div></div>
+      ${env.length ? html`<div class="label" style="margin-bottom:6px">Environment variables</div><ul class="plain-list" style="margin-bottom:16px">${env.map(([k, d]) => html`<li><code>${k}</code>${d ? ` ${d}` : ''}</li>`)}</ul>` : ''}
+      <div class="label" style="margin-bottom:6px">Share with your team: <code>.mcp.json</code> in the repository root</div>
+      ${codeBlock(json, { label: '.mcp.json' })}
+      <p class="subtle" style="margin:8px 0 16px">Claude Code reads it on start and asks each person to approve the server. Secrets stay <code>\${VAR}</code> references, filled in from each person’s environment.</p>
+      <div class="label" style="margin-bottom:6px">Just for you: the Claude Code command</div>
+      ${codeBlock(cmd, { label: 'claude mcp add command' })}
+      <p class="subtle" style="margin-top:8px">${m.auth === 'oauth' ? 'Then run /mcp inside Claude Code to sign in. ' : ''}Source: ${it.source} · <a href="${m.docs}" target="_blank" rel="noopener noreferrer">official documentation</a></p>`,
+    actions: [
+      { label: 'Add to a harness', icon: 'harness', primary: true, onClick: ({ close }) => { close(); navigate(`harness?addMcp=${encodeURIComponent(it.id)}`); } },
+      { label: 'Copy .mcp.json', icon: 'copy', onClick: () => copyText(json, '.mcp.json copied') },
+      { label: 'Copy command', icon: 'copy', onClick: () => copyText(cmd, 'Command copied') },
+      { label: fav ? 'Saved' : 'Save', icon: 'star', onClick: ({ button }) => {
+        const now = toggleFavorite(it.id);
+        button.lastChild.textContent = now ? 'Saved' : 'Save';
+        toast(now ? 'Added to favorites' : 'Removed from favorites');
+        onChange?.();
+      } },
+    ],
+    onClose: () => { if (location.hash.startsWith('#/library/')) history.replaceState(null, '', `#/library${sessionStorage.getItem('pf.libq') || ''}`); },
+  });
+}
+
 export function openItem(it, { onChange } = {}) {
+  if (it.kind === 'mcp' && it.mcp) return openMcp(it, { onChange });
   const kind = KINDS.find(k => k.id === it.kind);
   const vars = extractVars(it.body);
   const fav = isFavorite(it.id);
@@ -67,7 +109,7 @@ export default {
     let shown = PAGE;
 
     render(root, html`
-      ${pageHead({ eyebrow: 'Library', title: 'Templates, skills and agents', desc: '500+ unique, curated items from the open-source prompt-engineering community, organized by what you’re doing and how advanced it is.' })}
+      ${pageHead({ eyebrow: 'Library', title: 'Templates, skills, agents and MCP servers', desc: '500+ unique, curated items from the open-source prompt-engineering community, plus installable skills and MCP servers, organized by what you’re doing and how advanced it is.' })}
       <div id="lib-packs"></div>
       <div class="lib-search">${raw(icon('search'))}<input class="input" type="search" placeholder="Search by task, tool or technique: “code review”, “RAG”, “PRD”…" value="${f.q}" data-q aria-label="Search the library"></div>
       <div id="lib-facets"></div>
@@ -91,9 +133,9 @@ export default {
       const base = query(f.q, { ids: favIds, pack: f.pack });
       const packCounts = allItems().reduce((m, it) => (it.pack ? (m[it.pack] = (m[it.pack] || 0) + 1, m) : m), {});
       render($('#lib-packs', root), html`
-        <div class="row between" style="margin-bottom:10px"><span class="label">Skill collections <span class="opt">installable Agent Skills</span></span>${f.pack !== 'all' ? html`<button class="btn btn-sm btn-ghost" data-pack="all">${raw(icon('x'))}Show everything</button>` : ''}</div>
+        <div class="row between" style="margin-bottom:10px"><span class="label">Collections <span class="opt">installable Agent Skills and MCP servers</span></span>${f.pack !== 'all' ? html`<button class="btn btn-sm btn-ghost" data-pack="all">${raw(icon('x'))}Show everything</button>` : ''}</div>
         <div class="pack-strip">${PACKS.map(p => html`<button class="pack-card ${f.pack === p.id ? 'active' : ''}" data-pack="${p.id}" aria-pressed="${String(f.pack === p.id)}">
-          <span class="pack-ic">${raw(icon(p.icon))}</span><span class="pack-t">${p.title}</span><span class="pack-n">${packCounts[p.id] || 0} skills</span></button>`)}</div>
+          <span class="pack-ic">${raw(icon(p.icon))}</span><span class="pack-t">${p.title}</span><span class="pack-n">${packCounts[p.id] || 0} ${p.unit || 'skills'}</span></button>`)}</div>
         ${f.pack !== 'all' ? html`<p class="muted" style="margin:12px 0 4px">${packById(f.pack)?.blurb}</p>` : ''}`);
       const c = counts(base);
       const results = base.filter(it => (f.kind === 'all' || it.kind === f.kind) && (f.domain === 'all' || it.domain === f.domain) && (f.level === 'all' || it.level === f.level));
@@ -120,7 +162,7 @@ export default {
         <p class="subtle" style="margin:4px 0 14px" aria-live="polite">${results.length.toLocaleString()} result${results.length === 1 ? '' : 's'}${f.q ? html` for “${f.q}”` : ''}</p>
         ${results.length ? html`<div class="grid grid-auto">${page.map(it => html`
           <button class="card lib-card" data-open="${it.id}">
-            <div class="row" style="gap:6px;margin-bottom:8px"><span class="badge">${KINDS.find(k => k.id === it.kind)?.one || it.kind}</span>${levelBadge(it.level)}${it.pack ? html`<span class="badge accent">skill pack</span>` : ''}${isFavorite(it.id) ? raw(`<span class="fav-star" title="Saved">${icon('star')}</span>`) : ''}</div>
+            <div class="row" style="gap:6px;margin-bottom:8px">${it.mcp ? mcpLogo(it.mcp, 18) : ''}<span class="badge">${KINDS.find(k => k.id === it.kind)?.one || it.kind}</span>${levelBadge(it.level)}${it.pack && !it.mcp ? html`<span class="badge accent">skill pack</span>` : ''}${it.mcp ? html`<span class="badge ${it.mcp.access === 'read' ? 'good' : 'warn'}">${it.mcp.access === 'read' ? 'read-only' : 'read-write'}</span>` : ''}${isFavorite(it.id) ? raw(`<span class="fav-star" title="Saved">${icon('star')}</span>`) : ''}</div>
             <div class="card-title">${it.title}</div>
             <p class="lib-sum">${it.summary}</p>
             <div class="subtle lib-src">${DOMAINS[it.domain] || it.domain} · ${it.source}</div>

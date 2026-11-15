@@ -1,4 +1,5 @@
-// Curated collections of installable skills (skills/<name>/SKILL.md).
+// Curated collections: installable skills (skills/<name>/SKILL.md) and MCP
+// servers (mcp/servers.json). `unit` labels the count on each card.
 export const PACKS = [
   { id: 'trading-desk', title: 'Log-first trading desk', icon: 'route', blurb: 'Six agents from scan to log (scanner, rug check, sizer, executor, logger, equity guard) plus a morning review. Every trade gets a reason.' },
   { id: 'microstructure', title: 'Market microstructure', icon: 'layers', blurb: 'How prices really form: spread, depth, impact, adverse selection, queues, latency, fees and slippage.' },
@@ -6,5 +7,6 @@ export const PACKS = [
   { id: 'quant-research', title: 'Quant research rigor', icon: 'evals', blurb: 'Leakage-safe research: bias audits, walk-forward and CPCV, deflated Sharpe, cost models, regimes and more.' },
   { id: 'autoresearch', title: 'Autoresearch loops', icon: 'history', blurb: 'The Karpathy loop: agents that edit, run, measure, keep or discard, and log, all night long.' },
   { id: 'agent-engineering', title: 'Agent & context engineering', icon: 'harness', blurb: 'Context, memory, harnesses, judges, tools, multi-agent patterns, skill authoring and a Socratic tutor.' },
+  { id: 'mcp-servers', title: 'MCP servers', icon: 'plug', unit: 'servers', blurb: 'Official and reference MCP servers that connect agents to GitHub, browsers, docs, issue trackers and more. Each comes with a ready .mcp.json, the claude mcp add command, and security notes.' },
 ];
 export const packById = id => PACKS.find(p => p.id === id);

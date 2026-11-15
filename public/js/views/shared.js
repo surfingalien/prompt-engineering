@@ -3,6 +3,7 @@ import { html, raw, highlightPrompt } from '../core/dom.js';
 import { icon } from '../core/icons.js';
 import { scoreColor } from '../core/ui.js';
 import { levelLabel } from '../core/catalog.js';
+import { providerOf, logoPaths, monogram } from '../lib/providers.js';
 
 export const levelBadge = level => html`<span class="badge lv-${level}">${levelLabel(level)}</span>`;
 
@@ -72,4 +73,23 @@ export function lockedNotice(cfg, extra = '') {
 
 export function pageHead({ eyebrow, title, desc, actions = '' }) {
   return html`<header class="page-head"><div>${eyebrow ? html`<div class="eyebrow">${eyebrow}</div>` : ''}<h1 class="page-title">${title}</h1>${desc ? html`<p class="page-desc">${desc}</p>` : ''}</div>${actions ? html`<div class="page-actions">${actions}</div>` : ''}</header>`;
+}
+
+/**
+ * A provider or MCP-server logo: the SVG from /img/logos (with its
+ * light-colored variant on the dark theme), or a monogram when there is none.
+ */
+export function logoMark({ logo, light, label }, { size = 18, decorative = false } = {}) {
+  const paths = logoPaths(logo, light);
+  const name = label || 'Logo';
+  // Decorative when the name is already written next to the logo.
+  const a11y = decorative ? raw('aria-hidden="true"') : html`role="img" aria-label="${name}" title="${name}"`;
+  if (!paths) return html`<span class="logo-mark mono" style="--s:${size}px" ${a11y}>${monogram(name)}</span>`;
+  return html`<span class="logo-mark" style="--s:${size}px" ${a11y}><img class="lm-l" src="${paths.light}" alt="" width="${size}" height="${size}" loading="lazy">${light ? html`<img class="lm-d" src="${paths.dark}" alt="" width="${size}" height="${size}" loading="lazy">` : ''}</span>`;
+}
+
+/** Logo of the provider behind model `id` (Claude, or the gateway's upstream). */
+export function providerMark(cfg, id, opts) {
+  const model = (cfg.allModels || cfg.models || []).find(m => m.id === id) || { id };
+  return logoMark(providerOf(model, cfg.gateway?.name || 'Gateway'), opts);
 }

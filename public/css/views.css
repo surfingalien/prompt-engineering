@@ -223,3 +223,7 @@ details summary { cursor: pointer; }
   .toast { min-width: 0; max-width: none; }
 }
 
+
+/* ── Library: MCP servers ───────────────────────────────────────────────── */
+.plain-list { margin: 4px 0 0; padding-left: 18px; }
+.plain-list li { margin: 2px 0; }

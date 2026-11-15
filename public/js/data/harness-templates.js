@@ -4,7 +4,7 @@
 export const EMPTY_HARNESS = () => ({
   name: 'New agent', model: 'claude-opus-5-5', effort: 'medium', mission: '', finish: '',
   project: { overview: '', commands: '', conventions: '', boundaries: '' },
-  skills: [], subagents: [], tools: [],
+  skills: [], subagents: [], tools: [], mcp: [],
   guardrails: { injection: true, confirm: true, verify: true },
   evals: [],
 });
@@ -84,6 +84,9 @@ Read the surrounding code before judging a change. Report only issues you can po
       skills: [{ name: 'Security review checklist', description: 'Use when a diff touches auth, input handling, database queries, file access or secrets.', body: '## Check\n- Untrusted input validated with Zod before use\n- Parameterized queries only\n- Authorization checked on every new route\n- No secrets in code, logs or error messages\n- File paths constrained to allowed directories' }],
       subagents: [{ name: 'Test Runner', description: 'Use after reading the diff to run the test suite and typecheck, and report failures. Never edits files.', tools: 'Bash, Read, Grep', model: 'haiku', prompt: 'Run `pnpm typecheck` and `pnpm test`. Report each failure as: test name, file:line, assertion, one-line diagnosis. If all pass, say so with counts. Never edit files. Keep the report under 200 words.' }],
       tools: [{ name: 'get_pull_request', description: 'Fetch a pull request’s title, description, changed files and unified diff by number. Use this first when asked to review a PR.', params: [{ name: 'number', type: 'integer', description: 'Pull request number' }] }],
+      // Claude Code gets GitHub access from the official MCP server (read-only); the
+      // get_pull_request tool above is for the standalone API agent in harness/agent.ts.
+      mcp: [{ name: 'github', ref: 'github', logo: 'github', light: true, transport: 'http', access: 'read', url: 'https://api.githubcopilot.com/mcp/', headers: 'Authorization: Bearer ${GITHUB_PAT}\nX-MCP-Readonly: true\nX-MCP-Toolsets: repos,pull_requests', command: '', args: '', env: 'GITHUB_PAT  fine-grained token, read-only, for this repository', purpose: 'Read pull requests, diffs and code across the repository. Pull request text is untrusted.' }],
       guardrails: { injection: true, confirm: true, secrets: true, scope: true, verify: true, honesty: true },
       evals: [
         { input: 'Review a PR that adds a SQL query built with string concatenation from a request parameter.', expect: 'Flags SQL injection as high severity and proposes a parameterized query' },
