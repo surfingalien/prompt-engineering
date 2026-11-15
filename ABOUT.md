@@ -35,11 +35,11 @@ PromptForge teaches both in one place, for free and open source, with every less
 
 | | |
 |---|---|
-| Lessons | 16 across 4 levels |
-| Library items | 514 unique (skills, prompts, agents, techniques, references) |
+| Lessons | 17 across 4 levels |
+| Library items | 570 (514 curated + 56 installable skills in 6 collections) |
 | Builder blueprints | 8 |
-| Harness templates | 3 |
-| Automated tests | 60 |
+| Harness templates | 5 |
+| Automated tests | 67 |
 | Runtime dependencies | 4 |
 
 ## Who built it

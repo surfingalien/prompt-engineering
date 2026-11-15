@@ -115,6 +115,16 @@
 .dl.same { color: var(--text-2); }
 
 /* ─── Library ─────────────────────────────────────────────────────────────── */
+.pack-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: var(--s5); }
+@media (max-width: 1200px) { .pack-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .pack-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pack-card { display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; text-align: left; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--bg-elev); transition: all 0.15s var(--ease); }
+.pack-card:hover { border-color: var(--border-strong); }
+.pack-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.pack-ic { grid-row: span 2; color: var(--accent); }
+.pack-ic svg { width: 18px; height: 18px; margin-top: 1px; }
+.pack-t { font-weight: 600; font-size: var(--fs-sm); line-height: 1.3; }
+.pack-n { font-size: var(--fs-xs); color: var(--text-3); }
 .lib-search { position: relative; margin-bottom: var(--s4); }
 .lib-search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-3); pointer-events: none; }
 .lib-search .input { padding: 13px 16px 13px 46px; font-size: var(--fs-md); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }

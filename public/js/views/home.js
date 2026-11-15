@@ -6,6 +6,7 @@ import { LEVELS, LESSONS, lessonsForLevel } from '../data/curriculum.js';
 import { analyzePrompt } from '../lib/analyze.js';
 import { analysisPanel } from './shared.js';
 import { getConfig } from '../core/api.js';
+import { PACKS } from '../core/catalog.js';
 
 const DEMO_BEFORE = 'write a blog post about our product';
 const DEMO_AFTER = `You are a B2B content strategist.
@@ -74,10 +75,15 @@ export default {
       </section>
 
       <section class="section">
+        <div class="row between" style="margin-bottom:16px"><h2 class="section-title" style="margin:0">New skill collections</h2><a href="#/library" class="subtle">Browse the library →</a></div>
+        <div class="grid grid-3">${PACKS.map(p => html`<a class="card feature" href="#/library?pack=${p.id}"><div class="feature-ic">${raw(icon(p.icon))}</div><div class="card-title">${p.title}</div><p class="muted" style="font-size:var(--fs-sm);margin-top:4px">${p.blurb}</p></a>`)}</div>
+      </section>
+
+      <section class="section">
         <h2 class="section-title">Everything you need, in order</h2>
         <div class="grid grid-3">
           ${[
-            ['learn', 'Learn', 'Sixteen focused lessons, each with a before/after example and an exercise you run for real.', 'learn'],
+            ['learn', 'Learn', 'Seventeen focused lessons, each with a before/after example and an exercise you run for real.', 'learn'],
             ['build', 'Build', 'Answer a few plain-language questions; get a structured, best-practice prompt with a live quality score.', 'build'],
             ['workbench', 'Test', 'Run against Claude with streaming, compare models or versions side by side, and track every revision.', 'workbench'],
             ['evals', 'Measure', 'Turn success criteria into test suites with code checks and Claude-graded rubrics. Export to promptfoo.', 'evals'],

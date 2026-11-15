@@ -54,9 +54,21 @@ function listView(root) {
         ${HARNESS_TEMPLATES.map(t => html`<button class="card" data-new="${t.id}"><div class="feature-ic">${raw(icon('harness'))}</div><div class="card-title">${t.title}</div><p class="subtle" style="margin-top:4px">${t.desc}</p></button>`)}
       </div>
     </section>`);
-  return on(root, 'click', '[data-new]', (e, b) => {
+  return on(root, 'click', '[data-new]', async (e, b) => {
     const t = HARNESS_TEMPLATES.find(x => x.id === b.dataset.new);
-    navigate(`harness/${newH(t ? t.data : {}).id}`);
+    const data = t ? structuredClone(t.data) : {};
+    const refs = [...(data.skills || []), ...(data.subagents || [])].filter(x => x.ref);
+    if (refs.length) {
+      try {
+        await loadCatalog();
+        for (const x of refs) {
+          const it = find(`pack-${x.ref}`);
+          if (!it) continue;
+          if ('body' in x) x.body = it.body; else x.prompt = it.body;
+        }
+      } catch { /* offline: keep the short template text */ }
+    }
+    navigate(`harness/${newH(data).id}`);
   });
 }
 

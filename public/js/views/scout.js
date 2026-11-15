@@ -7,7 +7,7 @@ import { toast, confirmDialog, promptDialog, openDrawer } from '../core/ui.js';
 import { invalidate } from '../core/catalog.js';
 import { codeBlock, pageHead } from './shared.js';
 
-const TOPICS = ['Multi-agent orchestration', 'Agent evals', 'RAG systems', 'MCP servers', 'Browser automation', 'Prompt-injection defense', 'Agent memory', 'Code review agents', 'Data pipelines'];
+const TOPICS = ['Multi-agent orchestration', 'Agent evals', 'Market microstructure', 'Options volatility surfaces', 'Autoresearch loops', 'RAG systems', 'MCP servers', 'Browser automation', 'Prompt-injection defense', 'Agent memory', 'Code review agents', 'Data pipelines'];
 const TIER = { gold: 'good', silver: 'info', bronze: 'warn', quarantined: 'bad' };
 
 export default {

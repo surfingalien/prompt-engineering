@@ -208,3 +208,14 @@ test('security headers are set and unknown API routes return JSON 404', async ()
   assert.equal(bad.status, 400);
   assert.ok((await bad.json()).error);
 });
+
+test('skill packs are served as markdown and missing files 404 instead of the app shell', async () => {
+  const ok = await fetch(`${base}/skills/desk-rug-check/SKILL.md`);
+  assert.equal(ok.status, 200);
+  assert.match(ok.headers.get('content-type'), /text\/markdown/);
+  assert.match(await ok.text(), /^---\nname: desk-rug-check/);
+  const missing = await fetch(`${base}/skills/nope/SKILL.md`);
+  assert.equal(missing.status, 404);
+  assert.ok(!(await missing.text()).includes('<!doctype html>'));
+});
+

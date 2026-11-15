@@ -71,11 +71,17 @@ The **Readiness** checklist shows what's missing. **Download .zip** gives you th
 
 Search by task ("code review", "PRD", "RAG"), then filter by type, domain and level. Open an item to read it, copy it, save it as a favorite, open it in the Workbench, or add a skill to a harness.
 
-## 8. Council and Scout
+## 8. Skill collections
+
+At the top of the **Library**, six collections group 56 installable skills: a log-first trading desk, market microstructure, the volatility surface, quant research rigor, autoresearch loops, and agent & context engineering. Click a collection to filter. Open a skill to run it in the Workbench, add it to a harness, or **Download SKILL.md** to use it in Claude Code (put it in `.claude/skills/<name>/`).
+
+The trading skills are for learning and research, not financial advice. The trading-desk harness template runs in paper mode by default.
+
+## 9. Council and Scout
 
 - **Council:** describe a decision; five advisors analyze it independently and a chairman summarizes where they agree and disagree.
 - **Scout:** enter a topic; Claude proposes new skills and agents, which pass safety and quality checks before you can save them to your library.
 
-## Your data
+## 10. Your data
 
 Everything you create is stored in this browser. Use **Settings → Export workspace** to back it up or move it to another computer, and **Import** to bring it back. Settings also shows an estimate of what your runs have cost and lets you set a spend alert.

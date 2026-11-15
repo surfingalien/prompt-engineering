@@ -6,6 +6,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY public ./public
 COPY prompts ./prompts
 COPY src ./src
+COPY skills ./skills
 COPY server.js ./
 USER node
 EXPOSE 3000

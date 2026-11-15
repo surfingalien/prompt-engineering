@@ -5,7 +5,7 @@ export function prepare(items) {
   return items.map(it => ({
     it,
     title: (it.title || '').toLowerCase(),
-    meta: `${it.domain || ''} ${it.kind || ''} ${it.source || ''} ${(it.tags || []).join(' ')}`.toLowerCase(),
+    meta: `${it.domain || ''} ${it.kind || ''} ${it.source || ''} ${it.pack || ''} ${(it.tags || []).join(' ')}`.toLowerCase(),
     summary: (it.summary || '').toLowerCase(),
     body: (it.body || '').toLowerCase(),
   }));
@@ -27,6 +27,7 @@ export function search(index, query, filters = {}) {
     if (filters.kind && filters.kind !== 'all' && it.kind !== filters.kind) continue;
     if (filters.domain && filters.domain !== 'all' && it.domain !== filters.domain) continue;
     if (filters.level && filters.level !== 'all' && it.level !== filters.level) continue;
+    if (filters.pack && filters.pack !== 'all' && it.pack !== filters.pack) continue;
     if (filters.ids && !filters.ids.has(it.id)) continue;
     let score = 0;
     if (terms.length) {
