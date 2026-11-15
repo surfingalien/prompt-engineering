@@ -261,6 +261,46 @@ LLM_GATEWAY_URL=http://localhost:20128/v1 LLM_GATEWAY_KEY=... npm start
 - **Privacy:** free tiers may log your prompts or use them for training. Don't send confidential data through them, and tell visitors when a public deployment uses free models.
 - **Quality varies.** Free models are often smaller than Claude. The Workbench's A/B compare and Evals are a good way to check whether one is good enough for a given prompt.
 
+### Deploy OmniRoute on Railway
+
+Run OmniRoute as a second service in the same Railway project as PromptForge, and let PromptForge reach it over Railway's private network. These steps follow OmniRoute's documented Docker setup; check its docs if a newer version changes them.
+
+1. **Add the service.** In your project, choose **New → Docker Image** and enter `diegosouzapw/omniroute:latest` (or pin a version, as OmniRoute recommends for production). Name the service `omniroute`. Under **Settings → Volumes**, mount a volume at `/app/data`: it holds the database, provider keys and passwords, which a redeploy would otherwise wipe.
+2. **Set its variables.** Generate each secret with `openssl rand -hex 32`.
+
+   | Variable | Value |
+   |---|---|
+   | `PORT` | `20128` |
+   | `DATA_DIR` | `/app/data` |
+   | `JWT_SECRET` | random secret |
+   | `API_KEY_SECRET` | random secret |
+   | `INITIAL_PASSWORD` | a strong dashboard password (if left empty, whoever opens the URL first sets it) |
+   | `REQUIRE_API_KEY` | `true` (otherwise anyone who finds the URL can spend your quotas) |
+   | `AUTH_COOKIE_SECURE` | `true` |
+
+3. **Open the dashboard.** Under **Settings → Networking**, generate a domain with target port `20128` and log in. In **Providers**, add your own free API keys. In **Endpoints**, create an API key for PromptForge.
+4. **Point PromptForge at it.** On the PromptForge service, set these variables and redeploy. You can remove `ANTHROPIC_API_KEY` to run on free models only.
+
+```bash
+LLM_GATEWAY_URL=http://omniroute.railway.internal:20128/v1
+LLM_GATEWAY_KEY=<the key from Endpoints>
+LLM_GATEWAY_NAME=OmniRoute
+```
+
+5. **Check it.** The sidebar should say **Free models connected**. To test against real models from your machine:
+
+```bash
+LLM_GATEWAY_URL=https://<omniroute-domain>/v1 LLM_GATEWAY_KEY=... npm run smoke:live
+```
+
+6. **Lock it down.** PromptForge only uses the private address, so you can remove OmniRoute's public domain after setup and add it back when you need the dashboard. On a public site, keep `GATEWAY_DAILY_REQUEST_LIMIT`, consider `ACCESS_PASSWORD`, and tell visitors that free providers may log prompts.
+
+**Troubleshooting**
+
+- *Settings says "The gateway did not answer its model list":* the private connection failed. Older Railway environments route the private network over IPv6 only; set `HOST=::` on OmniRoute. Also check the URL uses `http` and port `20128`.
+- *Permission errors on `/app/data`:* Railway volumes are owned by root. Set `RAILWAY_RUN_UID=0` on OmniRoute.
+- *Crashes or restarts:* the image is about 500 MB and uses up to 1 GB of memory by default. Give the service more memory; expect it to add to your Railway usage.
+
 ---
 
 ## Quick start
