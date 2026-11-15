@@ -271,3 +271,17 @@ dialog::backdrop { background: rgba(20, 18, 15, 0.42); backdrop-filter: blur(2px
 .callout.warn svg { color: var(--warn); }
 .callout.accent { background: var(--accent-soft); }
 .callout.accent svg { color: var(--accent); }
+
+/* ── Provider and MCP-server logos (public/img/logos) ───────────────────── */
+.logo-mark { display: inline-grid; place-items: center; width: var(--s, 18px); height: var(--s, 18px); flex: none; }
+.logo-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.logo-mark .lm-d { display: none; }
+[data-theme="dark"] .logo-mark .lm-d { display: block; }
+[data-theme="dark"] .logo-mark .lm-l:not(:only-child) { display: none; }
+.logo-mark.mono { border-radius: 5px; background: var(--bg-sunken); border: 1px solid var(--border); color: var(--text-2); font: 600 calc(var(--s, 18px) * 0.42)/1 var(--font-sans, system-ui); letter-spacing: 0.02em; }
+.model-pick { display: flex; align-items: center; gap: 8px; }
+.model-pick .select { flex: 1; min-width: 0; }
+.provider-strip { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.provider-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 6px; border: 1px solid var(--border); border-radius: var(--r-full); font-size: 0.8125rem; background: var(--bg-elev); }
+.provider-chip .n { color: var(--text-3); font-size: 0.75rem; }
+.out-label { display: flex; align-items: center; gap: 6px; }

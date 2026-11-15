@@ -12,7 +12,7 @@ function lessonIndex(root, query) {
   const done = id => Boolean(state.progress[id]);
   const total = LESSONS.filter(l => done(l.id)).length;
   render(root, html`
-    ${pageHead({ eyebrow: 'Learning path', title: 'From first prompt to production harness', desc: 'Four levels, seventeen short lessons. Each teaches one principle with a real before-and-after, then hands you an exercise to run in the Workbench.' })}
+    ${pageHead({ eyebrow: 'Learning path', title: 'From first prompt to production harness', desc: `Four levels, ${LESSONS.length} short lessons. Each teaches one principle with a real before-and-after, then hands you an exercise to run in the Workbench.` })}
     <div class="card sunken row wrap" style="gap:20px;margin-bottom:32px">
       <div style="flex:1;min-width:220px"><div class="label">Your progress</div><div class="progress" style="margin-top:10px"><div style="width:${Math.round(100 * total / LESSONS.length)}%"></div></div></div>
       <div class="subtle">${total} of ${LESSONS.length} lessons · ~${LESSONS.reduce((s, l) => s + l.minutes, 0)} minutes total</div>

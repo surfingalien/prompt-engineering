@@ -10,7 +10,8 @@ import { toast, openModal, download, confirmDialog, copyText } from './core/ui.j
 import { loadCatalog, query as queryCatalog } from './core/catalog.js';
 import { LESSONS } from './data/curriculum.js';
 import { navigate } from './core/nav.js';
-import { modelOptions } from './views/shared.js';
+import { modelOptions, logoMark } from './views/shared.js';
+import { PROVIDERS, groupByProvider } from './lib/providers.js';
 
 const NAV = [
   { group: null, items: [{ id: 'home', label: 'Home', icon: 'home' }] },
@@ -207,8 +208,9 @@ async function openSettings() {
         <select class="select" name="theme">${['system', 'light', 'dark'].map(t => html`<option ${s.theme === t ? raw('selected') : ''}>${t}</option>`)}</select></label>
       <hr class="divider">
       <div class="label">Access</div>
-      ${c.providers?.anthropic?.serverKey ? html`<p class="help">This server provides a shared Claude key${c.budget?.daily ? html` with a daily budget: <b>$${c.budget.spent.toFixed(2)}</b> of $${c.budget.daily} used today (resets at 00:00 UTC)` : ''}.</p>` : c.gateway ? '' : html`<p class="help">This server has no shared Claude key. Add your own to run prompts.</p>`}
-      ${c.gateway ? html`<p class="help">Free models are available through <b>${c.gateway.name}</b>${c.budget?.gateway?.limit ? html` (${c.budget.gateway.used} of ${c.budget.gateway.limit} requests used today)` : ''}. ${c.providers?.anthropic?.serverKey ? '' : 'Add your own Anthropic key to also use Claude models.'}</p>` : ''}
+      ${c.providers?.anthropic?.serverKey ? html`<p class="help row" style="gap:8px;align-items:flex-start">${logoMark({ ...PROVIDERS.anthropic, label: 'Claude' }, { size: 16, decorative: true })}<span>This server provides a shared Claude key${c.budget?.daily ? html` with a daily budget: <b>$${c.budget.spent.toFixed(2)}</b> of $${c.budget.daily} used today (resets at 00:00 UTC)` : ''}.</span></p>` : c.gateway ? '' : html`<p class="help">This server has no shared Claude key. Add your own to run prompts.</p>`}
+      ${c.gateway ? html`<div class="provider-strip" aria-label="Free model providers">${groupByProvider(c.allModels.filter(m => m.provider === 'gateway'), c.gateway.name).map(g => html`<span class="provider-chip">${logoMark(g.provider, { size: 16, decorative: true })}${g.provider.label}<span class="n">${g.models.length}</span></span>`)}</div>
+      <p class="help">Free models are available through <b>${c.gateway.name}</b>${c.budget?.gateway?.limit ? html` (${c.budget.gateway.used} of ${c.budget.gateway.limit} requests used today)` : ''}. ${c.providers?.anthropic?.serverKey ? '' : 'Add your own Anthropic key to also use Claude models.'}</p>` : ''}
       ${c.access?.passwordRequired ? html`<label class="field"><span class="label">Access password <span class="opt">required for the shared key</span></span><input class="input" name="accessPassword" type="password" autocomplete="current-password" value="${s.accessPassword || ''}"></label>` : ''}
       <label class="field"><span class="label">Your Anthropic API key <span class="opt">optional</span></span><input class="input" name="userApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" value="${s.userApiKey || ''}">
         <span class="help">Used instead of the shared key, billed to you, and not limited by the shared budget. It is stored only in this browser and sent only to this site’s server, for each request. It is never saved on the server or included in exports.</span></label>

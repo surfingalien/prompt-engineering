@@ -8,7 +8,7 @@ import { ASSERTION_TYPES, checkAssertion, toPromptfooYaml } from '../lib/evals.j
 import { extractVars, fillVars, labelFor } from '../lib/template.js';
 import { renderMarkdown } from '../lib/markdown.js';
 import { slugify } from '../lib/harness.js';
-import { pageHead, lockedNotice, modelOptions } from './shared.js';
+import { pageHead, lockedNotice, modelOptions, providerMark } from './shared.js';
 
 const getS = id => state.suites.find(s => s.id === id);
 const saveS = s => update('suites', list => list.map(x => (x.id === s.id ? s : x)));
@@ -99,7 +99,7 @@ function suiteView(root, s, cfg) {
       ${lockedNotice(cfg, 'You can still design the suite and export it to promptfoo.')}
       <div class="card row wrap suite-bar" style="gap:14px">
         <label class="field"><span class="label">Prompt under test</span><select class="select select-sm" data-suite="promptId">${state.prompts.map(x => html`<option value="${x.id}" ${x.id === s.promptId ? raw('selected') : ''}>${x.title}</option>`)}</select></label>
-        <label class="field"><span class="label">Model</span><select class="select select-sm" data-suite="model">${modelOptions(cfg, s.model)}</select></label>
+        <label class="field"><span class="label">Model</span><span class="model-pick">${providerMark(cfg, s.model)}<select class="select select-sm" data-suite="model">${modelOptions(cfg, s.model)}</select></span></label>
         <label class="field"><span class="label">Effort</span><select class="select select-sm" data-suite="effort">${cfg.efforts.map(e => html`<option ${e === s.effort ? raw('selected') : ''}>${e}</option>`)}</select></label>
         <label class="field"><span class="label">Compare with</span><select class="select select-sm" data-compare aria-label="Compare with a saved version">
           <option value="">Nothing (current prompt only)</option>

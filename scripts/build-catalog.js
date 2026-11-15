@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Build public/data/catalog.json from two sources:
+// Build public/data/catalog.json from three sources:
 //   1. the legacy library already in catalog.json (items without a `path`)
 //   2. skill packs in skills/<name>/SKILL.md (Agent Skills format)
+//   3. curated MCP servers in mcp/servers.json (kind "mcp", collection "mcp-servers")
 //
 //   node scripts/build-catalog.js           rebuild catalog.json
 //   node scripts/build-catalog.js --check   exit 1 if catalog.json is stale
@@ -16,6 +17,8 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const CATALOG = path.join(ROOT, 'public', 'data', 'catalog.json');
+const MCP_FILE = path.join(ROOT, 'mcp', 'servers.json');
+const LOGO_DIR = path.join(ROOT, 'public', 'img', 'logos');
 
 const KINDS = ['skill', 'prompt', 'agent', 'technique', 'reference'];
 const LEVELS = ['beginner', 'intermediate', 'advanced', 'expert'];
@@ -93,31 +96,67 @@ function loadSkills() {
   });
 }
 
+// MCP servers: structural checks here; config generation and secret checks are
+// in public/js/lib/mcp.js (tested in tests/mcp.test.js).
+const MCP_FIELDS = ['id', 'name', 'publisher', 'summary', 'useWhen', 'domain', 'level', 'transport', 'auth', 'access', 'examples', 'security', 'docs'];
+function loadMcp() {
+  if (!fs.existsSync(MCP_FILE)) return [];
+  const { servers } = JSON.parse(fs.readFileSync(MCP_FILE, 'utf8'));
+  return servers.map(sv => {
+    const where = `mcp/servers.json "${sv.id}"`;
+    const errs = MCP_FIELDS.filter(f => sv[f] === undefined || sv[f] === '').map(f => `${f} is required`);
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(sv.id || '')) errs.push('id must be lowercase-hyphenated');
+    if (!LEVELS.includes(sv.level)) errs.push(`level must be one of ${LEVELS}`);
+    if (!DOMAINS.includes(sv.domain)) errs.push(`domain must be one of ${DOMAINS}`);
+    if (!['stdio', 'http'].includes(sv.transport)) errs.push('transport must be stdio or http');
+    if (!['none', 'oauth', 'token'].includes(sv.auth)) errs.push('auth must be none, oauth or token');
+    if (!['read', 'read-write'].includes(sv.access)) errs.push('access must be read or read-write');
+    if (sv.transport === 'http' && !/^https:\/\//.test(sv.url || '')) errs.push('http servers need an https url');
+    if (sv.transport === 'stdio' && !sv.command) errs.push('stdio servers need a command');
+    if (!/^https:\/\//.test(sv.docs || '')) errs.push('docs must be an https link');
+    if (sv.logo && !fs.existsSync(path.join(LOGO_DIR, `${sv.logo}.svg`))) errs.push(`logo public/img/logos/${sv.logo}.svg is missing`);
+    if (sv.logo && sv.light && !fs.existsSync(path.join(LOGO_DIR, `${sv.logo}-light.svg`))) errs.push(`logo public/img/logos/${sv.logo}-light.svg is missing`);
+    if (errs.length) throw new Error(`${where}:\n  - ${errs.join('\n  - ')}`);
+    const { $comment, ...mcp } = sv;
+    const body = [
+      `${sv.name}: ${sv.summary}`, '', `Use when: ${sv.useWhen}`, '',
+      'What it can do:', ...sv.examples.map(e => `- ${e}`), '',
+      `Transport: ${sv.transport} · Sign-in: ${sv.auth} · Access: ${sv.access}`, '',
+      'Security notes:', ...sv.security.map(e => `- ${e}`), '', `Docs: ${sv.docs}`,
+    ].join('\n');
+    return {
+      id: `mcp-${sv.id}`, kind: 'mcp', title: sv.name, summary: sv.summary, source: sv.publisher, body, vars: [],
+      level: sv.level, domain: sv.domain, pack: 'mcp-servers', tags: ['mcp', sv.transport, sv.access], mcp,
+    };
+  });
+}
+
 function build() {
   const existing = JSON.parse(fs.readFileSync(CATALOG, 'utf8'));
-  const legacy = existing.filter(it => !it.path);
+  const legacy = existing.filter(it => !it.path && it.kind !== 'mcp');
   // Legacy finance skills belong with the new trading collections.
   for (const it of legacy) if (it.source === 'PromptForge Finance') it.domain = 'trading';
   const packs = loadSkills();
+  const servers = loadMcp();
   const ids = new Set();
-  for (const it of [...packs, ...legacy]) {
+  for (const it of [...packs, ...servers, ...legacy]) {
     if (ids.has(it.id)) throw new Error(`duplicate id ${it.id}`);
     ids.add(it.id);
   }
-  return { json: JSON.stringify([...packs, ...legacy]), packs, legacy };
+  return { json: JSON.stringify([...packs, ...servers, ...legacy]), packs, servers, legacy };
 }
 
 if (require.main === module) {
-  const { json, packs, legacy } = build();
+  const { json, packs, servers, legacy } = build();
   const current = fs.readFileSync(CATALOG, 'utf8');
   if (process.argv.includes('--check')) {
     if (current !== json) { console.error('catalog.json is stale: run `npm run build:catalog`'); process.exit(1); }
-    console.log(`catalog.json is up to date (${packs.length} pack skills + ${legacy.length} library items)`);
+    console.log(`catalog.json is up to date (${packs.length} pack skills + ${servers.length} MCP servers + ${legacy.length} library items)`);
   } else {
     fs.writeFileSync(CATALOG, json);
     const byPack = packs.reduce((m, p) => (m[p.pack] = (m[p.pack] || 0) + 1, m), {});
-    console.log(`catalog.json: ${packs.length} pack skills + ${legacy.length} library items`, byPack);
+    console.log(`catalog.json: ${packs.length} pack skills + ${servers.length} MCP servers + ${legacy.length} library items`, byPack);
   }
 }
 
-module.exports = { build, parseFrontmatter, loadSkills };
+module.exports = { build, parseFrontmatter, loadSkills, loadMcp };

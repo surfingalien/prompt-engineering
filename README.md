@@ -33,7 +33,7 @@ v5 is a ground-up rebuild. The 10,500-line single HTML file is now a modular, de
 | | v4 | v5 |
 |---|---|---|
 | **Structure** | One 814 KB `index.html` (data + code + styles) | ES modules, three stylesheets, content in lazily loaded JSON |
-| **Learning** | Static technique cards | A 4-level, 17-lesson path with before/after examples, checklists and runnable exercises |
+| **Learning** | Static technique cards | A 4-level, 18-lesson path with before/after examples, checklists and runnable exercises |
 | **Creating** | Free-text editor + regex score | Guided prompt builder plus a Workbench with streaming runs, A/B compare, multi-turn follow-ups, versions and diffs |
 | **Quality** | Keyword-count score | A teaching analyzer: 6 dimensions, findings with concrete fixes, grounded in current Claude guidance |
 | **Shipping** | — | Harness studio (CLAUDE.md, skills, subagents, tools, guardrails, evals → .zip) and an Evals runner with Claude-graded rubrics and promptfoo export |
@@ -52,7 +52,7 @@ Everything you saved in v4 carries over: Workbench imports your v4 prompt histor
 | **1 · Foundations** | Write prompts Claude understands the first time | Be clear and direct · Give context and say why · Specify the output · Examples |
 | **2 · Structure** | Organize complex prompts so nothing gets lost | XML tags · Roles and system prompts · Long documents · Thinking and effort |
 | **3 · Systems** | Chain prompts, use tools, get reliable outputs | Prompt chaining · Structured output · Designing tools · Prompt-injection defense |
-| **4 · Harness** | Build and verify the scaffolding around an agent | What is a harness? · CLAUDE.md · Skills and subagents · Evals · Autonomous experiment loops |
+| **4 · Harness** | Build and verify the scaffolding around an agent | What is a harness? · CLAUDE.md · Skills and subagents · Skills vs. MCP servers · Evals · Autonomous experiment loops |
 
 Every lesson pairs a principle with a scored before/after example, a checklist, and an exercise that opens in the Workbench. The guidance reflects current Claude models: adaptive thinking controlled by **effort** rather than "think step by step", structured outputs instead of assistant prefill, and calm instructions instead of ALL-CAPS emphasis.
 
@@ -63,17 +63,32 @@ Every lesson pairs a principle with a scored before/after example, a checklist, 
 | Area | What it does |
 |---|---|
 | **Home** | Your path, progress, recent prompts and a live before/after demo |
-| **Learning path** | 17 lessons across 4 levels; progress is saved locally |
-| **Library** | 570 items: 514 curated skills, prompts, agents, techniques and reference system prompts, plus 56 installable skills in 6 collections. Faceted by collection, type, domain and level, with instant search and favorites |
+| **Learning path** | 18 lessons across 4 levels; progress is saved locally |
+| **Library** | 586 items: 514 curated skills, prompts, agents, techniques and reference system prompts, plus 56 installable skills in 6 collections and 16 MCP servers. Faceted by collection, type, domain and level, with instant search and favorites |
 | **Prompt builder** | 8 blueprints (write, analyze, code, extract, summarize, classify, brainstorm, agent). Guided and Pro modes compose a best-practice prompt live, with a quality score |
 | **Workbench** | Prompt workspace with system + user fields, **Deep review** (Claude critiques the prompt like an expert editor), **graded exercises** (Check my answer against the lesson checklist), **share links**, `{{variables}}`, streaming runs, reasoning summaries, A/B compare (model vs model or version vs version), follow-up turns, version history with diffs, and **Improve with Claude** (six rewrite modes, reviewed as a diff before applying) |
 | **Analyzer** | Deterministic prompt linter: clarity, context, structure, specificity, output and robustness, plus findings like "wrap untrusted input in tags", each with a fix |
-| **Harness studio** | Five templates (code review, support, research, log-first trading desk, autoresearch loop). Design mission, guardrails, project memory, tools, skills, subagents and evals, with a readiness checklist. Exports `CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`, strict `tools.json`, a runnable SDK `agent.ts`, and `evals.yaml` as a .zip |
+| **Harness studio** | Five templates (code review, support, research, log-first trading desk, autoresearch loop). Design mission, guardrails, project memory, tools, MCP servers, skills, subagents and evals, with a readiness checklist. Exports `CLAUDE.md`, `.mcp.json`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`, strict `tools.json`, a runnable SDK `agent.ts`, and `evals.yaml` as a .zip |
 | **Evals** | Suites of cases with checks (contains, regex, word limits, JSON, JSON keys, Claude-graded rubric). **Compare the current prompt with any saved version** on the same suite, and **generate typical, edge and adversarial cases with Claude**. Run history with pass rates; export to promptfoo for CI |
 | **Council** | Five advisors run as independent parallel calls, then a chairman synthesizes. A working example of the parallel-agents pattern |
 | **📡 Scout** | Generates new skills and agents through a governance pipeline (below) |
 | **Sharing** | Share a prompt or harness as a link. The content is compressed into the URL itself, with nothing stored on a server, and opens as a preview the recipient chooses to save. Variable values are never included |
 | **Everywhere** | ⌘K command palette, WCAG 2.1 AA (axe-audited in light and dark), mobile-friendly Workbench, light/dark theme, local-first storage with export/import, a usage and cost meter with a spend alert, offline mode |
+
+---
+
+## MCP servers
+
+The Library's **MCP servers** collection lists 16 [Model Context Protocol](https://modelcontextprotocol.io) servers, checked against each one's official documentation: GitHub, Filesystem, Fetch, Git, Memory, Playwright, Brave Search, Context7, Sentry, Linear, Notion, Stripe, Supabase, Vercel, Cloudflare Docs and Figma. Archived reference servers (Postgres, SQLite, Slack, Google Drive and others) are left out on purpose.
+
+Each server comes with:
+- **A ready `.mcp.json`** to commit for your team. Secrets stay `${ENV_VAR}` references that each person fills in from their own environment.
+- **The `claude mcp add` command** for your own machine. It uses local scope, so expanded secrets stay in your Claude Code config, outside the repository.
+- **Access level, sign-in method and security notes.** For example, GitHub starts read-only through `X-MCP-Readonly`, and Supabase is scoped to one project with `read_only=true`.
+
+The Harness studio has an **MCP servers** layer: add servers from the collection or define your own, and they export as `.mcp.json` plus a section in `CLAUDE.md`. Two readiness checks guard the risky parts: secrets must be `${ENV}` references (pasted GitHub, Stripe, Slack, AWS, Anthropic or bearer tokens are flagged), and servers that can make changes need the "Confirm irreversible actions" guardrail. The **Code review agent** template ships with a read-only GitHub server, and the lesson **Skills vs. MCP servers** explains when to use which.
+
+Model pickers show the logo of the provider behind each model: Claude, or the upstream provider of a free gateway model (Groq, Google, Cerebras, OpenRouter, NVIDIA, Mistral and others). Logos come from [homarr-labs/dashboard-icons](https://github.com/homarr-labs/dashboard-icons) under Apache-2.0. See `public/img/logos/ATTRIBUTION.md`.
 
 ---
 
@@ -148,17 +163,19 @@ public/
   index.html                  app shell (no inline scripts)
   css/tokens.css              design tokens: color, type, space, light + dark
   css/app.css · views.css     components and views
-  data/catalog.json           570-item library, built by scripts/build-catalog.js (lazy-loaded, ~265 KB gzipped)
+  data/catalog.json           586-item library, built by scripts/build-catalog.js (lazy-loaded)
+  img/logos/                  provider and MCP-server logos (dashboard-icons, Apache-2.0)
   js/app.js                   router, sidebar, command palette, settings
   js/core/                    store (localStorage), API client (SSE), catalog, templating, UI primitives
-  js/lib/                     pure, unit-tested modules: analyze, compose, harness, evals, zip, diff, markdown, search
+  js/lib/                     pure, unit-tested modules: analyze, compose, harness, mcp, providers, evals, zip, diff, markdown, search
   js/data/                    curriculum, builder blueprints, harness templates
   js/views/                   home, learn, library, build, workbench, harness, evals, council, scout
 prompts/scout-system.txt      Scout system prompt (single source for server + promptfoo evals)
-scripts/build-catalog.js      validates skills/ and merges them into catalog.json
+scripts/build-catalog.js      validates skills/ and mcp/ and merges them into catalog.json
 scripts/smoke-live.js         live smoke test against the real API (npm run smoke:live)
 scripts/extract-legacy-data.js  one-time migration of v4 content into catalog.json
 skills/                       56 installable Agent Skills (SKILL.md + optional scripts/)
+mcp/servers.json              16 curated MCP servers (Library collection + Harness studio)
 docs/archive/                 reference material from earlier versions (not loaded by the app)
 .github/workflows/ci.yml      tests on every PR; optional live smoke test
 tests/                        server integration (mock Anthropic API and mock gateway), library units, governance, Scout prompt
@@ -333,10 +350,11 @@ ANTHROPIC_API_KEY=sk-ant-... docker compose up --build promptforge
 npm test
 ```
 
-This runs 104 tests with no API key and no extra dependencies (Node's built-in test runner):
+This runs 116 tests with no API key and no extra dependencies (Node's built-in test runner):
 - **Server integration:** a local mock of the Anthropic API checks the exact request the SDK sends (effort, cache control, fallbacks, no sampling params, token caps), SSE streaming, refusal and error mapping, validation, Scout governance and the audit chain.
 - **Library units:** analyzer (including "every lesson's after beats its before"), composer, harness exports, eval assertions, promptfoo export, zip (verified with `unzip`), diff, markdown sanitization, search, catalog integrity.
 - **Gateway:** a local mock of an OpenAI-compatible gateway with no Anthropic key: model discovery, streaming and reasoning, `stream_options` retry, `response_format` downgrade, JSON coercion and one-shot repair, quotas, password gate, and Scout end to end.
+- **MCP and logos:** every curated server validates with no literal secrets, `.mcp.json` and `claude mcp add` output, secret detection, the harness export and readiness checks, share-link sanitizing, provider detection, and that every logo exists and contains no script.
 - **Governance:** policy, trust scoring, hash chain, plus the no-inline-handler invariant.
 
 **Calculators:** each skill script is run against hand-derivable values (skipped automatically if `python3` is missing).
@@ -382,6 +400,8 @@ Instructions with {{variables}} …
 ```
 
 Then run `npm run build:catalog`. `npm test` fails if a skill violates the format or the catalog is stale.
+
+**MCP servers** live in `mcp/servers.json`. Add an entry with `id`, `name`, `publisher`, `summary`, `useWhen`, `domain`, `level`, `transport` (`http` with `url` and optional `headers`, or `stdio` with `command` and `args`), `env` (each variable and what it is for), `auth` (`none`, `oauth` or `token`), `access` (`read` or `read-write`), `examples`, `security` and a `docs` link to the official documentation. Secrets must be `${ENV_VAR}` references. For a logo, copy the SVG from dashboard-icons into `public/img/logos/` and set `logo`. Then run `npm run build:catalog`.
 
 Legacy library items live in `public/data/catalog.json`. Each item:
 

@@ -15,7 +15,7 @@ PromptForge teaches both in one place, for free and open source, with every less
 1. **Foundations.** Clear and direct, context and why, output format, examples.
 2. **Structure.** XML tags, system prompts, long documents, thinking and effort.
 3. **Systems.** Prompt chaining, structured output, tool design, prompt-injection defense.
-4. **Harness.** What a harness is, CLAUDE.md, skills and subagents, evals.
+4. **Harness.** What a harness is, CLAUDE.md, skills and subagents, skills vs. MCP servers, evals.
 
 ## What makes it different
 
@@ -35,11 +35,11 @@ PromptForge teaches both in one place, for free and open source, with every less
 
 | | |
 |---|---|
-| Lessons | 17 across 4 levels |
-| Library items | 570 (514 curated + 56 installable skills in 6 collections) |
+| Lessons | 18 across 4 levels |
+| Library items | 586 (514 curated + 56 installable skills in 6 collections + 16 MCP servers) |
 | Builder blueprints | 8 |
 | Harness templates | 5 |
-| Automated tests | 104 (plus a live smoke test and CI) |
+| Automated tests | 116 (plus a live smoke test and CI) |
 | Runtime dependencies | 4 |
 
 ## Who built it
