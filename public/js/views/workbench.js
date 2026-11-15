@@ -11,7 +11,7 @@ import { renderMarkdown } from '../lib/markdown.js';
 import { lineDiff, diffStats } from '../lib/diff.js';
 import { toPlainText } from '../lib/compose.js';
 import { lessonById } from '../data/curriculum.js';
-import { analysisPanel, pageHead, lockedNotice, ring as ringFor } from './shared.js';
+import { analysisPanel, pageHead, lockedNotice, ring as ringFor, modelOptions as groupedModels, isGatewayModel } from './shared.js';
 
 const IMPROVE_MODES = [
   { id: 'fix', label: 'Fix analyzer findings', desc: 'Address every warning and tip the analyzer raised.' },
@@ -105,7 +105,7 @@ export default {
             </div>
             <div class="btn-row wb-actions" style="margin-bottom:16px">
               <button class="btn btn-sm" data-act="snapshot" title="Save version (Ctrl/⌘+S)">${raw(icon('save'))}Save version</button>
-              <button class="btn btn-sm" data-act="improve">${raw(icon('wand'))}Improve with Claude</button>
+              <button class="btn btn-sm" data-act="improve">${raw(icon('wand'))}Improve with ${isGatewayModel(ui.model) ? 'AI' : 'Claude'}</button>
               <button class="btn btn-sm" data-act="copy">${raw(icon('copy'))}Copy</button>
               <button class="btn btn-sm" data-act="share" title="Copy a link others can open (variable values are not included)">${raw(icon('external'))}Share link</button>
               <button class="btn btn-sm" data-act="eval">${raw(icon('evals'))}Create eval suite</button>
@@ -165,7 +165,7 @@ export default {
       return drawRun(el);
     }
 
-    const modelOptions = sel => cfg.models.map(m => html`<option value="${m.id}" ${m.id === sel ? raw('selected') : ''}>${m.short || m.label}</option>`);
+    const modelOptions = sel => groupedModels(cfg, sel);
     const effortOptions = sel => cfg.efforts.map(e => html`<option ${e === sel ? raw('selected') : ''}>${e}</option>`);
 
     function drawRun(el) {
@@ -173,9 +173,10 @@ export default {
       const p = P();
       render(el, html`
         ${cfg.ready ? '' : html`<div style="margin-bottom:12px">${lockedNotice(cfg, 'Or use Copy to run this prompt elsewhere.')}</div>`}
+        ${isGatewayModel(ui.model) ? html`<p class="help" style="margin:0 0 10px">Free model via ${cfg.gateway?.name || 'the gateway'}. Effort and reasoning summaries are Claude features; answers may differ from Claude’s.</p>` : ''}
         <div class="run-controls">
           <label class="field"><span class="label">Model</span><select class="select select-sm" data-ui="model">${modelOptions(ui.model)}</select></label>
-          <label class="field"><span class="label">Effort</span><select class="select select-sm" data-ui="effort">${effortOptions(ui.effort)}</select></label>
+          <label class="field"><span class="label">Effort</span><select class="select select-sm" data-ui="effort" ${isGatewayModel(ui.model) ? raw('disabled title="Effort applies to Claude models only"') : ''}>${effortOptions(ui.effort)}</select></label>
           <label class="field"><span class="label">Max tokens</span><input class="input input-sm" type="number" min="64" max="${cfg.maxOutputTokens}" step="256" data-ui="maxTokens" value="${ui.maxTokens}"></label>
         </div>
         <div class="row wrap" style="gap:14px;margin:10px 0 14px">
@@ -189,7 +190,7 @@ export default {
           </div>
           <div class="row wrap" style="gap:10px;margin-top:10px">
             ${ui.bMode === 'model'
-              ? html`<select class="select select-sm" style="width:auto" data-ui="bModel" aria-label="Model B">${modelOptions(ui.bModel)}</select><select class="select select-sm" style="width:auto" data-ui="bEffort" aria-label="Effort B">${effortOptions(ui.bEffort)}</select>`
+              ? html`<select class="select select-sm" style="width:auto" data-ui="bModel" aria-label="Model B">${modelOptions(ui.bModel)}</select><select class="select select-sm" style="width:auto" data-ui="bEffort" aria-label="Effort B" ${isGatewayModel(ui.bModel) ? raw('disabled title="Effort applies to Claude models only"') : ''}>${effortOptions(ui.bEffort)}</select>`
               : html`<select class="select select-sm" data-ui="bVersion" aria-label="Version B">${(p.versions || []).map((v, i) => html`<option value="${v.id}" ${v.id === ui.bVersion ? raw('selected') : ''}>v${p.versions.length - i} · ${v.note || timeAgo(v.at)}</option>`)}</select>`}
           </div></div>` : ''}
         <div class="btn-row">
@@ -301,12 +302,12 @@ export default {
         <div class="card">${analysisPanel(a, { limit: 12 })}</div>
         <div class="card" style="margin-top:14px">
           <div class="row between"><div class="card-title">${raw(icon('sparkle'))}Deep review</div>
-            <button class="btn btn-sm" data-act="deep-review" ${cfg.ready && !ui.reviewing ? '' : raw('disabled')}>${ui.reviewing ? raw('<span class="spinner"></span>Reviewing…') : ui.review ? 'Review again' : 'Review with Claude'}</button></div>
+            <button class="btn btn-sm" data-act="deep-review" ${cfg.ready && !ui.reviewing ? '' : raw('disabled')}>${ui.reviewing ? raw('<span class="spinner"></span>Reviewing…') : ui.review ? 'Review again' : `Review with ${isGatewayModel(ui.model) ? 'AI' : 'Claude'}`}</button></div>
           <p class="subtle" style="margin:4px 0 0">The score above comes from instant rules. A deep review has Claude read the prompt like an expert editor and explain what to change.</p>
           ${ui.review ? reviewHtml(ui.review) : ''}
         </div>
         <div class="card" style="margin-top:14px">
-          <div class="card-title">${raw(icon('wand'))}Improve with Claude</div>
+          <div class="card-title">${raw(icon('wand'))}Improve with ${isGatewayModel(ui.model) ? 'AI' : 'Claude'}</div>
           <p class="subtle" style="margin:4px 0 12px">Claude rewrites the prompt; you review the diff before anything changes.</p>
           <div class="improve-grid">${IMPROVE_MODES.map(m => html`<button class="improve-opt" data-improve="${m.id}" ${cfg.ready ? '' : raw('disabled')}><b>${m.label}</b><span>${m.desc}</span></button>`)}</div>
         </div>`);
@@ -381,7 +382,7 @@ export default {
       const ctrl = new AbortController();
       const drawer = openDrawer({
         title: `Improve: ${m.label}`,
-        subtitle: html`<span class="badge accent">${raw(icon('wand'))}Claude</span><span class="subtle">${cfg.models.find(x => x.id === ui.model)?.short || ui.model}</span>`,
+        subtitle: html`<span class="badge accent">${raw(icon('wand'))}${isGatewayModel(ui.model) ? cfg.gateway?.name || 'Free model' : 'Claude'}</span><span class="subtle">${cfg.models.find(x => x.id === ui.model)?.short || ui.model}</span>`,
         body: html`<div id="imp-body"><div class="row subtle" style="gap:8px"><span class="spinner"></span>Rewriting…</div></div>`,
         actions: [
           { label: 'Apply changes', icon: 'check', primary: true, onClick: ({ close }) => {
@@ -441,6 +442,7 @@ export default {
         const k = el.dataset.ui;
         ui[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Math.max(64, Math.min(cfg.maxOutputTokens, Number(el.value) || 1024)) : el.value;
         if (k === 'showThinking') update('settings', s => ({ ...s, showThinking: el.checked }));
+        if (k === 'model' || k === 'bModel') drawPanel();
         if (k === 'compare' || k === 'bVersion') { if (k === 'compare' && !ui.bVersion) ui.bVersion = P().versions?.[0]?.id || null; drawPanel(); }
       }),
       on(root, 'click', '[data-bmode]', (e, b) => { ui.bMode = b.dataset.bmode; if (!ui.bVersion) ui.bVersion = P().versions?.[0]?.id || null; drawPanel(); }),

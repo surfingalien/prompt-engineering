@@ -13,7 +13,7 @@ The sidebar groups everything by what you're doing:
 
 Press **⌘K** (Mac) or **Ctrl K** (Windows/Linux) anywhere to search pages, lessons and the whole library.
 
-The dot at the bottom of the sidebar shows whether the server is connected to Claude. In **offline mode** you can still learn, build, analyze and export; only running prompts needs the connection.
+The dot at the bottom of the sidebar shows whether you can run prompts: *Claude connected*, *Free models connected* (the server uses a free-model gateway) or *Using your key*. In **offline mode** you can still learn, build, analyze and export; only running prompts needs a connection.
 
 ## 2. New to prompting? Start with the Learning path
 
@@ -93,6 +93,6 @@ The trading skills are for learning and research, not financial advice. The trad
 
 ## 10. Your data
 
-**Running prompts:** if this site provides a shared Claude key, it may have a daily budget or an access password. You can always add **your own Anthropic API key** in Settings. It stays in your browser, is sent only with your requests, and is never stored on the server or included in exports.
+**Running prompts:** if this site provides a shared Claude key, it may have a daily budget or an access password. Some sites offer **free models** instead (or as well): they appear under *Free models* in every model picker, cost nothing, and ignore the effort setting. Free providers may log prompts, so keep confidential material out of them. You can always add **your own Anthropic API key** in Settings. It stays in your browser, is sent only with your requests, and is never stored on the server or included in exports.
 
 Everything you create is stored in this browser. Use **Settings → Export workspace** to back it up or move it to another computer, and **Import** to bring it back. Settings also shows an estimate of what your runs have cost and lets you set a spend alert.

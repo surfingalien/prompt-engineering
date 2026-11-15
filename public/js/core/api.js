@@ -18,14 +18,27 @@ export function getConfig(force = false) {
       .then(c => {
         const hasUserKey = Boolean(state.settings.userApiKey);
         const unlocked = !c.access?.passwordRequired || Boolean(state.settings.accessPassword);
-        const budgetLeft = !c.budget?.daily || c.budget.remaining > 0;
+        const serverKey = Boolean(c.providers?.anthropic?.serverKey ?? c.ready);
+        const gateway = c.providers?.gateway || null;
+        const claudeLeft = !c.budget?.daily || c.budget.remaining > 0;
+        const gatewayLeft = !c.budget?.gateway?.limit || c.budget.gateway.remaining > 0;
+        const budgetLeft = (serverKey && claudeLeft) || (Boolean(gateway) && gatewayLeft);
+        const allModels = c.models || [];
+        // Hide Claude models nobody here can run (no server key, no user key)
+        // when free gateway models are available instead.
+        const runnable = allModels.filter(m => !m.requiresUserKey || hasUserKey);
+        const models = runnable.length ? runnable : allModels;
         return {
           ...c,
+          allModels,
+          models,
+          defaultModel: models.some(m => m.id === c.defaultModel) ? c.defaultModel : models[0]?.id || c.defaultModel,
+          gateway,
           serverReady: Boolean(c.ready),
           // "ready" = this visitor can run prompts right now.
           ready: hasUserKey || (Boolean(c.ready) && unlocked && budgetLeft),
-          via: hasUserKey ? 'user-key' : c.ready ? 'server' : 'none',
-          lockedReason: hasUserKey ? null : !c.ready ? 'no_key' : !unlocked ? 'password' : !budgetLeft ? 'budget' : null,
+          via: hasUserKey ? 'user-key' : serverKey ? 'server' : gateway ? 'gateway' : 'none',
+          lockedReason: hasUserKey ? null : !c.ready ? 'no_key' : !unlocked ? 'password' : !budgetLeft ? (serverKey ? 'budget' : 'quota') : null,
         };
       });
   }
@@ -45,9 +58,9 @@ export class ApiError extends Error {
 async function errorFrom(res) {
   let body = {};
   try { body = await res.json(); } catch {}
-  if (body.code === 'no_api_key') return new ApiError('Live runs are off: the server has no API key. Add your own key in Settings, or keep working offline.', res.status, 'no_api_key');
+  if (body.code === 'no_api_key') return new ApiError(body.error || 'Live runs are off: the server has no API key. Add your own key in Settings, or keep working offline.', res.status, 'no_api_key');
   if (body.code === 'auth_required') return new ApiError(state.settings.accessPassword ? 'The access password was rejected. Check it in Settings.' : 'This server needs an access password, or your own API key. Add one in Settings.', res.status, 'auth_required');
-  if (body.code === 'budget_exhausted') getConfig(true);
+  if (body.code === 'budget_exhausted' || body.code === 'quota_exhausted') getConfig(true);
   return new ApiError(body.error || `Request failed (${res.status})`, res.status, body.code);
 }
 

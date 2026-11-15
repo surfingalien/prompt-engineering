@@ -84,7 +84,7 @@ function editorView(root, h, cfg) {
     mission: () => html`
       <div class="grid id-grid" style="gap:12px">
         <label class="field"><span class="label">Name</span>${inp('name', 'e.g. Code Review Agent')}</label>
-        <label class="field"><span class="label">Model</span><select class="select" data-path="model">${cfg.models.map(m => html`<option value="${m.id}" ${h.model === m.id ? raw('selected') : ''}>${m.label}</option>`)}</select></label>
+        <label class="field"><span class="label">Model</span><select class="select" data-path="model">${(cfg.allModels || cfg.models).filter(m => m.provider !== 'gateway').map(m => html`<option value="${m.id}" ${h.model === m.id ? raw('selected') : ''}>${m.label}</option>`)}</select></label>
         <label class="field"><span class="label">Effort</span><select class="select" data-path="effort">${cfg.efforts.map(e => html`<option ${h.effort === e ? raw('selected') : ''}>${e}</option>`)}</select></label>
       </div>
       <label class="field" style="margin-top:16px"><span class="label">Mission <span class="opt">the core of the system prompt</span></span>${tx('mission', { rows: 9, ph: 'You are the … agent for … Your job is … Work by … ' })}

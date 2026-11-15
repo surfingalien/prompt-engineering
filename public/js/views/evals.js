@@ -8,7 +8,7 @@ import { ASSERTION_TYPES, checkAssertion, toPromptfooYaml } from '../lib/evals.j
 import { extractVars, fillVars, labelFor } from '../lib/template.js';
 import { renderMarkdown } from '../lib/markdown.js';
 import { slugify } from '../lib/harness.js';
-import { pageHead, lockedNotice } from './shared.js';
+import { pageHead, lockedNotice, modelOptions } from './shared.js';
 
 const getS = id => state.suites.find(s => s.id === id);
 const saveS = s => update('suites', list => list.map(x => (x.id === s.id ? s : x)));
@@ -99,7 +99,7 @@ function suiteView(root, s, cfg) {
       ${lockedNotice(cfg, 'You can still design the suite and export it to promptfoo.')}
       <div class="card row wrap suite-bar" style="gap:14px">
         <label class="field"><span class="label">Prompt under test</span><select class="select select-sm" data-suite="promptId">${state.prompts.map(x => html`<option value="${x.id}" ${x.id === s.promptId ? raw('selected') : ''}>${x.title}</option>`)}</select></label>
-        <label class="field"><span class="label">Model</span><select class="select select-sm" data-suite="model">${cfg.models.map(m => html`<option value="${m.id}" ${m.id === s.model ? raw('selected') : ''}>${m.short || m.label}</option>`)}</select></label>
+        <label class="field"><span class="label">Model</span><select class="select select-sm" data-suite="model">${modelOptions(cfg, s.model)}</select></label>
         <label class="field"><span class="label">Effort</span><select class="select select-sm" data-suite="effort">${cfg.efforts.map(e => html`<option ${e === s.effort ? raw('selected') : ''}>${e}</option>`)}</select></label>
         <label class="field"><span class="label">Compare with</span><select class="select select-sm" data-compare aria-label="Compare with a saved version">
           <option value="">Nothing (current prompt only)</option>
@@ -120,7 +120,7 @@ function suiteView(root, s, cfg) {
       <div class="stack" style="margin-top:18px" id="cases">${s.cases.map(caseHtml)}</div>
       <div class="btn-row" style="margin-top:14px">
         <button class="btn" data-act="add-case">${raw(icon('plus'))}Add case</button>
-        <button class="btn" data-act="gen-cases" ${cfg.ready && p && !generating ? '' : raw('disabled')}>${generating ? raw('<span class="spinner"></span>Writing cases…') : raw(`${icon('sparkle')}Generate cases with Claude`)}</button>
+        <button class="btn" data-act="gen-cases" ${cfg.ready && p && !generating ? '' : raw('disabled')}>${generating ? raw('<span class="spinner"></span>Writing cases…') : raw(`${icon('sparkle')}Generate cases with ${(s?.model || '').startsWith('gw:') ? 'AI' : 'Claude'}`)}</button>
         <select class="select select-sm" style="width:auto" data-gen-count aria-label="How many cases">${[4, 6, 8].map(n => html`<option ${n === 6 ? raw('selected') : ''}>${n}</option>`)}</select>
       </div>`);
   }

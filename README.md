@@ -1,6 +1,8 @@
 # PromptForge v5 — Prompt engineering studio for Claude
 
 > **From your first prompt to a production agent harness.** Learn the principles, build prompts with guidance, test them against Claude, measure them with evals, and ship the scaffolding that makes agents dependable, all in one calm workspace.
+>
+> **No Claude API key?** Run every live feature on free models through a self-hosted gateway such as OmniRoute. See [Run it free](#run-it-free-no-claude-api-key-omniroute--freellmapi).
 
 **Live at:** [prompt-engineering-production-67f2.up.railway.app](https://prompt-engineering-production-67f2.up.railway.app)
 
@@ -133,9 +135,12 @@ server.js                     entry point
 src/
   app.js                      Express app factory: security headers (CSP), compression, rate limits, static
   anthropic.js                official SDK client, request builder (effort, caching, fallbacks), error mapping
-  models.js                   model registry: ids, labels, prices; ALLOWED_MODELS / DEFAULT_MODEL
+  providers/gateway.js        OpenAI-compatible gateway (OmniRoute, FreeLLMAPI): discovery, streaming, structured output
+  llm.js                      one stream/complete interface over Claude and the gateway
+  schema.js                   JSON-schema check + JSON extraction for gateway structured output
+  models.js                   model registry: Claude + gateway models; ALLOWED_MODELS / DEFAULT_MODEL
   validate.js                 strict request validation (roles, sizes, no prefill, token caps)
-  guard.js                    spend protection: daily budget, access password, bring-your-own-key
+  guard.js                    spend protection: daily budget, gateway request cap, access password, bring-your-own-key
   governance.js               Scout policy engine, trust scoring, hash-chained audit
   routes/chat.js              GET /api/config · POST /api/chat (SSE) · /api/grade · /api/review · /api/cases
   routes/scout.js             POST /api/scout · /api/scout/maintain · GET /api/scout/audit[/verify]
@@ -156,18 +161,18 @@ scripts/extract-legacy-data.js  one-time migration of v4 content into catalog.js
 skills/                       56 installable Agent Skills (SKILL.md + optional scripts/)
 docs/archive/                 reference material from earlier versions (not loaded by the app)
 .github/workflows/ci.yml      tests on every PR; optional live smoke test
-tests/                        server integration (mock Anthropic API), library units, governance, Scout prompt
+tests/                        server integration (mock Anthropic API and mock gateway), library units, governance, Scout prompt
 ```
 
 **Front end:** framework-free ES modules with no build step. Views are lazy-loaded; every interpolation goes through an escaping `html` template tag; events are delegated (no inline handlers). The heavy library JSON loads only when needed.
 
-**Back end:** Node 20+ and Express 5 with the official `@anthropic-ai/sdk`. The browser never chooses arbitrary request bodies: the server whitelists fields, resolves models against a registry, caps `max_tokens`, and streams results as Server-Sent Events.
+**Back end:** Node 20+ and Express 5 with the official `@anthropic-ai/sdk`, plus an optional OpenAI-compatible gateway for free models (built on `fetch`, no extra dependency). The browser never chooses arbitrary request bodies: the server whitelists fields, resolves models against a registry, caps `max_tokens`, and streams results as Server-Sent Events.
 
 ### API
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/config` | Models (with prices), efforts, limits, whether a key is configured |
+| `GET /api/config` | Models (Claude and gateway, with prices and provider), efforts, limits, which providers are configured, budgets |
 | `POST /api/chat` | `{model, system, messages, effort, maxTokens, showThinking}` → SSE events `delta`, `thinking`, `notice`, `done`, `error` |
 | `POST /api/grade` | LLM-as-judge for eval rubrics. Structured output `{pass, score, reason}` from a cheaper model than the one under test |
 | `POST /api/review` | `mode: "deep"` critiques a prompt (score, strengths, issues with fixes); `mode: "lesson"` grades an exercise against a lesson checklist. Structured output; the prompt is fenced as data |
@@ -187,16 +192,74 @@ tests/                        server integration (mock Anthropic API), library u
 
 ### Security
 
-- The API key lives only on the server. Without it, the app runs in **offline mode**, and visitors can still run prompts with their own key.
+- The API key lives only on the server. Without it (and without a gateway), the app runs in **offline mode**, and visitors can still run prompts with their own key.
+- The gateway key (`LLM_GATEWAY_KEY`) also stays on the server. Gateway model ids are namespaced (`gw:…`), checked against the discovered list, and never forwarded as arbitrary strings.
 - **Spend protection** for public deployments (`src/guard.js`):
   - `DAILY_BUDGET_USD` (default **$10**, `0` = no cap): a hard daily cap on shared-key spend, computed from each response's token usage and the model price table. It persists across restarts (`SPEND_STATE_PATH`) and resets at 00:00 UTC.
-  - `ACCESS_PASSWORD` (optional): visitors must enter it in Settings to use the shared key.
+  - `GATEWAY_DAILY_REQUEST_LIMIT` (default **1000**, `0` = off): a daily cap on free-model requests, protecting your free quotas.
+  - `ACCESS_PASSWORD` (optional): visitors must enter it in Settings to use the shared key or the free models.
   - **Bring your own key:** a visitor can add their own Anthropic key in Settings. It is sent with each request in the `x-user-api-key` header, used for that request only, never stored or logged on the server, excluded from workspace exports, and not counted against the shared budget.
 - Strict Content Security Policy: `script-src 'self'`, no inline scripts or handlers (enforced by a test).
 - Request validation: roles, sizes and message order are checked, unknown fields dropped, `max_tokens` capped (`MAX_OUTPUT_TOKENS`).
 - Per-IP rate limits on chat (60 / 15 min) and Scout (10 / 15 min), configurable. `TRUST_PROXY` controls client-IP detection.
 - Upstream errors are mapped to safe messages; raw API error bodies never reach the browser.
 - Prompts the app sends on your behalf (improver, grader, council, Scout) fence user content in tags and tell Claude to treat it as data.
+
+---
+
+## Run it free: no Claude API key (OmniRoute / FreeLLMAPI)
+
+PromptForge can run every live feature (Workbench, Evals, deep review, graded exercises, Council and Scout) on **free models** through a self-hosted, OpenAI-compatible gateway, with no `ANTHROPIC_API_KEY` at all. The gateway holds your free-tier provider keys and routes each request to whichever provider has quota left.
+
+| Gateway | Base URL | Notes |
+|---|---|---|
+| [OmniRoute](https://github.com/diegosouzapw/OmniRoute) | `http://localhost:20128/v1` | Dashboard, `auto` routing with fallback, many providers. Included in `docker-compose.yml` as the opt-in `free` profile |
+| [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi) | `http://localhost:3001/v1` | Small, MIT; `auto`, `auto:fast`, `auto:smart`. Its README says it is for personal experimentation |
+| Anything else | your URL + `/v1` | Any server that speaks OpenAI Chat Completions (`/models`, `/chat/completions`) |
+
+**With Docker (OmniRoute):**
+
+1. Put two secrets in `.env` (generate each with `openssl rand -hex 32`): `OMNIROUTE_JWT_SECRET` and `OMNIROUTE_API_KEY_SECRET`.
+2. Start the gateway:
+
+```bash
+docker compose --profile free up -d omniroute
+```
+
+3. Open http://localhost:20128, finish setup, and connect providers using **your own free API keys** (see the list below). Under **Endpoints**, create an API key for PromptForge.
+4. Add to `.env`, then start PromptForge:
+
+```bash
+LLM_GATEWAY_URL=http://omniroute:20128/v1
+LLM_GATEWAY_KEY=<the key from step 3>
+LLM_GATEWAY_NAME=OmniRoute
+```
+
+```bash
+docker compose --profile free up -d --build
+```
+
+**Without Docker:** run the gateway however its README describes, then:
+
+```bash
+LLM_GATEWAY_URL=http://localhost:20128/v1 LLM_GATEWAY_KEY=... npm start
+```
+
+**How it behaves**
+
+- Models are discovered from the gateway's `/v1/models` and appear in every model picker under **Free models**, marked "free" and costing $0. Pin a shorter list with `LLM_GATEWAY_MODELS`; choose the default with `LLM_GATEWAY_DEFAULT_MODEL` (default `auto`).
+- Set `LLM_GATEWAY_JUDGE_MODEL` to a strong model: it grades eval rubrics and verifies Scout output, and a judge should differ from the model being judged.
+- Structured features (grading, reviews, generated cases, Scout) ask for `json_schema` output, fall back to `json_object` or plain instructions when a provider does not support it, check the result against the schema (`src/schema.js`), and ask once for a correction if it does not match.
+- Claude-only features degrade gracefully: effort is disabled for free models, reasoning is shown when the provider streams it, and prompt caching does not apply.
+- Claude and free models can run side by side: keep `ANTHROPIC_API_KEY` and add a gateway, or let visitors bring their own Claude key in Settings. Without a server key, Claude models only appear for visitors who add one.
+- `GATEWAY_DAILY_REQUEST_LIMIT` (default 1000) caps free-model requests per day, so a public deployment can't drain your quotas. `ACCESS_PASSWORD` applies to free models too.
+
+**Choose providers with care**
+
+- **Prefer official free API tiers** that you sign up for yourself, such as Groq, Cerebras, Google Gemini API, OpenRouter's free models, NVIDIA NIM, Cloudflare Workers AI or GitHub Models. Each has its own rate limits and terms.
+- **Avoid subscription-reuse routes.** Some gateways can also route through consumer subscriptions or CLI logins (for example Claude Code, Gemini CLI, Kiro or Qwen accounts), or imitate official clients' fingerprints. That usually breaks the provider's terms of service and can get the account suspended. PromptForge does not need any of it: connect API-key providers only.
+- **Privacy:** free tiers may log your prompts or use them for training. Don't send confidential data through them, and tell visitors when a public deployment uses free models.
+- **Quality varies.** Free models are often smaller than Claude. The Workbench's A/B compare and Evals are a good way to check whether one is good enough for a given prompt.
 
 ---
 
@@ -214,7 +277,7 @@ cd prompt-engineering && npm install
 ANTHROPIC_API_KEY=sk-ant-... npm start
 ```
 
-Open http://localhost:3000. Without a key the studio still runs in offline mode.
+Open http://localhost:3000. Without a key the studio still runs in offline mode. To run free models instead, see [Run it free](#run-it-free-no-claude-api-key-omniroute--freellmapi).
 
 **Docker:**
 
@@ -230,9 +293,10 @@ ANTHROPIC_API_KEY=sk-ant-... docker compose up --build promptforge
 npm test
 ```
 
-This runs 82 tests with no API key and no extra dependencies (Node's built-in test runner):
+This runs 104 tests with no API key and no extra dependencies (Node's built-in test runner):
 - **Server integration:** a local mock of the Anthropic API checks the exact request the SDK sends (effort, cache control, fallbacks, no sampling params, token caps), SSE streaming, refusal and error mapping, validation, Scout governance and the audit chain.
 - **Library units:** analyzer (including "every lesson's after beats its before"), composer, harness exports, eval assertions, promptfoo export, zip (verified with `unzip`), diff, markdown sanitization, search, catalog integrity.
+- **Gateway:** a local mock of an OpenAI-compatible gateway with no Anthropic key: model discovery, streaming and reasoning, `stream_options` retry, `response_format` downgrade, JSON coercion and one-shot repair, quotas, password gate, and Scout end to end.
 - **Governance:** policy, trust scoring, hash chain, plus the no-inline-handler invariant.
 
 **Calculators:** each skill script is run against hand-derivable values (skipped automatically if `python3` is missing).
@@ -240,6 +304,8 @@ This runs 82 tests with no API key and no extra dependencies (Node's built-in te
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... npm run smoke:live
 ```
+
+It also runs against a gateway with no Claude key: `LLM_GATEWAY_URL=http://localhost:20128/v1 LLM_GATEWAY_KEY=... npm run smoke:live`.
 
 The **live smoke test** boots the app and exercises every endpoint against the real API on every enabled model: streaming, reasoning summaries, prompt caching, grading, deep review, lesson grading, case generation, and with `--scout` also Scout. It costs roughly $0.05–0.20 per run and is capped by a $2 budget.
 

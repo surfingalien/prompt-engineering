@@ -10,6 +10,7 @@ import { toast, openModal, download, confirmDialog, copyText } from './core/ui.j
 import { loadCatalog, query as queryCatalog } from './core/catalog.js';
 import { LESSONS } from './data/curriculum.js';
 import { navigate } from './core/nav.js';
+import { modelOptions } from './views/shared.js';
 
 const NAV = [
   { group: null, items: [{ id: 'home', label: 'Home', icon: 'home' }] },
@@ -103,7 +104,7 @@ function renderSidebar() {
     </nav>
     <div class="sidebar-foot">
       <div class="status-line" title="${statusTitle()}">
-        <span class="dot ${cfg.ready ? 'ok' : 'off'}"></span>${cfg.ready ? (cfg.via === 'user-key' ? 'Using your key' : 'Claude connected') : ({ password: 'Locked: password needed', budget: 'Daily budget used up' }[cfg.lockedReason] || 'Offline mode')}
+        <span class="dot ${cfg.ready ? 'ok' : 'off'}"></span>${cfg.ready ? ({ 'user-key': 'Using your key', gateway: 'Free models connected' }[cfg.via] || 'Claude connected') : ({ password: 'Locked: password needed', budget: 'Daily budget used up', quota: 'Free quota used up' }[cfg.lockedReason] || 'Offline mode')}
         <span class="spacer"></span><span title="Estimated spend this browser">${formatCost(state.usage.cost)}</span>
       </div>
       <div class="foot-actions">
@@ -119,7 +120,7 @@ function renderSidebar() {
     <button class="btn btn-ghost btn-icon" data-action="palette" aria-label="Search">${raw(icon('search'))}</button>`);
 }
 function statusTitle() {
-  if (cfg.ready) return cfg.via === 'user-key' ? 'Runs use your own API key' : 'Live runs enabled';
+  if (cfg.ready) return cfg.via === 'user-key' ? 'Runs use your own API key' : cfg.via === 'gateway' ? `Runs use free models via ${cfg.gateway?.name || 'the gateway'}` : 'Live runs enabled';
   return { password: 'Enter the access password in Settings, or add your own API key', budget: 'Today’s shared budget is used up; add your own API key in Settings' }[cfg.lockedReason]
     || 'No API key: runs are off. Add your own key in Settings; everything else works offline.';
 }
@@ -198,15 +199,16 @@ async function openSettings() {
     title: 'Settings',
     body: html`
       <label class="field"><span class="label">Default model</span>
-        <select class="select" name="model">${c.models.map(m => html`<option value="${m.id}" ${(s.model || c.defaultModel) === m.id ? raw('selected') : ''}>${m.label} — ${m.blurb}</option>`)}</select></label>
+        <select class="select" name="model">${modelOptions(c, s.model || c.defaultModel, { long: true })}</select></label>
       <label class="field"><span class="label">Default effort</span>
         <select class="select" name="effort">${c.efforts.map(e => html`<option ${s.effort === e ? raw('selected') : ''}>${e}</option>`)}</select>
-        <span class="help">Effort controls how deeply Claude thinks. Medium is a strong default; raise it for hard reasoning.</span></label>
+        <span class="help">Effort controls how deeply Claude thinks. Medium is a strong default; raise it for hard reasoning. Free gateway models ignore it.</span></label>
       <label class="field"><span class="label">Theme</span>
         <select class="select" name="theme">${['system', 'light', 'dark'].map(t => html`<option ${s.theme === t ? raw('selected') : ''}>${t}</option>`)}</select></label>
       <hr class="divider">
       <div class="label">Access</div>
-      ${c.serverReady ? html`<p class="help">This server provides a shared Claude key${c.budget?.daily ? html` with a daily budget: <b>$${c.budget.spent.toFixed(2)}</b> of $${c.budget.daily} used today (resets at 00:00 UTC)` : ''}.</p>` : html`<p class="help">This server has no shared Claude key. Add your own to run prompts.</p>`}
+      ${c.providers?.anthropic?.serverKey ? html`<p class="help">This server provides a shared Claude key${c.budget?.daily ? html` with a daily budget: <b>$${c.budget.spent.toFixed(2)}</b> of $${c.budget.daily} used today (resets at 00:00 UTC)` : ''}.</p>` : c.gateway ? '' : html`<p class="help">This server has no shared Claude key. Add your own to run prompts.</p>`}
+      ${c.gateway ? html`<p class="help">Free models are available through <b>${c.gateway.name}</b>${c.budget?.gateway?.limit ? html` (${c.budget.gateway.used} of ${c.budget.gateway.limit} requests used today)` : ''}. ${c.providers?.anthropic?.serverKey ? '' : 'Add your own Anthropic key to also use Claude models.'}</p>` : ''}
       ${c.access?.passwordRequired ? html`<label class="field"><span class="label">Access password <span class="opt">required for the shared key</span></span><input class="input" name="accessPassword" type="password" autocomplete="current-password" value="${s.accessPassword || ''}"></label>` : ''}
       <label class="field"><span class="label">Your Anthropic API key <span class="opt">optional</span></span><input class="input" name="userApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" value="${s.userApiKey || ''}">
         <span class="help">Used instead of the shared key, billed to you, and not limited by the shared budget. It is stored only in this browser and sent only to this site’s server, for each request. It is never saved on the server or included in exports.</span></label>

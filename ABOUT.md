@@ -28,8 +28,8 @@ PromptForge teaches both in one place, for free and open source, with every less
 
 - **Front end:** framework-free ES modules with no build step, an editorial design system, light and dark themes
 - **Back end:** Node.js + Express 5 using the official Anthropic SDK (streaming, effort control, structured outputs, refusal fallbacks)
-- **Models:** Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.2
-- **Deployment:** Docker (Railway-ready); offline mode when no API key is set
+- **Models:** Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.2, or free models through a self-hosted OpenAI-compatible gateway (OmniRoute, FreeLLMAPI) with no Claude key
+- **Deployment:** Docker (Railway-ready), with an opt-in OmniRoute service; offline mode when no model provider is set
 
 ## Numbers
 
@@ -39,7 +39,7 @@ PromptForge teaches both in one place, for free and open source, with every less
 | Library items | 570 (514 curated + 56 installable skills in 6 collections) |
 | Builder blueprints | 8 |
 | Harness templates | 5 |
-| Automated tests | 82 (plus a live API smoke test and CI) |
+| Automated tests | 104 (plus a live smoke test and CI) |
 | Runtime dependencies | 4 |
 
 ## Who built it

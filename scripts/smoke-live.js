@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Live smoke test against the REAL Anthropic API.
+// Live smoke test against the REAL Anthropic API and/or a free-model gateway.
 //
 //   ANTHROPIC_API_KEY=sk-ant-... npm run smoke:live          (≈ $0.05–0.20)
 //   ANTHROPIC_API_KEY=sk-ant-... npm run smoke:live -- --scout   (also runs Scout, ≈ +$0.30)
+//   LLM_GATEWAY_URL=http://localhost:20128/v1 LLM_GATEWAY_KEY=... npm run smoke:live
+//                                                          (OmniRoute / FreeLLMAPI: free)
 //
 // Boots the app in-process on a random port and exercises every endpoint
 // the UI uses, on every enabled model. Unit tests use a mock API; this is the
@@ -11,8 +13,8 @@
 'use strict';
 const http = require('http');
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('ANTHROPIC_API_KEY is not set. This test calls the real API; set a key to run it.');
+if (!process.env.ANTHROPIC_API_KEY && !process.env.LLM_GATEWAY_URL) {
+  console.error('Set ANTHROPIC_API_KEY or LLM_GATEWAY_URL. This test calls real models.');
   process.exit(2);
 }
 process.env.DAILY_BUDGET_USD = process.env.DAILY_BUDGET_USD || '2';
@@ -47,9 +49,13 @@ async function check(name, fn) {
   const json = async (p, body) => { const r = await post(p, body); const v = await r.json(); if (!r.ok) throw new Error(`${r.status}: ${v.error}`); return v; };
 
   const cfg = await (await fetch(`${base}/api/config`)).json();
-  console.log(`Models: ${cfg.models.map(m => m.id).join(', ')} · budget $${cfg.budget.daily}\n`);
+  // Claude models need a server key here; on the gateway, test the default
+  // plus a couple of others (a gateway can expose dozens).
+  const claude = cfg.models.filter(m => m.provider === 'anthropic' && !m.requiresUserKey);
+  const gateway = cfg.models.filter(m => m.provider === 'gateway').slice(0, 3);
+  console.log(`Models under test: ${[...claude, ...gateway].map(m => m.id).join(', ')} · default ${cfg.defaultModel} · budget $${cfg.budget.daily}\n`);
 
-  for (const m of cfg.models) {
+  for (const m of [...claude, ...gateway]) {
     await check(`chat stream · ${m.id}`, async () => {
       const r = await post('/api/chat', { model: m.id, effort: 'low', maxTokens: 400, system: 'Answer in one short sentence.', messages: [{ role: 'user', content: 'What is the capital of France?' }] });
       if (!r.ok) throw new Error(`${r.status}: ${(await r.json()).error}`);
@@ -73,7 +79,7 @@ async function check(name, fn) {
     const text = second.filter(e => e.event === 'delta').map(e => e.data.text).join('');
     if (!/0?\.05|5 cents|five cents/i.test(text)) throw new Error(`wrong answer: ${text.slice(0, 80)}`);
     const thinking = first.concat(second).some(e => e.event === 'thinking');
-    return `thinking summary: ${thinking ? 'yes' : 'none returned'} · cache read ${done.data.usage.cache_read_input_tokens} tokens`;
+    return `thinking: ${thinking ? 'yes' : 'none returned'} · cache read ${done.data.usage.cache_read_input_tokens} tokens`;
   });
 
   await check('grade · structured verdict', async () => {
@@ -110,6 +116,6 @@ async function check(name, fn) {
   const after = await (await fetch(`${base}/api/config`)).json();
   server.close();
   const failed = results.filter(r => !r.ok);
-  console.log(`\n${results.length - failed.length}/${results.length} passed · estimated spend $${after.budget.spent.toFixed(4)}`);
+  console.log(`\n${results.length - failed.length}/${results.length} passed · estimated spend $${after.budget.spent.toFixed(4)}${after.budget.gateway?.used ? ` · ${after.budget.gateway.used} free gateway requests` : ''}`);
   process.exit(failed.length ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
