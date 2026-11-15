@@ -111,7 +111,7 @@ function trustScore(kind, item, { policy, verification }) {
 // ─── Hash-chained audit log ──────────────────────────────────────────────────
 
 const GENESIS = '0'.repeat(64);
-const AUDIT_PATH = process.env.SCOUT_AUDIT_PATH || path.join(__dirname, 'scout-audit.jsonl');
+const AUDIT_PATH = process.env.SCOUT_AUDIT_PATH || path.join(__dirname, '..', 'scout-audit.jsonl');
 
 function canonical(obj) {
   if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
@@ -166,7 +166,7 @@ function itemDigest(kind, item) {
 // grading its own output tends to agree with itself. The verifier only
 // judges — it never rewrites — so its token budget stays small.
 function verifierModel(scoutModel) {
-  return scoutModel === 'claude-haiku-4-5-20251001' ? 'claude-sonnet-4-6' : 'claude-haiku-4-5-20251001';
+  return scoutModel === 'claude-haiku-5-5' ? 'claude-sonnet-5-5' : 'claude-haiku-5-5';
 }
 
 function verifierPrompt(skills, agents) {

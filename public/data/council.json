@@ -1,0 +1,72 @@
+{
+ "advisors": [
+  {
+   "id": "contrarian",
+   "name": "The Contrarian",
+   "color": "#e05c5c",
+   "desc": "Hunts fatal flaws & what will fail"
+  },
+  {
+   "id": "firstprinciples",
+   "name": "First Principles",
+   "color": "#6c5ce7",
+   "desc": "Asks if you're solving the right problem"
+  },
+  {
+   "id": "expansionist",
+   "name": "The Expansionist",
+   "color": "#00cec9",
+   "desc": "Finds upside & opportunity you're missing"
+  },
+  {
+   "id": "outsider",
+   "name": "The Outsider",
+   "color": "#fdcb6e",
+   "desc": "Responds with zero context — catches blind spots"
+  },
+  {
+   "id": "executor",
+   "name": "The Executor",
+   "color": "#fd79a8",
+   "desc": "What do you do Monday morning?"
+  }
+ ],
+ "modes": [
+  {
+   "icon": "⚔",
+   "name": "Full Council Session",
+   "desc": "Run all 5 advisors on your decision in parallel. They analyze independently, then peer-review each other anonymously. Chairman synthesizes the verdict.",
+   "trigger": "council this / war room this / pressure-test this"
+  },
+  {
+   "icon": "🔍",
+   "name": "The Contrarian",
+   "desc": "Actively hunts for what's wrong, what's missing, what will fail. Assumes the idea has a fatal flaw and tries to find it. The friend who saves you from a bad deal.",
+   "trigger": "contrarian review / find the flaws in"
+  },
+  {
+   "icon": "🧱",
+   "name": "First Principles Thinker",
+   "desc": "Ignores the surface question and asks \"what are we actually trying to solve?\" Strips away assumptions. Rebuilds from ground up. Sometimes tells you you're asking the wrong question.",
+   "trigger": "first principles / strip assumptions"
+  },
+  {
+   "icon": "🚀",
+   "name": "The Expansionist",
+   "desc": "Looks for upside everyone else is missing. What could be bigger? What adjacent opportunity is hiding? What's being undervalued? Doesn't care about risk — that's the Contrarian's job.",
+   "trigger": "expand this / what's the upside"
+  },
+  {
+   "icon": "👁",
+   "name": "The Outsider",
+   "desc": "Has zero context about you, your field, or your history. Catches the curse of knowledge — things obvious to you but confusing to everyone else. The most underrated advisor.",
+   "trigger": "fresh eyes / outsider view"
+  },
+  {
+   "icon": "⚡",
+   "name": "The Executor",
+   "desc": "Only cares: can this be done, and what's the fastest path? Ignores theory. Looks at every idea through \"what do you do Monday morning?\" If it has no clear first step, the Executor will say so.",
+   "trigger": "execution plan / monday morning / how do I start"
+  }
+ ]
+}

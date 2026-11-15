@@ -8,7 +8,7 @@ const path = require('path');
 
 // Point the audit log at a throwaway file BEFORE loading the module.
 process.env.SCOUT_AUDIT_PATH = path.join(os.tmpdir(), `scout-audit-test-${process.pid}.jsonl`);
-const governance = require('../governance');
+const governance = require('../src/governance');
 
 const goodSkill = () => ({
   id: 'scout-ab12',
@@ -205,63 +205,30 @@ test('canonical JSON is key-order independent', () => {
 });
 
 test('verifier model always differs from scout model', () => {
-  for (const m of ['claude-sonnet-4-6', 'claude-opus-4-8', 'claude-haiku-4-5-20251001']) {
+  for (const m of ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-fable-5-2']) {
     assert.notEqual(governance.verifierModel(m), m);
   }
 });
 
-// ── Client-side attribute escaping ────────────────────────────────────────────
-// jsAttr lives in the inline script of public/index.html (there is no client
-// module boundary to import), so the test extracts and evaluates it. It guards
-// a real bug: a model-generated Scout item name containing a quote used to
-// truncate the onclick attribute and produce a dead/malformed button.
-
-function loadClientEscapers() {
+// ── Client-side injection surface ─────────────────────────────────────────────
+// v4 built inline onclick="…" strings, and a Scout item name containing a quote
+// once broke them. v5 removes that bug class: no inline handlers anywhere, all
+// events are delegated, and the CSP forbids inline script. This guards the
+// invariant. (Escaping of the same adversarial names is tested in lib.test.js.)
+test('front end has no inline event handlers or inline scripts', () => {
   const fs = require('fs');
   const path = require('path');
-  const src = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
-  const jsAttrSrc = src.match(/function jsAttr\(s\) \{[\s\S]*?\n\}/);
-  const escSrc = src.match(/function escapeHtmlLite\(s\) \{[\s\S]*?\n\}/);
-  assert.ok(jsAttrSrc && escSrc, 'jsAttr and escapeHtmlLite must exist in index.html');
-  const scope = {};
-  // eslint-disable-next-line no-eval
-  eval(`${jsAttrSrc[0]}\n${escSrc[0]}\nscope.jsAttr = jsAttr; scope.escapeHtmlLite = escapeHtmlLite;`);
-  return scope;
-}
-
-const ADVERSARIAL_NAMES = [
-  'The "Best" Agent',
-  "O'Brien's Agent",
-  'back\\slash',
-  '</script><img src=x onerror=alert(1)>',
-  'Tom & "Jerry"',
-];
-
-test('jsAttr keeps the onclick attribute intact for adversarial names', () => {
-  const { jsAttr } = loadClientEscapers();
-  for (const name of ADVERSARIAL_NAMES) {
-    const html = `<button onclick="removeSavedScoutItem('agent','${jsAttr(name)}')">x</button>`;
-    const attr = /onclick="([^"]*)"/.exec(html);
-    assert.ok(attr, `attribute missing for ${name}`);
-    assert.ok(attr[1].trim().endsWith(')'), `attribute truncated for ${name}: ${attr[1]}`);
+  const pub = path.join(__dirname, '..', 'public');
+  const files = [];
+  const walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
+    const p = path.join(d, e.name);
+    if (e.isDirectory()) walk(p); else if (/\.(html|js)$/.test(e.name)) files.push(p);
+  });
+  walk(pub);
+  assert.ok(files.length > 20);
+  for (const f of files) {
+    const src = fs.readFileSync(f, 'utf8');
+    assert.ok(!/\son(click|input|change|submit|load|error|mouse\w+|key\w+)\s*=\s*["'`]/i.test(src), `inline handler in ${path.relative(pub, f)}`);
+    if (f.endsWith('.html')) assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(src), `inline <script> in ${path.relative(pub, f)}`);
   }
-});
-
-test('jsAttr round-trips the exact name through browser decode + JS eval', () => {
-  const { jsAttr } = loadClientEscapers();
-  for (const name of ADVERSARIAL_NAMES) {
-    const attrValue = `removeSavedScoutItem('agent','${jsAttr(name)}')`;
-    // What a browser does: decode entities, then evaluate as JS.
-    const decoded = attrValue.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
-    let received;
-    // eslint-disable-next-line no-new-func
-    new Function('removeSavedScoutItem', decoded)((_kind, value) => { received = value; });
-    assert.equal(received, name);
-  }
-});
-
-test('escapeHtmlLite escapes the quote that breaks attributes', () => {
-  const { escapeHtmlLite } = loadClientEscapers();
-  assert.equal(escapeHtmlLite('a"b'), 'a&quot;b');
-  assert.equal(escapeHtmlLite('<i>&</i>'), '&lt;i&gt;&amp;&lt;/i&gt;');
 });

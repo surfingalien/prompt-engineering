@@ -14,6 +14,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      HELICONE_API_KEY: ${HELICONE_API_KEY:-}
+      ALLOWED_MODELS: ${ALLOWED_MODELS:-}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
 
   # Open Design — local-first design agent tool (port 7456)
   open-design:

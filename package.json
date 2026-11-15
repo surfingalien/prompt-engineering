@@ -1,13 +1,14 @@
 {
   "name": "prompt-engineering",
-  "version": "1.0.0",
-  "description": "PromptForge \u2014 AI Prompt Engineering Studio. Built from prompts.chat, dair-ai, CL4R1T4S, system_prompts_leaks, prompt-optimizer, and microsoft/generative-ai-for-beginners.",
+  "version": "5.0.0",
+  "description": "PromptForge — a prompt engineering studio for Claude: learn, build, test, evaluate and ship prompts and agent harnesses.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node --test tests/*.test.js",
-    "eval": "promptfoo eval"
+    "eval": "promptfoo eval",
+    "extract-legacy": "node scripts/extract-legacy-data.js"
   },
   "repository": {
     "type": "git",
@@ -15,20 +16,26 @@
   },
   "keywords": [
     "prompt-engineering",
-    "ai",
-    "llm",
     "claude",
-    "gpt",
-    "prompts"
+    "anthropic",
+    "llm",
+    "agents",
+    "harness",
+    "evals",
+    "claude-code"
   ],
   "author": "surfingalien",
   "license": "MIT",
   "dependencies": {
-    "cors": "^2.8.6",
+    "@anthropic-ai/sdk": "^1.8.0",
+    "compression": "^1.8.2",
     "express": "^5.2.1",
     "express-rate-limit": "^7.4.1"
   },
   "devDependencies": {
     "promptfoo": "^0.103.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
