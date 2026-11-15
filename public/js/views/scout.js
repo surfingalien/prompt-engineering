@@ -5,7 +5,7 @@ import { scoutLibrary, saveScoutLibrary } from '../core/store.js';
 import { getConfig, scout, maintainScout, auditLog, verifyAudit, currentModel } from '../core/api.js';
 import { toast, confirmDialog, promptDialog, openDrawer } from '../core/ui.js';
 import { invalidate } from '../core/catalog.js';
-import { codeBlock, pageHead } from './shared.js';
+import { codeBlock, pageHead, lockedNotice } from './shared.js';
 
 const TOPICS = ['Multi-agent orchestration', 'Agent evals', 'Market microstructure', 'Options volatility surfaces', 'Autoresearch loops', 'RAG systems', 'MCP servers', 'Browser automation', 'Prompt-injection defense', 'Agent memory', 'Code review agents', 'Data pipelines'];
 const TIER = { gold: 'good', silver: 'info', bronze: 'warn', quarantined: 'bad' };
@@ -48,7 +48,7 @@ export default {
             <select class="select" style="width:auto" data-count aria-label="How many">${[2, 3, 4, 5].map(n => html`<option ${n === 3 ? raw('selected') : ''}>${n}</option>`)}</select>
             <button class="btn btn-primary" data-act="run" ${cfg.ready && !busy ? '' : raw('disabled')}>${busy ? raw('<span class="spinner"></span>Scouting…') : raw(`${icon('scout')}Run Scout`)}</button></div>
           <div class="chips" style="margin-top:12px">${TOPICS.map(t => html`<button class="chip" data-topic-pick="${t}">${t}</button>`)}</div>
-          ${cfg.ready ? '' : html`<p class="subtle" style="margin-top:10px">Scout needs an <code>ANTHROPIC_API_KEY</code> on the server.</p>`}
+          ${cfg.ready ? '' : html`<div style="margin-top:12px">${lockedNotice(cfg)}</div>`}
         </div>
 
         ${results ? html`<section class="section">

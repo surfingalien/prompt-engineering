@@ -3,7 +3,8 @@ import { icon } from '../core/icons.js';
 import { state, update, getPrompt, createPrompt } from '../core/store.js';
 import { navigate } from '../core/nav.js';
 import { getConfig } from '../core/api.js';
-import { toast, openDrawer, download, confirmDialog, copyText } from '../core/ui.js';
+import { toast, openDrawer, download, confirmDialog, copyText, shareLink } from '../core/ui.js';
+import { shareHarness } from '../lib/share.js';
 import { loadCatalog, find } from '../core/catalog.js';
 import { harnessFiles, readiness, systemPrompt, GUARDRAILS, slugify } from '../lib/harness.js';
 import { makeZip } from '../lib/zip.js';
@@ -167,15 +168,15 @@ function editorView(root, h, cfg) {
 
   function draw() {
     render(root, html`
-      <nav class="crumbs"><a href="#/harness">Harness studio</a><span>/</span><span>${h.name}</span></nav>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="#/harness">Harness studio</a><span>/</span><span>${h.name}</span></nav>
       <div class="row between wrap" style="gap:12px;margin-bottom:20px">
         <h1 class="page-title">${h.name}</h1>
-        <div class="btn-row"><button class="btn btn-sm" data-act="duplicate">Duplicate</button><button class="btn btn-sm btn-ghost btn-danger" data-act="delete">${raw(icon('trash'))}Delete</button></div>
+        <div class="btn-row"><button class="btn btn-sm" data-act="share">${raw(icon('external'))}Share link</button><button class="btn btn-sm" data-act="duplicate">Duplicate</button><button class="btn btn-sm btn-ghost btn-danger" data-act="delete">${raw(icon('trash'))}Delete</button></div>
       </div>
       <div class="h-layout">
         <nav class="h-nav" aria-label="Harness layers">${LAYERS.map(([id, ic, t]) => {
           const n = { tools: h.tools?.length, skills: h.skills?.length, subagents: h.subagents?.length, evals: h.evals?.length, guardrails: Object.values(h.guardrails || {}).filter(Boolean).length }[id];
-          return html`<button class="h-nav-item" data-section="${id}" aria-current="${section === id}">${raw(icon(ic))}<span>${t}</span>${n ? html`<span class="count">${n}</span>` : ''}</button>`;
+          return html`<button class="h-nav-item" data-section="${id}" aria-current="${String(section === id)}">${raw(icon(ic))}<span>${t}</span>${n ? html`<span class="count">${n}</span>` : ''}</button>`;
         })}</nav>
         <section class="card h-main"><h2 class="section-title">${LAYERS.find(l => l[0] === section)[2]}</h2>${SECTIONS[section]()}</section>
         <aside class="sticky-col" id="h-side"></aside>
@@ -221,6 +222,7 @@ function editorView(root, h, cfg) {
         download(`${folder}-harness.zip`, new Blob([makeZip(files.map(f => ({ ...f, path: `${folder}/${f.path}` })))], { type: 'application/zip' }));
         toast('Harness downloaded');
       } else if (act === 'copy-system') copyText(systemPrompt(h), 'System prompt copied');
+      else if (act === 'share') shareLink(shareHarness(h), 'Share link').catch(err => toast(err.message, 'error'));
       else if (act === 'test-mission') {
         const p = createPrompt({ title: `${h.name} — system prompt`, system: systemPrompt(h), user: h.evals?.[0]?.input || 'Hi! Briefly, what can you help me with?', source: `harness:${h.id}` });
         navigate(`workbench/${p.id}`);

@@ -64,13 +64,14 @@ Every lesson pairs a principle with a scored before/after example, a checklist, 
 | **Learning path** | 17 lessons across 4 levels; progress is saved locally |
 | **Library** | 570 items: 514 curated skills, prompts, agents, techniques and reference system prompts, plus 56 installable skills in 6 collections. Faceted by collection, type, domain and level, with instant search and favorites |
 | **Prompt builder** | 8 blueprints (write, analyze, code, extract, summarize, classify, brainstorm, agent). Guided and Pro modes compose a best-practice prompt live, with a quality score |
-| **Workbench** | Prompt workspace with system + user fields, `{{variables}}`, streaming runs, reasoning summaries, A/B compare (model vs model or version vs version), follow-up turns, version history with diffs, and **Improve with Claude** (six rewrite modes, reviewed as a diff before applying) |
+| **Workbench** | Prompt workspace with system + user fields, **Deep review** (Claude critiques the prompt like an expert editor), **graded exercises** (Check my answer against the lesson checklist), **share links**, `{{variables}}`, streaming runs, reasoning summaries, A/B compare (model vs model or version vs version), follow-up turns, version history with diffs, and **Improve with Claude** (six rewrite modes, reviewed as a diff before applying) |
 | **Analyzer** | Deterministic prompt linter: clarity, context, structure, specificity, output and robustness, plus findings like "wrap untrusted input in tags", each with a fix |
 | **Harness studio** | Five templates (code review, support, research, log-first trading desk, autoresearch loop). Design mission, guardrails, project memory, tools, skills, subagents and evals, with a readiness checklist. Exports `CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`, strict `tools.json`, a runnable SDK `agent.ts`, and `evals.yaml` as a .zip |
-| **Evals** | Suites of cases with checks (contains, regex, word limits, JSON, JSON keys, Claude-graded rubric). Run history with pass rates; export to promptfoo for CI |
+| **Evals** | Suites of cases with checks (contains, regex, word limits, JSON, JSON keys, Claude-graded rubric). **Compare the current prompt with any saved version** on the same suite, and **generate typical, edge and adversarial cases with Claude**. Run history with pass rates; export to promptfoo for CI |
 | **Council** | Five advisors run as independent parallel calls, then a chairman synthesizes. A working example of the parallel-agents pattern |
 | **📡 Scout** | Generates new skills and agents through a governance pipeline (below) |
-| **Everywhere** | ⌘K command palette, light/dark theme, local-first storage with export/import, a usage and cost meter with a spend alert, offline mode |
+| **Sharing** | Share a prompt or harness as a link. The content is compressed into the URL itself, with nothing stored on a server, and opens as a preview the recipient chooses to save. Variable values are never included |
+| **Everywhere** | ⌘K command palette, WCAG 2.1 AA (axe-audited in light and dark), mobile-friendly Workbench, light/dark theme, local-first storage with export/import, a usage and cost meter with a spend alert, offline mode |
 
 ---
 
@@ -86,6 +87,8 @@ Every lesson pairs a principle with a scored before/after example, a checklist, 
 | **Quant research rigor** | 17 | Look-ahead and survivorship audits, leakage audit, walk-forward/CPCV, deflated Sharpe, overfitting reviewer, cost model, triple-barrier labels, regimes, vol forecasting, mean reversion, pairs, tearsheet, hypothesis design, pre-trade gate, prediction markets, LP math |
 | **Autoresearch loops** | 5 | The Karpathy loop, a program.md writer, the morning results.tsv review, an overfit-safe loop for trading strategies, and an eval-driven loop for prompts |
 | **Agent & context engineering** | 11 | Context degradation, compression, long-horizon briefs, memory design, filesystem context, harness engineering, LLM-as-judge, multi-agent patterns, skill creator, tool contracts, Socratic tutor |
+
+Five skills ship **calculators** (`scripts/*.py`, standard-library Python) that Claude runs instead of doing arithmetic by hand: market impact (`micro-market-impact`), deflated Sharpe (`quant-deflated-sharpe`), impermanent loss (`quant-lp-impermanent-loss`), variance-swap strike (`vol-variance-swap`) and position size (`desk-position-sizer`). Each is regression-tested against values you can derive by hand. In the Library, these skills download as a .zip with their scripts.
 
 The Harness studio's **Log-first trading desk** and **Autoresearch loop** templates assemble these skills into complete, exportable harnesses. The trading desk runs in paper mode with confirmation gates and circuit breakers.
 
@@ -132,8 +135,9 @@ src/
   anthropic.js                official SDK client, request builder (effort, caching, fallbacks), error mapping
   models.js                   model registry: ids, labels, prices; ALLOWED_MODELS / DEFAULT_MODEL
   validate.js                 strict request validation (roles, sizes, no prefill, token caps)
+  guard.js                    spend protection: daily budget, access password, bring-your-own-key
   governance.js               Scout policy engine, trust scoring, hash-chained audit
-  routes/chat.js              GET /api/config · POST /api/chat (SSE) · POST /api/grade
+  routes/chat.js              GET /api/config · POST /api/chat (SSE) · /api/grade · /api/review · /api/cases
   routes/scout.js             POST /api/scout · /api/scout/maintain · GET /api/scout/audit[/verify]
 public/
   index.html                  app shell (no inline scripts)
@@ -146,7 +150,12 @@ public/
   js/data/                    curriculum, builder blueprints, harness templates
   js/views/                   home, learn, library, build, workbench, harness, evals, council, scout
 prompts/scout-system.txt      Scout system prompt (single source for server + promptfoo evals)
+scripts/build-catalog.js      validates skills/ and merges them into catalog.json
+scripts/smoke-live.js         live smoke test against the real API (npm run smoke:live)
 scripts/extract-legacy-data.js  one-time migration of v4 content into catalog.json
+skills/                       56 installable Agent Skills (SKILL.md + optional scripts/)
+docs/archive/                 reference material from earlier versions (not loaded by the app)
+.github/workflows/ci.yml      tests on every PR; optional live smoke test
 tests/                        server integration (mock Anthropic API), library units, governance, Scout prompt
 ```
 
@@ -161,6 +170,8 @@ tests/                        server integration (mock Anthropic API), library u
 | `GET /api/config` | Models (with prices), efforts, limits, whether a key is configured |
 | `POST /api/chat` | `{model, system, messages, effort, maxTokens, showThinking}` → SSE events `delta`, `thinking`, `notice`, `done`, `error` |
 | `POST /api/grade` | LLM-as-judge for eval rubrics. Structured output `{pass, score, reason}` from a cheaper model than the one under test |
+| `POST /api/review` | `mode: "deep"` critiques a prompt (score, strengths, issues with fixes); `mode: "lesson"` grades an exercise against a lesson checklist. Structured output; the prompt is fenced as data |
+| `POST /api/cases` | Drafts typical, edge and adversarial eval cases for a prompt template (structured output) |
 | `POST /api/scout` · `/api/scout/maintain` | Scout generation and library maintenance |
 | `GET /api/scout/audit` · `/api/scout/audit/verify` | Audit log and chain verification |
 | `GET /api/health` | Liveness |
@@ -176,7 +187,11 @@ tests/                        server integration (mock Anthropic API), library u
 
 ### Security
 
-- The API key lives only on the server. Without it, the app runs in **offline mode**.
+- The API key lives only on the server. Without it, the app runs in **offline mode**, and visitors can still run prompts with their own key.
+- **Spend protection** for public deployments (`src/guard.js`):
+  - `DAILY_BUDGET_USD` (default **$10**, `0` = no cap): a hard daily cap on shared-key spend, computed from each response's token usage and the model price table. It persists across restarts (`SPEND_STATE_PATH`) and resets at 00:00 UTC.
+  - `ACCESS_PASSWORD` (optional): visitors must enter it in Settings to use the shared key.
+  - **Bring your own key:** a visitor can add their own Anthropic key in Settings. It is sent with each request in the `x-user-api-key` header, used for that request only, never stored or logged on the server, excluded from workspace exports, and not counted against the shared budget.
 - Strict Content Security Policy: `script-src 'self'`, no inline scripts or handlers (enforced by a test).
 - Request validation: roles, sizes and message order are checked, unknown fields dropped, `max_tokens` capped (`MAX_OUTPUT_TOKENS`).
 - Per-IP rate limits on chat (60 / 15 min) and Scout (10 / 15 min), configurable. `TRUST_PROXY` controls client-IP detection.
@@ -215,10 +230,20 @@ ANTHROPIC_API_KEY=sk-ant-... docker compose up --build promptforge
 npm test
 ```
 
-This runs 67 tests with no API key and no extra dependencies (Node's built-in test runner):
+This runs 82 tests with no API key and no extra dependencies (Node's built-in test runner):
 - **Server integration:** a local mock of the Anthropic API checks the exact request the SDK sends (effort, cache control, fallbacks, no sampling params, token caps), SSE streaming, refusal and error mapping, validation, Scout governance and the audit chain.
 - **Library units:** analyzer (including "every lesson's after beats its before"), composer, harness exports, eval assertions, promptfoo export, zip (verified with `unzip`), diff, markdown sanitization, search, catalog integrity.
 - **Governance:** policy, trust scoring, hash chain, plus the no-inline-handler invariant.
+
+**Calculators:** each skill script is run against hand-derivable values (skipped automatically if `python3` is missing).
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... npm run smoke:live
+```
+
+The **live smoke test** boots the app and exercises every endpoint against the real API on every enabled model: streaming, reasoning summaries, prompt caching, grading, deep review, lesson grading, case generation, and with `--scout` also Scout. It costs roughly $0.05–0.20 per run and is capped by a $2 budget.
+
+**CI** (`.github/workflows/ci.yml`) runs `npm test` on Node 20 and 22 for every pull request. On pushes to `main`, or on demand, it also runs the live smoke test when the repository has an `ANTHROPIC_API_KEY` secret.
 
 ```bash
 npm run eval

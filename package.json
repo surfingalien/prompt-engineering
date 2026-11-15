@@ -9,7 +9,8 @@
     "test": "node scripts/build-catalog.js --check && node --test tests/*.test.js",
     "eval": "promptfoo eval",
     "extract-legacy": "node scripts/extract-legacy-data.js",
-    "build:catalog": "node scripts/build-catalog.js"
+    "build:catalog": "node scripts/build-catalog.js",
+    "smoke:live": "node scripts/smoke-live.js"
   },
   "repository": {
     "type": "git",

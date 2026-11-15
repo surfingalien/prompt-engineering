@@ -65,4 +65,39 @@ function validateGrade(body) {
   return { value: { output, rubric, input: input || '', model } };
 }
 
-module.exports = { validateChat, validateGrade, maxOutputTokens, LIMITS };
+function promptPair(body) {
+  const { system = '', user = '' } = body;
+  if (typeof system !== 'string' || typeof user !== 'string') return fail('system and user must be strings.');
+  if (!system.trim() && !user.trim()) return fail('The prompt is empty.');
+  if (system.length + user.length > 150_000) return fail('Prompt is too long to review (150k characters max).');
+  return { value: { system, user } };
+}
+
+function validateReview(body) {
+  if (!body || typeof body !== 'object') return fail('Body must be a JSON object.');
+  const p = promptPair(body);
+  if (p.error) return p;
+  const mode = body.mode === 'lesson' ? 'lesson' : 'deep';
+  let lesson = null;
+  if (mode === 'lesson') {
+    const l = body.lesson || {};
+    const checklist = Array.isArray(l.checklist) ? l.checklist.filter(c => typeof c === 'string' && c.trim()).map(c => c.slice(0, 300)).slice(0, 10) : [];
+    if (typeof l.title !== 'string' || !l.title.trim() || !checklist.length) return fail('lesson mode needs lesson.title and a non-empty lesson.checklist.');
+    lesson = { title: l.title.slice(0, 200), task: String(l.task || '').slice(0, 2000), checklist };
+  }
+  if (body.model !== undefined && typeof body.model !== 'string') return fail('model must be a string.');
+  return { value: { ...p.value, mode, lesson, model: body.model } };
+}
+
+function validateCases(body) {
+  if (!body || typeof body !== 'object') return fail('Body must be a JSON object.');
+  const p = promptPair(body);
+  if (p.error) return p;
+  const vars = Array.isArray(body.vars) ? body.vars.filter(v => typeof v === 'string' && /^[\w\- ]{1,60}$/.test(v)).slice(0, 20) : [];
+  const count = Math.max(1, Math.min(12, parseInt(body.count, 10) || 6));
+  const focus = typeof body.focus === 'string' ? body.focus.slice(0, 500) : '';
+  if (body.model !== undefined && typeof body.model !== 'string') return fail('model must be a string.');
+  return { value: { ...p.value, vars, count, focus, model: body.model } };
+}
+
+module.exports = { validateChat, validateGrade, validateReview, validateCases, maxOutputTokens, LIMITS };

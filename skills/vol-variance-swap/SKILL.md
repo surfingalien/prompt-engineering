@@ -32,3 +32,13 @@ Vega notional: {{vega_notional}}
 
 ## Report
 Fair strike, the replication weights table (largest contributions), P&L scenarios for realized vol at −5, 0 and +5 vols vs. strike, and the risks: convexity (short variance loses quadratically in crashes), strike truncation, and liquidity in far wings. Educational use; not financial advice.
+
+## Calculator
+When you can run code, use the bundled script instead of doing the arithmetic by hand, and quote its output:
+
+```bash
+python3 scripts/varswap.py --chain chain.csv --forward {{forward}} --rate {{rate}} --maturity {{maturity}} --vega-notional {{vega_notional}}
+```
+
+It computes the fair strike from an OTM strip (CSV columns strike,type,mid), and realized vol from a price file with --prices; run --demo-flat-vol 0.2 to self-check (≈20 vol points). It uses only the Python standard library. Without code execution, do the calculation step by step and show your working.
+

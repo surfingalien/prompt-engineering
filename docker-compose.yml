@@ -18,6 +18,8 @@ services:
       HELICONE_API_KEY: ${HELICONE_API_KEY:-}
       ALLOWED_MODELS: ${ALLOWED_MODELS:-}
       TRUST_PROXY: ${TRUST_PROXY:-0}
+      DAILY_BUDGET_USD: ${DAILY_BUDGET_USD:-10}
+      ACCESS_PASSWORD: ${ACCESS_PASSWORD:-}
 
   # Open Design — local-first design agent tool (port 7456)
   open-design:

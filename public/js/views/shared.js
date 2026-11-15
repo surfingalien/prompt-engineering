@@ -33,7 +33,21 @@ export function analysisPanel(a, { compact = false, limit = 8 } = {}) {
 export function codeBlock(text, { highlight = true, copy = true, label = '' } = {}) {
   return html`<div class="code-wrap">
     ${copy ? html`<button class="btn btn-sm copy-btn" data-copy="${text}" aria-label="Copy ${label}">${raw(icon('copy'))}Copy</button>` : ''}
-    <pre class="code">${highlight ? highlightPrompt(text) : text}</pre></div>`;
+    <pre class="code" tabindex="0">${highlight ? highlightPrompt(text) : text}</pre></div>`;
+}
+
+const LOCKED_TEXT = {
+  no_key: 'This server has no shared Claude key, so live runs are off.',
+  password: 'This server’s shared key is protected by an access password.',
+  budget: 'Today’s shared budget on this server is used up (it resets at 00:00 UTC).',
+};
+
+/** Why live runs are unavailable, and the fix. Empty when runs are available. */
+export function lockedNotice(cfg, extra = '') {
+  if (cfg.ready) return '';
+  const why = LOCKED_TEXT[cfg.lockedReason] || LOCKED_TEXT.no_key;
+  const fix = cfg.lockedReason === 'password' ? 'Enter the password, or add your own Anthropic API key, in Settings.' : 'Add your own Anthropic API key in Settings to run prompts.';
+  return html`<div class="callout warn locked-notice">${raw(icon('lock'))}<div>${why} ${fix}${extra ? html` ${extra}` : ''} <button class="btn btn-sm" data-action="settings" style="margin-left:6px">Open settings</button></div></div>`;
 }
 
 export function pageHead({ eyebrow, title, desc, actions = '' }) {

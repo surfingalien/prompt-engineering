@@ -42,4 +42,14 @@ reason: <one line the Logger can store>
 ```
 Show the arithmetic for each step in a compact table above the decision.
 
+
+## Calculator
+When you can run code, use the bundled script instead of doing the arithmetic by hand, and quote its output:
+
+```bash
+python3 scripts/size.py --equity {{equity}} --entry {{entry_price}} --stop {{stop_price}} --risk-pct {{risk_pct}} --liquidity {{liquidity}} --max-liq-share {{max_liquidity_share}} --max-heat {{max_heat}}
+```
+
+It prints every cap (base, Kelly, liquidity, heat), the binding constraint and the decision. It uses only the Python standard library. Without code execution, do the calculation step by step and show your working.
+
 > Educational and research use. Not financial advice. High position sizes in illiquid assets can lose far more than the stop implies.

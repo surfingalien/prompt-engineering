@@ -61,7 +61,7 @@ function createApp() {
   // the Library can offer a one-click SKILL.md download.
   app.use('/skills', express.static(SKILLS_DIR, {
     index: false, dotfiles: 'ignore',
-    setHeaders(res) { res.setHeader('Content-Type', 'text/markdown; charset=utf-8'); res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate'); },
+    setHeaders(res, file) { res.setHeader('Content-Type', file.endsWith('.md') ? 'text/markdown; charset=utf-8' : 'text/plain; charset=utf-8'); res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate'); },
   }));
   app.use(express.static(PUBLIC_DIR, {
     extensions: ['html'],

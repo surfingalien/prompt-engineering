@@ -28,6 +28,7 @@ const VIEWS = {
   evals: () => import('./views/evals.js'),
   council: () => import('./views/council.js'),
   scout: () => import('./views/scout.js'),
+  import: () => import('./views/import.js'),
 };
 
 // ── Theme ────────────────────────────────────────────────────────────────────
@@ -89,20 +90,20 @@ function renderSidebar() {
   const counts = { learn: `${done}/${LESSONS.length}`, workbench: state.prompts.length || '', harness: state.harnesses.length || '', evals: state.suites.length || '' };
   const dark = document.documentElement.dataset.theme === 'dark';
   render($('#sidebar'), html`
-    <a class="brand" href="#/home" aria-label="PromptForge home">
+    <a class="brand" href="#/home">
       <span class="brand-mark">${raw(LOGO)}</span>
       <span><div class="brand-name">PromptForge</div><div class="brand-sub">Prompt studio for Claude</div></span>
     </a>
     <button class="search-trigger" data-action="palette">${raw(icon('search'))}<span>Search or jump to…</span><span class="kbd">${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} K</span></button>
-    <nav>
+    <nav aria-label="Main">
       ${NAV.map(g => html`<div class="nav-group">
         ${g.group ? html`<div class="nav-label">${g.group}</div>` : ''}
         ${g.items.map(i => html`<a class="nav-link" href="#/${i.id}" ${current === i.id ? raw('aria-current="page"') : ''}>${raw(icon(i.icon))}<span>${i.label}</span>${counts[i.id] ? html`<span class="count">${counts[i.id]}</span>` : ''}</a>`)}
       </div>`)}
     </nav>
     <div class="sidebar-foot">
-      <div class="status-line" title="${cfg.ready ? 'Live runs enabled' : 'Server has no API key: runs disabled, everything else works'}">
-        <span class="dot ${cfg.ready ? 'ok' : 'off'}"></span>${cfg.ready ? 'Claude connected' : 'Offline mode'}
+      <div class="status-line" title="${statusTitle()}">
+        <span class="dot ${cfg.ready ? 'ok' : 'off'}"></span>${cfg.ready ? (cfg.via === 'user-key' ? 'Using your key' : 'Claude connected') : ({ password: 'Locked: password needed', budget: 'Daily budget used up' }[cfg.lockedReason] || 'Offline mode')}
         <span class="spacer"></span><span title="Estimated spend this browser">${formatCost(state.usage.cost)}</span>
       </div>
       <div class="foot-actions">
@@ -116,6 +117,11 @@ function renderSidebar() {
     <a class="brand" href="#/home"><span class="brand-mark">${raw(LOGO)}</span><span class="brand-name">PromptForge</span></a>
     <span class="spacer"></span>
     <button class="btn btn-ghost btn-icon" data-action="palette" aria-label="Search">${raw(icon('search'))}</button>`);
+}
+function statusTitle() {
+  if (cfg.ready) return cfg.via === 'user-key' ? 'Runs use your own API key' : 'Live runs enabled';
+  return { password: 'Enter the access password in Settings, or add your own API key', budget: 'Today’s shared budget is used up; add your own API key in Settings' }[cfg.lockedReason]
+    || 'No API key: runs are off. Add your own key in Settings; everything else works offline.';
 }
 const openNav = () => $('#shell').classList.add('nav-open');
 const closeNav = () => $('#shell').classList.remove('nav-open');
@@ -162,7 +168,7 @@ function openPalette() {
     render(list, results.length ? html`${results.map((r, i) => {
       const head = r.group !== lastGroup ? html`<div class="palette-group">${r.group}</div>` : '';
       lastGroup = r.group;
-      return html`${head}<button class="palette-item" role="option" data-i="${i}" aria-selected="${i === sel}">${raw(icon(r.icon))}<span>${r.label}</span>${r.sum ? html`<span class="sum">${r.sum}</span>` : ''}${r.meta ? html`<span class="meta">${r.meta}</span>` : ''}</button>`;
+      return html`${head}<button class="palette-item" role="option" data-i="${i}" aria-selected="${String(i === sel)}">${raw(icon(r.icon))}<span>${r.label}</span>${r.sum ? html`<span class="sum">${r.sum}</span>` : ''}${r.meta ? html`<span class="meta">${r.meta}</span>` : ''}</button>`;
     })}` : html`<div class="empty" style="margin:8px;padding:28px">No matches for “${input.value}”.</div>`);
   };
   const choose = i => { const r = results[i]; if (!r) return; dlg.close(); r.run(); };
@@ -198,6 +204,13 @@ async function openSettings() {
         <span class="help">Effort controls how deeply Claude thinks. Medium is a strong default; raise it for hard reasoning.</span></label>
       <label class="field"><span class="label">Theme</span>
         <select class="select" name="theme">${['system', 'light', 'dark'].map(t => html`<option ${s.theme === t ? raw('selected') : ''}>${t}</option>`)}</select></label>
+      <hr class="divider">
+      <div class="label">Access</div>
+      ${c.serverReady ? html`<p class="help">This server provides a shared Claude key${c.budget?.daily ? html` with a daily budget: <b>$${c.budget.spent.toFixed(2)}</b> of $${c.budget.daily} used today (resets at 00:00 UTC)` : ''}.</p>` : html`<p class="help">This server has no shared Claude key. Add your own to run prompts.</p>`}
+      ${c.access?.passwordRequired ? html`<label class="field"><span class="label">Access password <span class="opt">required for the shared key</span></span><input class="input" name="accessPassword" type="password" autocomplete="current-password" value="${s.accessPassword || ''}"></label>` : ''}
+      <label class="field"><span class="label">Your Anthropic API key <span class="opt">optional</span></span><input class="input" name="userApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" value="${s.userApiKey || ''}">
+        <span class="help">Used instead of the shared key, billed to you, and not limited by the shared budget. It is stored only in this browser and sent only to this site’s server, for each request. It is never saved on the server or included in exports.</span></label>
+      <hr class="divider">
       <label class="field"><span class="label">Spend alert (USD)</span><input class="input" name="budgetUsd" type="number" min="0" step="1" value="${s.budgetUsd}">
         <span class="help">Estimated spend from this browser: <b>${formatCost(u.cost)}</b> across ${u.runs} runs (${(u.input + u.output).toLocaleString()} tokens). Estimates only.</span></label>
       <hr class="divider">
@@ -228,8 +241,13 @@ async function openSettings() {
     }
     return;
   }
-  update('settings', st => ({ ...st, model: r.data.model, effort: r.data.effort, theme: r.data.theme, budgetUsd: Number(r.data.budgetUsd) || 0 }));
+  const userApiKey = String(r.data.userApiKey || '').trim();
+  if (userApiKey && !/^sk-ant-[\w-]{20,}$/.test(userApiKey)) { toast('That API key doesn’t look right (it should start with sk-ant-). Not saved.', 'error'); return; }
+  update('settings', st => ({ ...st, model: r.data.model, effort: r.data.effort, theme: r.data.theme, budgetUsd: Number(r.data.budgetUsd) || 0,
+    userApiKey, ...(r.data.accessPassword !== undefined ? { accessPassword: String(r.data.accessPassword) } : {}) }));
+  cfg = await getConfig(true);
   applyTheme(); renderSidebar(); toast('Settings saved');
+  route();
 }
 
 // ── Global events ────────────────────────────────────────────────────────────

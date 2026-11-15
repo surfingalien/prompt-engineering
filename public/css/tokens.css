@@ -15,23 +15,23 @@
   /* Ink */
   --text: #1f1e1b;
   --text-2: #5c584f;
-  --text-3: #8a8579;
+  --text-3: #625c52;
   --text-inv: #faf9f5;
   /* Accent — clay */
-  --accent: #c15f3c;
-  --accent-hover: #a84f2f;
+  --accent: #a34b2b;
+  --accent-hover: #8c3d20;
   --accent-soft: #f6e7df;
   --accent-ink: #ffffff;
-  --focus: #c15f3c;
+  --focus: #a34b2b;
   /* Semantic */
-  --good: #2f7d4f;  --good-soft: #e3f1e7;
-  --warn: #a66300;  --warn-soft: #fbefd9;
+  --good: #286b43;  --good-soft: #e3f1e7;
+  --warn: #8a5200;  --warn-soft: #fbefd9;
   --bad:  #b4372e;  --bad-soft:  #f8e1de;
   --info: #3d6799;  --info-soft: #e3ecf6;
   /* Skill levels */
-  --lv-beginner: #4f7a5a;     --lv-beginner-soft: #e5efe6;
-  --lv-intermediate: #a87b1f; --lv-intermediate-soft: #f6eedb;
-  --lv-advanced: #c15f3c;     --lv-advanced-soft: #f6e7df;
+  --lv-beginner: #3f6849;     --lv-beginner-soft: #e5efe6;
+  --lv-intermediate: #85600f; --lv-intermediate-soft: #f6eedb;
+  --lv-advanced: #a34b2b;     --lv-advanced-soft: #f6e7df;
   --lv-expert: #7a4c8f;       --lv-expert-soft: #efe5f3;
 
   /* Type */
@@ -64,16 +64,16 @@
   --border-strong: #4a4640;
   --text: #ece9e2;
   --text-2: #b4afa4;
-  --text-3: #878276;
+  --text-3: #aaa599;
   --text-inv: #1d1c1a;
-  --accent: #d97757;
-  --accent-hover: #e48a6c;
+  --accent: #e48a6c;
+  --accent-hover: #eb9a7e;
   --accent-soft: rgba(217, 119, 87, 0.15);
   --accent-ink: #1d1c1a;
-  --focus: #e48a6c;
+  --focus: #eb9a7e;
   --good: #6fbf8b;  --good-soft: rgba(111, 191, 139, 0.14);
   --warn: #e0a54a;  --warn-soft: rgba(224, 165, 74, 0.14);
-  --bad:  #e8796f;  --bad-soft:  rgba(232, 121, 111, 0.14);
+  --bad:  #f0908a;  --bad-soft:  rgba(232, 121, 111, 0.14);
   --info: #86aedb;  --info-soft: rgba(134, 174, 219, 0.14);
   --lv-beginner: #8cc39a;     --lv-beginner-soft: rgba(140, 195, 154, 0.14);
   --lv-intermediate: #e0b85a; --lv-intermediate-soft: rgba(224, 184, 90, 0.14);

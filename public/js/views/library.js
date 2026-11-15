@@ -5,6 +5,7 @@ import { navigate } from '../core/nav.js';
 import { copyText, openDrawer, toast, download } from '../core/ui.js';
 import { loadCatalog, query, find, counts, all as allItems, KINDS, DOMAINS, LEVELS, PACKS, packById } from '../core/catalog.js';
 import { extractVars } from '../lib/template.js';
+import { makeZip } from '../lib/zip.js';
 import { levelBadge, codeBlock, pageHead } from './shared.js';
 
 const PAGE = 36;
@@ -26,7 +27,7 @@ export function openItem(it, { onChange } = {}) {
       ${it.summary ? html`<p class="muted" style="font-size:var(--fs-md);margin-bottom:16px">${it.summary}</p>` : ''}
       ${it.kind === 'reference' ? html`<div class="callout warn" style="margin-bottom:16px">${raw(icon('info'))}<div>Community-collected system prompt, kept for study. Its authenticity and currency are <b>not verified</b>, and the original product may behave differently today.</div></div>` : ''}
       ${it.kind === 'technique' ? html`<div class="callout" style="margin-bottom:16px">${raw(icon('learn'))}<div>Techniques are taught in depth in the <a href="#/learn">learning path</a>. The snippet below is a minimal illustration.</div></div>` : ''}
-      ${it.path ? html`<div class="callout accent" style="margin-bottom:16px">${raw(icon('download'))}<div><b>Installable Agent Skill.</b> Copy <code>${it.path}/</code> from the repository into your project’s <code>.claude/skills/</code> folder and Claude Code will use it automatically, or download the <code>SKILL.md</code> below.</div></div>` : ''}
+      ${it.path ? html`<div class="callout accent" style="margin-bottom:16px">${raw(icon('download'))}<div><b>Installable Agent Skill.</b> Copy <code>${it.path}/</code> from the repository into your project’s <code>.claude/skills/</code> folder and Claude Code will use it automatically, or download it below.${it.files?.length ? html`<div style="margin-top:6px">Includes ${it.files.map(f => html`<code>${f}</code> `)}: a calculator Claude runs instead of doing the math by hand.</div>` : ''}</div></div>` : ''}
       ${vars.length ? html`<div class="row wrap" style="gap:6px;margin-bottom:12px"><span class="subtle">Variables:</span>${vars.map(v => html`<code>{{${v}}}</code>`)}</div>` : ''}
       ${codeBlock(it.body, { label: it.title })}
       <p class="subtle" style="margin-top:12px">Source: ${it.source || 'PromptForge'}${it.note ? ` · Note: ${it.note}` : ''}</p>`,
@@ -39,11 +40,17 @@ export function openItem(it, { onChange } = {}) {
         toast(now ? 'Added to favorites' : 'Removed from favorites');
         onChange?.();
       } },
-      ...(it.path ? [{ label: 'Download SKILL.md', icon: 'download', onClick: async () => {
+      ...(it.path ? [{ label: it.files?.length ? 'Download skill (.zip)' : 'Download SKILL.md', icon: 'download', onClick: async () => {
         try {
-          const r = await fetch(`/${it.path}/SKILL.md`);
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          download('SKILL.md', await r.text(), 'text/markdown');
+          const name = it.path.split('/').pop();
+          const paths = ['SKILL.md', ...(it.files || [])];
+          const contents = await Promise.all(paths.map(async p => {
+            const r = await fetch(`/${it.path}/${p}`);
+            if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`);
+            return { path: `${name}/${p}`, content: await r.text() };
+          }));
+          if (contents.length === 1) download('SKILL.md', contents[0].content, 'text/markdown');
+          else download(`${name}.zip`, new Blob([makeZip(contents)], { type: 'application/zip' }));
         } catch (e) { toast(`Download failed: ${e.message}`, 'error'); }
       } }] : []),
       ...(it.kind === 'skill' || it.kind === 'agent' ? [{ label: it.kind === 'skill' ? 'Add to a harness' : 'Use as harness mission', icon: 'harness', onClick: ({ close }) => { close(); navigate(`harness?add${it.kind === 'skill' ? 'Skill' : 'Mission'}=${encodeURIComponent(it.id)}`); } }] : []),
@@ -85,7 +92,7 @@ export default {
       const packCounts = allItems().reduce((m, it) => (it.pack ? (m[it.pack] = (m[it.pack] || 0) + 1, m) : m), {});
       render($('#lib-packs', root), html`
         <div class="row between" style="margin-bottom:10px"><span class="label">Skill collections <span class="opt">installable Agent Skills</span></span>${f.pack !== 'all' ? html`<button class="btn btn-sm btn-ghost" data-pack="all">${raw(icon('x'))}Show everything</button>` : ''}</div>
-        <div class="pack-strip">${PACKS.map(p => html`<button class="pack-card ${f.pack === p.id ? 'active' : ''}" data-pack="${p.id}" aria-pressed="${f.pack === p.id}">
+        <div class="pack-strip">${PACKS.map(p => html`<button class="pack-card ${f.pack === p.id ? 'active' : ''}" data-pack="${p.id}" aria-pressed="${String(f.pack === p.id)}">
           <span class="pack-ic">${raw(icon(p.icon))}</span><span class="pack-t">${p.title}</span><span class="pack-n">${packCounts[p.id] || 0} skills</span></button>`)}</div>
         ${f.pack !== 'all' ? html`<p class="muted" style="margin:12px 0 4px">${packById(f.pack)?.blurb}</p>` : ''}`);
       const c = counts(base);
@@ -93,9 +100,9 @@ export default {
       render($('#lib-facets', root), html`
         <div class="facets">
           <div class="chips" role="group" aria-label="Type">
-            <button class="chip" data-f="kind" data-v="all" aria-pressed="${f.kind === 'all'}">All <span class="n">${base.length}</span></button>
-            ${KINDS.map(k => html`<button class="chip" data-f="kind" data-v="${k.id}" aria-pressed="${f.kind === k.id}" title="${k.desc}">${k.label} <span class="n">${c.kind[k.id] || 0}</span></button>`)}
-            <button class="chip" data-f="fav" aria-pressed="${f.fav}">${raw(icon('star'))}Saved <span class="n">${state.favorites.length}</span></button>
+            <button class="chip" data-f="kind" data-v="all" aria-pressed="${String(f.kind === 'all')}">All <span class="n">${base.length}</span></button>
+            ${KINDS.map(k => html`<button class="chip" data-f="kind" data-v="${k.id}" aria-pressed="${String(f.kind === k.id)}" title="${k.desc}">${k.label} <span class="n">${c.kind[k.id] || 0}</span></button>`)}
+            <button class="chip" data-f="fav" aria-pressed="${String(f.fav)}">${raw(icon('star'))}Saved <span class="n">${state.favorites.length}</span></button>
           </div>
           <div class="row wrap" style="gap:10px">
             <select class="select select-sm" style="width:auto" data-f="domain" aria-label="Domain">
@@ -103,8 +110,8 @@ export default {
               ${Object.entries(DOMAINS).filter(([k]) => c.domain[k]).map(([k, l]) => html`<option value="${k}" ${f.domain === k ? raw('selected') : ''}>${l} (${c.domain[k]})</option>`)}
             </select>
             <div class="seg" role="group" aria-label="Level">
-              <button data-f="level" data-v="all" aria-pressed="${f.level === 'all'}">Any level</button>
-              ${LEVELS.map(l => html`<button data-f="level" data-v="${l.id}" aria-pressed="${f.level === l.id}">${l.label}</button>`)}
+              <button data-f="level" data-v="all" aria-pressed="${String(f.level === 'all')}">Any level</button>
+              ${LEVELS.map(l => html`<button data-f="level" data-v="${l.id}" aria-pressed="${String(f.level === l.id)}">${l.label}</button>`)}
             </div>
           </div>
         </div>`);

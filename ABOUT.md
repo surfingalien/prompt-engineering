@@ -39,7 +39,7 @@ PromptForge teaches both in one place, for free and open source, with every less
 | Library items | 570 (514 curated + 56 installable skills in 6 collections) |
 | Builder blueprints | 8 |
 | Harness templates | 5 |
-| Automated tests | 67 |
+| Automated tests | 82 (plus a live API smoke test and CI) |
 | Runtime dependencies | 4 |
 
 ## Who built it

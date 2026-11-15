@@ -27,3 +27,13 @@ Expected volume / TVL: {{volume_tvl}} · Reward emissions: {{emissions}}
 
 ## Output
 Scenario table (price move · value LP · value hold · IL · fees · net), a verdict on whether the pool pays for its risk, and the price range or exit rule that keeps the position sensible.
+
+## Calculator
+When you can run code, use the bundled script instead of doing the arithmetic by hand, and quote its output:
+
+```bash
+python3 scripts/il.py --p0 {{entry_price}} --lower <range low> --upper <range high> --fee-apr <estimated fee APR> --days 30
+```
+
+It prints the constant-product IL table and, for a range, LP value vs. holding with fees. It uses only the Python standard library. Without code execution, do the calculation step by step and show your working.
+

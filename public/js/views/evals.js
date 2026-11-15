@@ -2,13 +2,13 @@ import { html, render, raw, on, debounce, $, uid, timeAgo } from '../core/dom.js
 import { icon } from '../core/icons.js';
 import { state, update, getPrompt } from '../core/store.js';
 import { navigate } from '../core/nav.js';
-import { getConfig, streamChat, grade, currentModel } from '../core/api.js';
+import { getConfig, streamChat, grade, currentModel, generateCases } from '../core/api.js';
 import { toast, download, confirmDialog, openDrawer } from '../core/ui.js';
 import { ASSERTION_TYPES, checkAssertion, toPromptfooYaml } from '../lib/evals.js';
 import { extractVars, fillVars, labelFor } from '../lib/template.js';
 import { renderMarkdown } from '../lib/markdown.js';
 import { slugify } from '../lib/harness.js';
-import { pageHead } from './shared.js';
+import { pageHead, lockedNotice } from './shared.js';
 
 const getS = id => state.suites.find(s => s.id === id);
 const saveS = s => update('suites', list => list.map(x => (x.id === s.id ? s : x)));
@@ -43,6 +43,11 @@ function listView(root) {
 
 function suiteView(root, s, cfg) {
   const results = {}; // caseId → { output, checks:[{pass, reason}], pass, error, running }
+  const resultsB = {}; // same, for the comparison version
+  let compareTo = ''; // version id of the prompt to compare against ('' = none)
+  let generating = false;
+  const versionOf = id => prompt()?.versions?.find(v => v.id === id);
+  const versionLabel = id => { const vs = prompt()?.versions || []; const i = vs.findIndex(v => v.id === id); return i < 0 ? '' : `v${vs.length - i}${vs[i].note ? ` · ${vs[i].note}` : ''}`; };
   let running = false;
   let ctrl = null;
 
@@ -57,7 +62,8 @@ function suiteView(root, s, cfg) {
         <span class="case-status">${r ? (r.running ? raw('<span class="spinner"></span>') : raw(icon(r.pass ? 'checkCircle' : 'alert'))) : raw(icon('circle'))}</span>
         <input class="input input-sm case-name" data-case="${c.id}" data-k="name" value="${c.name}" aria-label="Case name">
         <span class="spacer"></span>
-        ${r && !r.running ? html`<button class="btn btn-sm btn-ghost" data-output="${c.id}">View output</button>` : ''}
+        ${compareTo && resultsB[c.id] ? html`<span class="ab-pill ${resultsB[c.id].running ? '' : resultsB[c.id].pass ? 'good' : 'bad'}" title="Result for ${versionLabel(compareTo)}">B ${resultsB[c.id].running ? '…' : resultsB[c.id].pass ? 'pass' : 'fail'}</span>` : ''}
+        ${r && !r.running ? html`<button class="btn btn-sm btn-ghost" data-output="${c.id}">View output${compareTo && resultsB[c.id] && !resultsB[c.id].running ? 's' : ''}</button>` : ''}
         <button class="btn btn-sm btn-ghost btn-danger" data-del-case="${c.id}" aria-label="Delete case">${raw(icon('trash'))}</button>
       </div>
       ${vars.length ? html`<div class="vars-grid" style="margin-top:10px">${vars.map(v => html`<label class="field"><span class="label" style="font-size:var(--fs-xs)">${labelFor(v)}</span><textarea class="textarea" rows="2" data-case="${c.id}" data-var="${v}">${c.vars?.[v] || ''}</textarea></label>`)}</div>`
@@ -82,7 +88,7 @@ function suiteView(root, s, cfg) {
     const p = prompt();
     const last = s.runs?.[0];
     render(root, html`
-      <nav class="crumbs"><a href="#/evals">Evals</a><span>/</span><span>${s.name}</span></nav>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="#/evals">Evals</a><span>/</span><span>${s.name}</span></nav>
       <div class="row between wrap" style="gap:12px;margin-bottom:18px">
         <input class="title-input" data-suite="name" value="${s.name}" aria-label="Suite name">
         <div class="btn-row">
@@ -90,11 +96,15 @@ function suiteView(root, s, cfg) {
           <button class="btn btn-sm btn-ghost btn-danger" data-act="delete">${raw(icon('trash'))}</button>
         </div>
       </div>
-      ${!cfg.ready ? html`<div class="callout warn" style="margin-bottom:16px">${raw(icon('info'))}<div>Runs are disabled: the server has no <code>ANTHROPIC_API_KEY</code>. You can still design the suite and export it to promptfoo.</div></div>` : ''}
+      ${lockedNotice(cfg, 'You can still design the suite and export it to promptfoo.')}
       <div class="card row wrap suite-bar" style="gap:14px">
         <label class="field"><span class="label">Prompt under test</span><select class="select select-sm" data-suite="promptId">${state.prompts.map(x => html`<option value="${x.id}" ${x.id === s.promptId ? raw('selected') : ''}>${x.title}</option>`)}</select></label>
         <label class="field"><span class="label">Model</span><select class="select select-sm" data-suite="model">${cfg.models.map(m => html`<option value="${m.id}" ${m.id === s.model ? raw('selected') : ''}>${m.short || m.label}</option>`)}</select></label>
         <label class="field"><span class="label">Effort</span><select class="select select-sm" data-suite="effort">${cfg.efforts.map(e => html`<option ${e === s.effort ? raw('selected') : ''}>${e}</option>`)}</select></label>
+        <label class="field"><span class="label">Compare with</span><select class="select select-sm" data-compare aria-label="Compare with a saved version">
+          <option value="">Nothing (current prompt only)</option>
+          ${(p?.versions || []).map(v => html`<option value="${v.id}" ${compareTo === v.id ? raw('selected') : ''}>${versionLabel(v.id)}</option>`)}
+        </select></label>
         <span class="spacer"></span>
         ${p ? html`<a class="btn btn-sm btn-ghost" href="#/workbench/${p.id}">${raw(icon('workbench'))}Edit prompt</a>` : ''}
         ${running ? html`<button class="btn btn-dark" data-act="stop">${raw(icon('stop'))}Stop</button>` : html`<button class="btn btn-primary" data-act="run" ${cfg.ready && p ? '' : raw('disabled')}>${raw(icon('play'))}Run ${s.cases.length} case${s.cases.length === 1 ? '' : 's'}</button>`}
@@ -105,41 +115,71 @@ function suiteView(root, s, cfg) {
         ${s.runs.slice(0, 10).reverse().map(r => html`<div class="hist-bar" title="${Math.round(r.passRate * 100)}% · ${new Date(r.at).toLocaleString()}${r.model ? ` · ${r.model}` : ''}"><div style="height:${Math.max(6, Math.round(r.passRate * 100))}%;background:${raw(r.passRate >= 0.8 ? 'var(--good)' : r.passRate >= 0.5 ? 'var(--warn)' : 'var(--bad)')}"></div></div>`)}
         ${last ? html`<span class="subtle">Last run: <b>${last.passed}/${last.total}</b> passing (${Math.round(last.passRate * 100)}%) · ${timeAgo(last.at)}</span>` : ''}
       </div>` : ''}
+      ${compareTo && Object.keys(resultsB).length ? abSummary() : ''}
+      ${p && !p.versions?.length ? html`<p class="subtle" style="margin-top:10px">Tip: save a version of the prompt in the Workbench to compare two versions on this suite.</p>` : ''}
       <div class="stack" style="margin-top:18px" id="cases">${s.cases.map(caseHtml)}</div>
-      <button class="btn" style="margin-top:14px" data-act="add-case">${raw(icon('plus'))}Add case</button>`);
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn" data-act="add-case">${raw(icon('plus'))}Add case</button>
+        <button class="btn" data-act="gen-cases" ${cfg.ready && p && !generating ? '' : raw('disabled')}>${generating ? raw('<span class="spinner"></span>Writing cases…') : raw(`${icon('sparkle')}Generate cases with Claude`)}</button>
+        <select class="select select-sm" style="width:auto" data-gen-count aria-label="How many cases">${[4, 6, 8].map(n => html`<option ${n === 6 ? raw('selected') : ''}>${n}</option>`)}</select>
+      </div>`);
+  }
+
+  function abSummary() {
+    const done = s.cases.filter(c => results[c.id] && !results[c.id].running && resultsB[c.id] && !resultsB[c.id].running);
+    const a = done.filter(c => results[c.id].pass).length;
+    const b = done.filter(c => resultsB[c.id].pass).length;
+    const flips = done.filter(c => results[c.id].pass !== resultsB[c.id].pass);
+    const verdict = !done.length ? '' : a > b ? 'The current prompt is ahead.' : b > a ? `${versionLabel(compareTo)} is ahead.` : 'They tie on pass rate.';
+    return html`<div class="card ab-summary">
+      <div class="ab-cols">
+        <div><div class="subtle">A · current prompt</div><div class="ab-score">${a}/${done.length}</div></div>
+        <div><div class="subtle">B · ${versionLabel(compareTo)}</div><div class="ab-score">${b}/${done.length}</div></div>
+      </div>
+      <p class="muted" style="margin-top:8px">${verdict} ${flips.length ? `${flips.length} case${flips.length > 1 ? 's' : ''} changed outcome: ${flips.map(c => c.name).join(', ')}.` : done.length ? 'No case changed outcome.' : ''}</p>
+    </div>`;
+  }
+
+  // Run one case against one prompt variant and fill in result r.
+  async function runCase(c, variant, r) {
+    try {
+      const user = fillVars(variant.user, c.vars);
+      const out = await streamChat({ model: s.model, effort: s.effort, system: fillVars(variant.system, c.vars).trim() || undefined, messages: [{ role: 'user', content: user }], maxTokens: Math.min(4096, cfg.maxOutputTokens), signal: ctrl.signal });
+      r.output = out.text;
+      r.checks = [];
+      for (const a of c.assertions || []) {
+        const det = checkAssertion(a, out.text);
+        if (det) r.checks.push(det);
+        else {
+          const g = await grade({ output: out.text, rubric: a.value || 'The response is helpful and correct.', input: user, model: s.model, signal: ctrl.signal });
+          r.checks.push({ pass: g.pass, reason: `${g.score}/10 · ${g.reason}` });
+        }
+      }
+      r.pass = r.checks.every(x => x.pass);
+    } catch (e) {
+      r.error = e.name === 'AbortError' ? 'Stopped.' : e.message; r.pass = false;
+    }
+    r.running = false;
   }
 
   async function runAll() {
     const p = prompt();
     if (!p || running) return;
+    const vB = compareTo ? versionOf(compareTo) : null;
     running = true; ctrl = new AbortController();
-    for (const c of s.cases) results[c.id] = { running: true };
+    for (const k of Object.keys(resultsB)) delete resultsB[k];
+    for (const c of s.cases) { results[c.id] = { running: true }; if (vB) resultsB[c.id] = { running: true }; }
     draw();
     let passed = 0;
     const queue = [...s.cases];
     const worker = async () => {
       while (queue.length && !ctrl.signal.aborted) {
         const c = queue.shift();
-        const r = results[c.id];
-        try {
-          const user = fillVars(p.user, c.vars);
-          const out = await streamChat({ model: s.model, effort: s.effort, system: fillVars(p.system, c.vars).trim() || undefined, messages: [{ role: 'user', content: user }], maxTokens: Math.min(4096, cfg.maxOutputTokens), signal: ctrl.signal });
-          r.output = out.text;
-          r.checks = [];
-          for (const a of c.assertions || []) {
-            const det = checkAssertion(a, out.text);
-            if (det) r.checks.push(det);
-            else {
-              const g = await grade({ output: out.text, rubric: a.value || 'The response is helpful and correct.', input: user, model: s.model, signal: ctrl.signal });
-              r.checks.push({ pass: g.pass, reason: `${g.score}/10 · ${g.reason}` });
-            }
-          }
-          r.pass = r.checks.every(x => x.pass);
-        } catch (e) {
-          r.error = e.name === 'AbortError' ? 'Stopped.' : e.message; r.pass = false;
-        }
-        r.running = false;
-        if (r.pass) passed++;
+        await Promise.all([
+          runCase(c, p, results[c.id]),
+          vB ? runCase(c, vB, resultsB[c.id]) : null,
+        ]);
+        if (results[c.id].pass) passed++;
         draw();
       }
     };
@@ -147,7 +187,9 @@ function suiteView(root, s, cfg) {
     running = false;
     const completed = s.cases.filter(c => results[c.id] && !results[c.id].running && !results[c.id].error?.startsWith('Stopped'));
     if (completed.length === s.cases.length) {
-      s.runs = [{ at: Date.now(), passed, total: s.cases.length, passRate: s.cases.length ? passed / s.cases.length : 0, model: s.model, promptVersion: p.versions?.length || 0 }, ...(s.runs || [])].slice(0, 30);
+      const bPassed = vB ? s.cases.filter(c => resultsB[c.id]?.pass).length : null;
+      s.runs = [{ at: Date.now(), passed, total: s.cases.length, passRate: s.cases.length ? passed / s.cases.length : 0, model: s.model, promptVersion: p.versions?.length || 0,
+        ...(vB ? { compare: { label: versionLabel(compareTo), passed: bPassed } } : {}) }, ...(s.runs || [])].slice(0, 30);
       saveS(s);
       toast(`${passed}/${s.cases.length} cases passing`);
     }
@@ -172,13 +214,33 @@ function suiteView(root, s, cfg) {
     on(root, 'click', '[data-del-a]', (e, b) => { const [cid, j] = b.dataset.delA.split(':'); s.cases.find(x => x.id === cid).assertions.splice(Number(j), 1); saveS(s); draw(); }),
     on(root, 'click', '[data-del-case]', (e, b) => { s.cases = s.cases.filter(c => c.id !== b.dataset.delCase); saveS(s); draw(); }),
     on(root, 'click', '[data-output]', (e, b) => {
-      const c = s.cases.find(x => x.id === b.dataset.output); const r = results[c.id];
-      openDrawer({ title: c.name, subtitle: html`<span class="badge ${r.pass ? 'good' : 'bad'}">${r.pass ? 'passed' : 'failed'}</span>`,
-        body: html`${(r.checks || []).map((x, j) => html`<div class="finding ${x.pass ? 'good' : 'warn'}" style="margin-bottom:6px">${raw(icon(x.pass ? 'checkCircle' : 'alert', 'ic'))}<div><b>${ASSERTION_TYPES.find(t => t.id === c.assertions[j]?.type)?.label || 'Check'}${c.assertions[j]?.value ? `: ${c.assertions[j].value}` : ''}</b><p>${x.reason}</p></div></div>`)}
-          <div class="label" style="margin:16px 0 8px">Output</div><div class="card flat md">${raw(renderMarkdown(r.output || ''))}</div>` });
+      const c = s.cases.find(x => x.id === b.dataset.output);
+      const block = (r, label) => html`${label ? html`<h3 class="section-title" style="margin:8px 0 10px">${label} <span class="badge ${r.pass ? 'good' : 'bad'}">${r.pass ? 'passed' : 'failed'}</span></h3>` : ''}
+        ${r.error ? html`<div class="callout warn">${raw(icon('alert'))}<div>${r.error}</div></div>` : ''}
+        ${(r.checks || []).map((x, j) => html`<div class="finding ${x.pass ? 'good' : 'warn'}" style="margin-bottom:6px">${raw(icon(x.pass ? 'checkCircle' : 'alert', 'ic'))}<div><b>${ASSERTION_TYPES.find(t => t.id === c.assertions[j]?.type)?.label || 'Check'}${c.assertions[j]?.value ? `: ${c.assertions[j].value}` : ''}</b><p>${x.reason}</p></div></div>`)}
+        <div class="label" style="margin:16px 0 8px">Output</div><div class="card flat md">${raw(renderMarkdown(r.output || ''))}</div>`;
+      const r = results[c.id]; const rb = compareTo && resultsB[c.id] && !resultsB[c.id].running ? resultsB[c.id] : null;
+      openDrawer({ title: c.name, subtitle: rb ? html`<span class="badge">A/B comparison</span>` : html`<span class="badge ${r.pass ? 'good' : 'bad'}">${r.pass ? 'passed' : 'failed'}</span>`,
+        body: rb ? html`<div class="ab-drawer">${block(r, 'A · current')}<hr class="divider">${block(rb, `B · ${versionLabel(compareTo)}`)}</div>` : block(r, '') });
     }),
+    on(root, 'change', '[data-compare]', (e, el) => { compareTo = el.value; for (const k of Object.keys(resultsB)) delete resultsB[k]; draw(); }),
     on(root, 'click', '[data-act]', async (e, b) => {
       const act = b.dataset.act;
+      if (act === 'gen-cases') {
+        const p = prompt(); if (!p) return;
+        const vars = extractVars(p.system, p.user);
+        generating = true; draw();
+        try {
+          const r = await generateCases({ system: p.system, user: p.user, vars, count: Number($('[data-gen-count]', root)?.value || 6), model: s.model });
+          for (const gc of r.cases) {
+            const values = Object.fromEntries((gc.values || []).map(v => [v.name, v.value]));
+            s.cases.push({ id: uid('c'), name: `${gc.kind}: ${gc.name}`, vars: Object.fromEntries(vars.map(v => [v, values[v] ?? ''])), assertions: [{ type: 'rubric', value: gc.expectation }] });
+          }
+          saveS(s); toast(`Added ${r.cases.length} cases. Review and edit them before relying on the suite.`);
+        } catch (err) { toast(err.message, 'error'); }
+        generating = false; draw();
+        return;
+      }
       if (act === 'run') runAll();
       else if (act === 'stop') ctrl?.abort();
       else if (act === 'add-case') {

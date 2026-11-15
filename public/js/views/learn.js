@@ -49,7 +49,7 @@ function lessonPage(root, lesson) {
   const draw = () => {
     const done = Boolean(state.progress[lesson.id]);
     render(root, html`
-      <nav class="crumbs"><a href="#/learn">Learning path</a><span>/</span><a href="#/learn?level=${lv.id}">Level ${lv.n} · ${lv.title}</a></nav>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="#/learn">Learning path</a><span>/</span><a href="#/learn?level=${lv.id}">Level ${lv.n} · ${lv.title}</a></nav>
       <article class="lesson">
         <header class="lesson-head">
           <div class="row wrap" style="gap:8px">${levelBadge(lesson.level)}<span class="subtle">Lesson ${lv.n}.${nInLevel} · ${lesson.minutes} min read</span></div>
@@ -75,6 +75,7 @@ function lessonPage(root, lesson) {
             <div class="eyebrow" style="margin:0">Exercise</div>
             <div class="card-title" style="font-size:var(--fs-md);margin-top:4px">${lesson.exercise.title}</div>
             <p class="muted" style="font-size:var(--fs-sm);margin-top:6px">${lesson.exercise.hint}</p>
+            <p class="subtle" style="margin-top:6px">In the workbench, <b>Check my answer</b> has Claude grade your attempt against this lesson’s checklist.</p>
             <div class="btn-row" style="margin-top:16px">
               <button class="btn btn-primary" data-act="exercise">${raw(icon('workbench'))}Try it in the workbench</button>
               <button class="btn" data-act="after">Load the “after” example</button>

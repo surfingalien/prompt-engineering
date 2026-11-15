@@ -65,6 +65,15 @@ function validate(slug, fm, file) {
   if (errs.length) throw new Error(`${file}:\n  - ${errs.join('\n  - ')}`);
 }
 
+// Relative paths of every file in a skill folder (scripts, references, assets).
+function listFiles(dir, prefix = '') {
+  return fs.readdirSync(dir, { withFileTypes: true }).sort((a, c) => a.name.localeCompare(c.name)).flatMap(e => {
+    if (e.name.startsWith('.') || e.name === '__pycache__') return [];
+    const rel = prefix ? `${prefix}/${e.name}` : e.name;
+    return e.isDirectory() ? listFiles(path.join(dir, e.name), rel) : [rel];
+  });
+}
+
 const vars = t => [...new Set([...String(t).matchAll(/\{\{\s*([a-zA-Z0-9_][\w\- ]*?)\s*\}\}/g)].map(m => m[1]))];
 
 function loadSkills() {
@@ -75,10 +84,11 @@ function loadSkills() {
     const { data, body } = parseFrontmatter(fs.readFileSync(file, 'utf8'), rel);
     validate(d.name, data, rel);
     const md = data.metadata;
+    const files = listFiles(path.join(SKILLS_DIR, d.name)).filter(f => f !== 'SKILL.md');
     return {
       id: `pack-${d.name}`, kind: md.kind || 'skill', title: md.title, summary: data.description,
       source: md.source || 'PromptForge', body, vars: vars(body), level: md.level, domain: md.domain,
-      pack: md.pack, path: `skills/${d.name}`, ...(md.tags ? { tags: md.tags } : {}),
+      pack: md.pack, path: `skills/${d.name}`, ...(md.tags ? { tags: md.tags } : {}), ...(files.length ? { files } : {}),
     };
   });
 }

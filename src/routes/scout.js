@@ -8,7 +8,8 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const governance = require('../governance');
-const { getClient, complete, describeError } = require('../anthropic');
+const { complete, describeError } = require('../anthropic');
+const { authorize, recordSpend } = require('../guard');
 const { resolveModel } = require('../models');
 
 const PROMPT_PATH = path.join(__dirname, '..', '..', 'prompts', 'scout-system.txt');
@@ -58,7 +59,7 @@ function parseJsonLoose(text, opener) {
 }
 
 // One cross-model pass (assess-only, fail-open).
-async function verify(client, scoutModel, skills, agents) {
+async function verify(client, scoutModel, skills, agents, onUsage) {
   const verdicts = new Map();
   let usage = { input: 0, output: 0 };
   if (process.env.SCOUT_VERIFY === '0' || !(skills.length || agents.length)) return { verdicts, usage, enabled: false };
@@ -70,6 +71,7 @@ async function verify(client, scoutModel, skills, agents) {
       messages: [{ role: 'user', content: governance.verifierPrompt(skills, agents) }],
     });
     usage = { input: message.usage?.input_tokens || 0, output: message.usage?.output_tokens || 0 };
+    if (onUsage) onUsage(message);
     for (const v of parseJsonLoose(text, '[') || []) {
       if (v && v.key && (v.verdict === 'pass' || v.verdict === 'fail')) verdicts.set(`${v.kind}:${v.key}`, { verdict: v.verdict, reason: v.reason || '' });
     }
@@ -83,8 +85,10 @@ module.exports = function scoutRoutes({ scoutLimiter }) {
   const router = express.Router();
 
   router.post('/scout', scoutLimiter, async (req, res) => {
-    const client = getClient();
-    if (!client) return res.status(503).json({ error: 'ANTHROPIC_API_KEY is not configured on the server.', code: 'no_api_key' });
+    const auth = authorize(req);
+    if (auth.status) return res.status(auth.status).json(auth.body);
+    const client = auth.client;
+    const track = m => recordSpend(auth, m.model, m.usage);
 
     const body = req.body || {};
     const topic = String(body.topic || 'AI agents and prompt engineering').replace(/[\r\n]+/g, ' ').slice(0, 200).trim();
@@ -112,6 +116,7 @@ Today's date: ${new Date().toISOString().split('T')[0]}`;
         model: scoutModel, maxTokens: 12000, effort: 'medium', system: systemPrompt,
         messages: [{ role: 'user', content: userMsg }], format: SCOUT_FORMAT,
       });
+      track(message);
       const parsed = parseJsonLoose(text, '{');
       if (!parsed) return res.status(502).json({ error: 'Scout returned an unparseable response.' });
 
@@ -134,7 +139,7 @@ Today's date: ${new Date().toISOString().split('T')[0]}`;
       skills = gate('skill', skills);
       agents = gate('agent', agents);
 
-      const { verdicts, usage: vUsage, enabled: verifyEnabled } = await verify(client, scoutModel, skills, agents);
+      const { verdicts, usage: vUsage, enabled: verifyEnabled } = await verify(client, scoutModel, skills, agents, track);
 
       const finalize = (kind, items) => items.filter(item => {
         const key = kind === 'skill' ? item.id : item.name;
@@ -188,15 +193,17 @@ Today's date: ${new Date().toISOString().split('T')[0]}`;
 
   // Skill maintainer — re-validate a saved library; keep / flag / prune.
   router.post('/scout/maintain', scoutLimiter, async (req, res) => {
-    const client = getClient();
-    if (!client) return res.status(503).json({ error: 'ANTHROPIC_API_KEY is not configured on the server.', code: 'no_api_key' });
+    const auth = authorize(req);
+    if (auth.status) return res.status(auth.status).json(auth.body);
+    const client = auth.client;
+    const track = m => recordSpend(auth, m.model, m.usage);
     const skills = (Array.isArray(req.body?.skills) ? req.body.skills : []).filter(s => s && s.id && s.prompt).slice(0, 100);
     const agents = (Array.isArray(req.body?.agents) ? req.body.agents : []).filter(a => a && a.name && a.text).slice(0, 100);
     if (!skills.length && !agents.length) {
       return res.json({ skills: [], agents: [], summary: { keep: 0, flag: 0, prune: 0 }, note: 'Library is empty — nothing to maintain.' });
     }
     const scoutModel = resolveModel(req.body?.model).id;
-    const { verdicts, usage } = await verify(client, scoutModel, skills, agents);
+    const { verdicts, usage } = await verify(client, scoutModel, skills, agents, track);
 
     const summary = { keep: 0, flag: 0, prune: 0 };
     const review = (kind, items) => items.map(item => {

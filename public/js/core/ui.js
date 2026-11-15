@@ -99,6 +99,16 @@ export async function promptDialog(title, label, value = '', placeholder = '') {
   return r ? String(r.data.value || '').trim() : null;
 }
 
+/** Build a share link for a payload and copy it. */
+export async function shareLink(payload, what = 'Link') {
+  const { encodeShare } = await import('../lib/share.js');
+  const data = await encodeShare(payload);
+  const url = `${location.origin}${location.pathname}#/import?d=${data}`;
+  await copyText(url, `${what} copied. Anyone with the link can view and save a copy.`);
+  if (url.length > 8000) toast('This link is long; some chat apps may cut it off. Export a file instead if it breaks.', 'error');
+  return url;
+}
+
 export function scoreColor(score) {
   return score >= 85 ? 'var(--good)' : score >= 70 ? 'var(--lv-intermediate)' : score >= 45 ? 'var(--accent)' : 'var(--bad)';
 }

@@ -30,3 +30,13 @@ Keep Sharpe per period and annualize only for display. If N is unknown, estimate
 
 ## Output
 DSR as a probability, a verdict (≥ 0.95 strong; 0.5–0.95 inconclusive; < 0.5 likely noise), and how many more out-of-sample observations would be needed to reach 0.95 at the current Sharpe.
+
+## Calculator
+When you can run code, use the bundled script instead of doing the arithmetic by hand, and quote its output:
+
+```bash
+python3 scripts/dsr.py --sharpe {{sharpe}} --n-obs {{n_obs}} --skew {{skew}} --kurtosis {{kurtosis}} --trials {{n_trials}} --sharpe-var {{sharpe_variance}}
+```
+
+It prints the expected maximum Sharpe under the null, PSR, DSR and a verdict. It uses only the Python standard library. Without code execution, do the calculation step by step and show your working.
+

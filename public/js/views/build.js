@@ -65,14 +65,14 @@ export default {
       render(root, html`
         ${pageHead({ eyebrow: 'Prompt builder', title: 'Build a prompt, step by step', desc: 'Pick what you’re doing, answer in plain language, and watch a structured prompt take shape with a live quality score.' })}
         <div class="bp-picker" role="radiogroup" aria-label="Task type">
-          ${BLUEPRINTS.map(b => html`<button class="bp ${b.id === draft.blueprint ? 'active' : ''}" role="radio" aria-checked="${b.id === draft.blueprint}" data-bp="${b.id}">${raw(icon(b.icon))}<span class="bp-t">${b.title}</span><span class="bp-d">${b.desc}</span></button>`)}
+          ${BLUEPRINTS.map(b => html`<button class="bp ${b.id === draft.blueprint ? 'active' : ''}" role="radio" aria-checked="${String(b.id === draft.blueprint)}" data-bp="${b.id}">${raw(icon(b.icon))}<span class="bp-t">${b.title}</span><span class="bp-d">${b.desc}</span></button>`)}
         </div>
         <div class="split">
           <section class="card">
             <div class="row between wrap" style="margin-bottom:18px;gap:12px">
               <div class="row" style="gap:10px"><h2 style="font:500 var(--fs-lg) var(--font-serif)">${bp.title}</h2>${levelBadge(bp.level)}</div>
               <div class="row" style="gap:8px">
-                <div class="seg" role="group" aria-label="Mode"><button data-mode="guided" aria-pressed="${draft.mode === 'guided'}">Guided</button><button data-mode="pro" aria-pressed="${draft.mode === 'pro'}">Pro</button></div>
+                <div class="seg" role="group" aria-label="Mode"><button data-mode="guided" aria-pressed="${String(draft.mode === 'guided')}">Guided</button><button data-mode="pro" aria-pressed="${String(draft.mode === 'pro')}">Pro</button></div>
                 <button class="btn btn-sm" data-act="example">${raw(icon('sparkle'))}Load example</button>
                 <button class="btn btn-sm btn-ghost" data-act="clear">Clear</button>
               </div>

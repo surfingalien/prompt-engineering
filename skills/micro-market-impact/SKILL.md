@@ -41,3 +41,13 @@ So 4× the size gives only about 2× the impact, but impact still grows without 
 - For DEX/AMM pools, use pool math instead: for constant product x·y = k, price impact ≈ 2·Δx/x for small trades
 
 End with: expected cost in bps, recommended schedule, and the confidence level of the estimate.
+
+## Calculator
+When you can run code, use the bundled script instead of doing the arithmetic by hand, and quote its output:
+
+```bash
+python3 scripts/impact.py --size {{order_size}} --adv {{adv}} --vol {{daily_vol}} --y {{impact_constant}} --price {{price}} --days 3
+```
+
+It prints the sensitivity table (0.25×–4×) and the sliced-execution comparison. It uses only the Python standard library. Without code execution, do the calculation step by step and show your working.
+
